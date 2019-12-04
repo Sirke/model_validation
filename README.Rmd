@@ -3,7 +3,6 @@ output: github_document
 ---
 
 ---
-something about the course.
-Check out my [GitHub](https://github.com/Sirke/IODS-project)!!
+comparing four different model validation methods
 
 ---
