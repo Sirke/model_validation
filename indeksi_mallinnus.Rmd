@@ -1,5 +1,5 @@
 ---
-title: "model validation paper"
+title: "Model validation paper"
 author: "Sirke Piirainen"
 output:
   html_document:

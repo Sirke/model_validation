@@ -1,8 +1,10 @@
 ---
-title: "part1"
+title: "First part of the paper"
 author: "me"
 date: "3 joulukuuta 2019"
-output: html_document
+output: 
+  html_document:
+      toc: TRUE
 ---
 
 ```{r setup, include=FALSE}
