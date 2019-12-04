@@ -189,7 +189,7 @@ summary {
 <p>This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <a href="http://rmarkdown.rstudio.com" class="uri">http://rmarkdown.rstudio.com</a>.</p>
 <p>When you click the <strong>Knit</strong> button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:</p>
 <pre class="r"><code>getwd()</code></pre>
-<pre><code>## [1] &quot;C:/Users/U1701911/OneDrive - University of Helsinki/github_mallinnus&quot;</code></pre>
+<pre><code>## [1] &quot;C:/Users/U1701911/OneDrive - University of Helsinki/github_mallinnus/model_validation&quot;</code></pre>
 <pre class="r"><code>localDir = &quot;.&quot;
 PredictionDir = file.path(localDir, &quot;data&quot;)
 
@@ -296,9 +296,8 @@ filename = file.path(PredictionDir, paste(&quot;predictions_&quot;,c(&quot;pa&qu
                                           &quot;.Rdata&quot;,sep = &quot;&quot;))
 load(filename) #mpred1, mpred2, Y, studyDesign</code></pre>
 </div>
-<div id="including-plots" class="section level2">
-<h2>Including Plots</h2>
-<p>You can also embed plots, for example:</p>
+<div id="next-chunk" class="section level2">
+<h2>next chunk</h2>
 <pre class="r"><code>routes=levels(studyDesign$Route)
 nr=length(routes)
 years=levels(studyDesign$Year)
@@ -311,7 +310,6 @@ dim(mpred2)</code></pre>
 <pre><code>## [1] 19752   120</code></pre>
 <pre class="r"><code>dim(studyDesign)</code></pre>
 <pre><code>## [1] 19752     2</code></pre>
-<p>Note that the <code>echo = FALSE</code> parameter was added to the code chunk to prevent printing of the R code that generated the plot.</p>
 </div>
 
 

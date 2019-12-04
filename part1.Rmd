@@ -43,9 +43,9 @@ filename = file.path(PredictionDir, paste("predictions_",c("pa","abundance")[mod
 load(filename) #mpred1, mpred2, Y, studyDesign
 ```
 
-## Including Plots
+## next chunk
 
-You can also embed plots, for example:
+
 
 ```{r}
 routes=levels(studyDesign$Route)
@@ -59,4 +59,4 @@ dim(studyDesign)
 
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
