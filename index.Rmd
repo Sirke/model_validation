@@ -1,5 +1,5 @@
 ---
-title: "IODS course project"
+title: "model validation indeksi"
 author: "Sirke Piirainen"
 output:
   html_document:
@@ -21,3 +21,9 @@ output:
   
 ***
 
+***
+  
+```{r child = "part2.Rmd"}
+```
+  
+***

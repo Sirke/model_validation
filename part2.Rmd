@@ -1,0 +1,22 @@
+---
+title: "Second part of the paper"
+author: "me"
+date: "4 joulukuuta 2019"
+output: html_document
+---
+
+```{r , include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Toista
+piipaapuu
+duppiduu
+
+```{r}
+2+12
+
+```
+
+
+
