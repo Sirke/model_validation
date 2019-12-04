@@ -4,16 +4,60 @@ author: "me"
 date: "3 joulukuuta 2019"
 output: 
   html_document:
-      toc: TRUE
+  toc: TRUE
 ---
-
-```{r setup, include=FALSE}
+  
+```{r, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Kunhan kokeilen kaikkea
-Ja sillä lailla eteenpäin.
-```{r}
-1+1
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+  
+```{r }
+getwd()
+localDir = "."
+PredictionDir = file.path(localDir, "data")
+
+paketit<-c("readr","tidyr","dplyr","plyr","magrittr","purrr","data.table","plotrix","jtools")
+lapply(paketit,library,character.only=T)
+
+# SET DIRECTORIES AND LOAD LIBRARIES (END) ####################################################################
+
+#model 1: data until 2006; model 2: full data
+#mpred1: posterior mean based on model 1; mpred2: posterior mean based on model 2
+
+#tiff("pa_species_specific_route_level.tiff",width=180,height=180,units="mm",res=300, compression="lzw")
+#par(mfrow=c(1,2))
+
+samples = 1000
+thin = 10
+nChains = 4
+modeltype = 1 #1 on pa-aineistolle
+
+filename = file.path(PredictionDir, paste("predictions_",c("pa","abundance")[modeltype],
+                                          "_chains_",as.character(nChains),"_thin_", as.character(thin),"_samples_", as.character(samples),
+                                          
+                                          ".Rdata",sep = ""))
+load(filename) #mpred1, mpred2, Y, studyDesign
 ```
 
+## next chunk
+
+
+
+```{r}
+routes=levels(studyDesign$Route)
+nr=length(routes)
+years=levels(studyDesign$Year)
+dim(mpred1)
+ns=dim(mpred1)[2]
+dim(mpred2)
+dim(Y)
+dim(studyDesign)
+
+```
