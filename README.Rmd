@@ -1,8 +1,0 @@
----
-output: github_document
----
-
----
-comparing four different model validation methods
-
----
