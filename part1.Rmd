@@ -1,5 +1,5 @@
 ---
-title: "First part of the paper"
+title: "Counting prediction accuracies PA and ABU"
 author: "me"
 date: "3 joulukuuta 2019"
 output: 
@@ -10,29 +10,32 @@ output:
 ```{r, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+# Counting prediction accuracies
+
+Malli on nyt ajettu 120 lajilla, joiden prevalenssi on ollut v‰hint‰‰n 0.05. T‰ll‰ hetkell‰ saatavilla on ollut vasta thin=10 aineisto. Mallista on ajettu kahta versiota. Toisessa on k‰ytetty aineistoa vain vuoteen 1999 asti ja toisessa vuoteen 2016 asti.
+
+Malleja, joiden tekemisess‰ oli k‰ytetty aineistoa vain vuoteen 1999 asti, pyydettiin ennustamaan tulevaisuutta niin, ett‰ kaikki muut muuttujat paitsi vuosi muuttuivat. Vuosi fiksattiin paikoilleen vuoteen 1997.
+
+Malli: 
+XFormula = ~ JunJul + DJF + AprMay + Year + Urb + Br + Co + Op + Ma + We + Effort*Method
 
 
-## R Markdown
+## Presence/absence data 
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-  
+### Aineisto sis‰lle ja tarkastelu
 ```{r }
 getwd()
 localDir = "."
 PredictionDir = file.path(localDir, "data")
-
-paketit<-c("readr","tidyr","dplyr","plyr","magrittr","purrr","data.table","plotrix","jtools")
+```
+```{r include=FALSE}
+paketit<-c("readr","tidyr","dplyr","plyr","magrittr","purrr","data.table","plotrix","jtools","sp","GISTools","rgdal","sf","spatialEco","ggplot2","ggrepel")
 lapply(paketit,library,character.only=T)
+```
 
-# SET DIRECTORIES AND LOAD LIBRARIES (END) ####################################################################
-
+```{r }
 #model 1: data until 2006; model 2: full data
 #mpred1: posterior mean based on model 1; mpred2: posterior mean based on model 2
-
-#tiff("pa_species_specific_route_level.tiff",width=180,height=180,units="mm",res=300, compression="lzw")
-#par(mfrow=c(1,2))
 
 samples = 1000
 thin = 10
@@ -41,16 +44,9 @@ modeltype = 1 #1 on pa-aineistolle
 
 filename = file.path(PredictionDir, paste("predictions_",c("pa","abundance")[modeltype],
                                           "_chains_",as.character(nChains),"_thin_", as.character(thin),"_samples_", as.character(samples),
-                                          
                                           ".Rdata",sep = ""))
 load(filename) #mpred1, mpred2, Y, studyDesign
-```
 
-## next chunk
-
-
-
-```{r}
 routes=levels(studyDesign$Route)
 nr=length(routes)
 years=levels(studyDesign$Year)
@@ -59,5 +55,565 @@ ns=dim(mpred1)[2]
 dim(mpred2)
 dim(Y)
 dim(studyDesign)
-
 ```
+
+###Periodien m‰‰rittely
+
+```{r}
+period1=(studyDesign$Year=="Year_1996" | studyDesign$Year=="Year_1997" | studyDesign$Year=="Year_1998" | studyDesign$Year=="Year_1999")
+period2=(studyDesign$Year=="Year_2013" | studyDesign$Year=="Year_2014" | studyDesign$Year=="Year_2015" | studyDesign$Year=="Year_2016")
+
+pm1p1=mpred1[period1,]
+pm2p1=mpred2[period1,]
+
+pm1p2=mpred1[period2,] #pm1p2 = predictions by model 1 to period 2
+pm2p2=mpred2[period2,]
+
+y1=Y[period1,]
+y2=Y[period2,]
+
+sd1 = studyDesign[period1,]
+sd2 = studyDesign[period2,]
+
+visits1 = rep(NA,nr)
+visits2 = rep(NA,nr)
+for (i in 1:nr){
+  visits1[i] = sum(sd1$Route==routes[i])
+  visits2[i] = sum(sd2$Route==routes[i])
+}
+```
+
+
+### 4 erilaista validointimetodia
+
+Vaihtoehdot A,B,C,D.  
+A ja B katsovat yht‰ ajanhetke‰.  
+C ja D katsovat muutosta tietyn ajanjakson aikana.
+
+```{r echo=F, out.width='60%'}
+knitr::include_graphics('./methods.png')
+```
+
+
+### Lasketaan lajikohtaiset ennustustarkkuudet metodeilla A ja B
+
+Lasketaan ennustustarkkuus kun ennustetaan kunkin lajin esiintymistodenn‰kˆisyytt‰ yhten‰ ajanhetken‰ (periodi 2)  
+A: mallin kalibrointiin on k‰ytetty aineistoa samalta ajalta  
+B: mallin kalibrointiin EI ole k‰ytetty aineistoa samalta ajalta
+
+
+```{r}
+# COMPUTE MEASURES A AND B
+selroutes = routes[which(visits2>=2)]  #periodi 2, joten vesilintujen NA:t eiv‰t vaikuta n‰iss‰ laskuissa
+nsr = length(selroutes)
+
+Ap1=matrix(NA,nrow = nsr,ncol = ns)
+Ap2=matrix(NA,nrow = nsr,ncol = ns)
+Ay=matrix(NA,nrow = nsr,ncol = ns)
+for (i in 1:nsr){
+  take = which(sd2$Route == selroutes[i])
+  Ap1[i,] = colMeans(pm1p2[take,])
+  Ap2[i,] = colMeans(pm2p2[take,])
+  Ay[i,] = colMeans(y2[take,])
+}
+A = rep(NA,ns)
+B = rep(NA,ns)
+for (i in 1:ns){
+  A[i] = cor(Ap2[,i],Ay[,i])
+  B[i] = cor(Ap1[,i],Ay[,i])
+}
+
+plot(A,B) + abline(0,1)
+```
+
+### Lasketaan reittikohtaiset ennustustarkkuudet metodeilla A ja B
+
+Lasketaan ennustustarkkuudet myˆs reittikohtaisesti, kullakin nelj‰ll‰ tyylill‰ (A,B,C,D).   
+Ensin A ja B:
+
+```{r}
+## Reittikohtainen korrelaatio, kaikki lajit samanaikaisesti
+selroutes1=as.data.frame(selroutes)
+
+selroutes1$corA=NA
+selroutes1$corB=NA
+
+for(i in 1:nrow(Ap1)){
+  selroutes1$corB[i]=cor(Ap1[i,],Ay[i,],use="na.or.complete")
+}
+
+for(i in 1:nrow(Ap2)){
+  selroutes1$corA[i]=cor(Ap2[i,],Ay[i,],use="na.or.complete")
+}
+```
+
+### Lasketaan lajikohtaiset ennustustarkkuudet metodeilla C ja D
+
+Lasketaan ennustustarkkuus kun ennustetaan kunkin lajin esiintymistodenn‰kˆisyyden muutosta periodien 1 ja 2 v‰lill‰  
+C: mallin kalibrointiin on k‰ytetty aineistoa samalta ajalta   
+D: mallin kalibrointiin EI ole k‰ytetty aineistoa samalta ajalta (periodin 2 osalta)
+
+```{r}
+# COMPUTE MEASURES C AND D
+selroutes = routes[which(visits1>=2 & visits2>=2)]
+nsr = length(selroutes)
+
+Ap1=matrix(NA,nrow = nsr,ncol = ns)
+Ap2=matrix(NA,nrow = nsr,ncol = ns)
+Ay=matrix(NA,nrow = nsr,ncol = ns)
+for (i in 1:nsr){
+  take1 = which(sd1$Route == selroutes[i])
+  take2 = which(sd2$Route == selroutes[i])
+  Ap1[i,] = colMeans(pm1p2[take2,])-colMeans(pm1p1[take1,]) #ennusteisiin ei tule NA:ta mutta seuraavissa laskuissa havaintojen NA eliminoi ennusteissa olevat virheet 
+  Ap2[i,] = colMeans(pm2p2[take2,])-colMeans(pm2p1[take1,])
+  Ay[i,] = colMeans(y2[take2,])- colMeans(y1[take1,])   #Suomen vesilintujen NA:t s‰ilyv‰t
+}
+C = rep(NA,ns)
+D = rep(NA,ns)
+for (i in 1:ns){
+  C[i] = cor(Ap2[,i],Ay[,i], use="na.or.complete")  #NA:t eiv‰t est‰ korrelaation laskemista koko lajille
+  D[i] = cor(Ap1[,i],Ay[,i], use="na.or.complete")
+}
+
+plot(C,D) + abline(0,1)
+```
+
+Presence/absence aineistossa mm. Suomen vesilinnut ovat NA:ta ennen vuotta 2006. Periodi 1:sen kaikki arvot vesilinnuille Suomessa ovat siis NA, eiv‰tk‰ tule mukaan laskelmiin. Korrelaatiota laskiessa argumentti "use="na.or.complete"" varmistaa, ett‰ korrelaatio lasketaan muista kuin NA-arvoista.
+
+
+### Lajikohtaiset ennustustarkkuudet, PA
+
+```{r}
+#create a table
+meres=c(mean(A,na.rm = TRUE),mean(B,na.rm = TRUE),mean(C,na.rm = TRUE),mean(D,na.rm = TRUE))
+names(meres)=c("A","B","C","D")
+meres
+#write.csv(meres,file="pa_species_specific_route_level.csv")
+```
+
+Keskiarvot n‰ytt‰v‰t suht surkeilta tyyleille C ja D. Eli nimenomaan muutoksen ennustaminen on vaikeaa. Vaikka mallin kalibrointii olisi k‰ytetty aineistoa samalta ajalta kuin mihin yritet‰‰n ennustaa.
+
+```{r}
+#save results as datatable for further analysis
+species=colnames(Y)
+pa_results=data.frame(species,A,B,C,D)
+setnames(pa_results,c("A","B","C","D"),c("pa_A","pa_B","pa_C","pa_D"))
+write.csv(pa_results, "pa_results.csv",row.names = F)
+```
+
+
+
+### Reittikohtaiset ennustustarkkuudet, PA
+
+```{r}
+## metodit C ja D
+selroutes2=as.data.frame(selroutes)
+
+selroutes2$corC=NA
+selroutes2$corD=NA
+
+for(i in 1:nrow(Ap1)){
+  selroutes2$corD[i]=cor(Ap1[i,],Ay[i,],use="na.or.complete")
+}
+
+for(i in 1:nrow(Ap2)){
+  selroutes2$corC[i]=cor(Ap2[i,],Ay[i,],use="na.or.complete")
+}
+#collect all to one table
+selroutes12<-left_join(selroutes1,selroutes2, by="selroutes")
+colMeans(selroutes12[,2:5],na.rm = T)
+```
+
+Reittikohtaiset ennustustarkkuudet ovat hieman parempia. Tosin edelleen tyyleille C ja D alakanttiin.
+
+
+#### Selitt‰‰kˆ leveysaste ennustustarkkuutta?
+
+Onko pohjoisen tai etel‰n lajeja helpompi/vaikeampi mallintaa luotettavasti?
+
+```{r}
+#Liitetaan kullekin linjalle koordinaatit
+routeyear<-read.csv("studydesign.csv",header=T,sep=",")
+xy<-read.csv("xy.csv",header=T,sep=",")
+
+#koordinaateista puuttuu nollia
+xy<-xy%>%
+  mutate(x = x * 1000) %>%
+  mutate(y = y * 1000) 
+
+#jotta koordinaatit saa liitetty‰ oikealle linjalle, tehd‰‰n taulukko, jossa reiteill‰ on molemmat koodaukset (alkuper‰iset ja 1-2591)
+Route<-unique(routeyear$Route)
+routeid<-c(1:2591)
+d<-data.frame(Route,routeid)
+xy<-left_join(xy,d,by=c("route"="routeid"))
+selroutes12<-left_join(selroutes12,xy,by=c("selroutes"="Route"))
+
+#tallenna erikseen jos tarve piirt‰‰ GIS:ll‰ karttoja
+#write.csv(selroutes12,"selroutes12_pa.csv",row.names = F,na="")
+
+#ennustustarkkuuksien jakauma
+ggplot(selroutes12, aes(corD)) + 
+  geom_histogram()
+
+#kuvaajia, plotataan linjakohtaiset ennustustarkkuudet latitudea vasten
+ggplot(selroutes12, aes(x=y, y=corA))+ geom_point()+ geom_smooth()
+ggplot(selroutes12, aes(x=y, y=corB))+ geom_point()+ geom_smooth()
+
+ggplot(selroutes12, aes(x=y, y=corC))+ geom_point()+ geom_smooth()
+ggplot(selroutes12, aes(x=y, y=corD))+ geom_point()+ geom_smooth()
+
+#Kaikki mukaan valikoituneet reitit kartalla
+ggplot(selroutes12,aes(x=x,y=y))+geom_point()
+
+#testataan selittaako latitude (y) ennustustarkkuutta (corD)
+selroutes_D<-subset(selroutes12,!is.na(corD))
+M1=lm(corD~y,data = selroutes_D)
+summary(M1)
+
+#mallin validointi
+op<-par(mfrow=c(2,2),mar=c(5,4,1,2))
+plot(M1,add.smooth = F,which = 1)
+E<-resid(M1)
+hist(E, xlab = "residuals",main = "")
+plot(selroutes_D$corD,E,xlab = "accuracy(D)",ylab="residuals")
+par(op)
+```
+
+Ennustustarkkuus n‰ytt‰isi aluksi nousevan kohti pohjoista ja laskevan aivan pohjoisessa. GAM?
+
+
+### Todelliset ja ennustetut muutokset esiintymistodenn‰kˆisyyksiss‰ periodien 1 ja 2 v‰lill‰
+
+Tarkastellaan viel‰ absoluuttisia todellisia ja ennustettuja muutoksia esiintymistodenn‰kˆisyyksiss‰. Ennusteet on tehty joko tyyliin C tai D, eli koko aineistoa tai osittaista aineistoa hyˆdynt‰m‰ll‰.
+
+```{r}
+#kannanmuutostrendien tarkastelu, lasketaan kaikilta linjoilta ennustetut ja todelliset kannanmuutokset
+Ap1<-as.data.frame(Ap1)
+Ap2<-as.data.frame(Ap2)
+Ay<-as.data.frame(Ay)
+
+#aineisto, jossa kullekin lajille laskettu kaikilta linjoilta ennustettu ja todellinen muutoksen keskiarvo (EI siis korrelaatio
+# ennusteiden ja oikeiden muutosten v‰lill‰ kuten aiemmin on laskettu)
+kat=colnames(Y)
+kat=as.data.frame(kat)
+kat$Ap1k=colMeans(Ap1,na.rm = T)
+kat$Ap2k<-colMeans(Ap2,na.rm = T)
+kat$Ayk<-colMeans(Ay,na.rm = T)
+```
+
+Ensin tyyliin C, eli k‰ytt‰en koko aineistoa vuoteen 2016.
+
+```{r }
+#C, ennusteet tehty k‰ytt‰en aineistoa vuoteen 2016
+ggplot(kat, aes(x=Ap2k, y=Ayk))+ 
+  geom_point()+ geom_hline(yintercept = 0, color = "black")+ 
+  geom_vline(xintercept = 0, color = "black")+
+  xlab("Mean predicted change, C")+
+  ylab("Mean observed change")+ 
+  geom_abline(intercept = 0, slope = 1, color="red",linetype="dashed", size=1.5)
+```
+
+Sama kuva mutta lajit merkitty.
+
+```{r }
+ggplot(kat, aes(x=Ap2k, y=Ayk))+ geom_point()+ 
+  geom_hline(yintercept = 0, color = "black")+ 
+  geom_vline(xintercept = 0, color = "black")+
+  xlab("Mean predicted change, C")+
+  ylab("Mean observed change")+ 
+  geom_abline(intercept = 0, slope = 1, color="red",linetype="dashed", size=1.5)+
+  geom_text(aes(label=kat),hjust=0, vjust=0)                                                                                                                      
+```
+
+Tyyli D, eli k‰ytt‰en aineistoa vuoteen 1999.
+
+```{r }                                                                                        
+#D, ennusteet tehty k‰ytt‰en aineistoa vuoteen 2006
+ggplot(kat, aes(x=Ap1k, y=Ayk))+ 
+  geom_point()+ geom_hline(yintercept = 0, color = "black")+ 
+  geom_vline(xintercept = 0, color = "black")+
+  xlab("Mean predicted change, D")+
+  ylab("Mean observed change")+ 
+  geom_abline(intercept = 0, slope = 1, color="red",linetype="dashed", size=1.5)
+```
+
+Sama kuva mutta lajit merkitty.
+
+```{r }
+ggplot(kat, aes(x=Ap1k, y=Ayk))+ 
+  geom_point()+ geom_hline(yintercept = 0, color = "black")+ 
+  geom_vline(xintercept = 0, color = "black")+
+  xlab("Mean predicted change, D")+
+  ylab("Mean observed change")+ 
+  geom_abline(intercept = 0, slope = 1, color="red",linetype="dashed", size=1.5)+
+  geom_text(aes(label=kat),hjust=0, vjust=0)
+
+#tallennetaan tarvittaessa
+write.csv(kat,"mean_observed_predicted_changes_pa.csv",row.names = F)
+```
+
+
+##Abundance-aineisto
+
+Lasketaan kaikki samat asiat abundance -aineistolla myˆs.
+
+```{r }
+modeltype = 2 #2 on abu-aineistolle
+
+filename = file.path(PredictionDir, paste("predictions_",c("pa","abundance")[modeltype],                                    "_chains_",as.character(nChains),"_thin_", as.character(thin),"_samples_", as.character(samples),".Rdata",sep = ""))
+
+load(filename) #mpred1, mpred2, Y, studyDesign
+routes=levels(studyDesign$Route)
+nr=length(routes)
+years=levels(studyDesign$Year)
+dim(mpred1)
+ns=dim(mpred1)[2]
+dim(mpred2)
+dim(Y)
+dim(studyDesign)
+```
+
+### Periodien m‰‰rittely
+
+```{r }
+pm1p1=mpred1[period1,]
+pm2p1=mpred2[period1,]
+
+pm1p2=mpred1[period2,] #pm1p2 = predictions by model 1 to period 2
+pm2p2=mpred2[period2,]
+
+y1=Y[period1,]
+y2=Y[period2,]
+
+sd1 = studyDesign[period1,]
+sd2 = studyDesign[period2,]
+
+visits1 = rep(NA,nr)
+visits2 = rep(NA,nr)
+for (i in 1:nr){
+  visits1[i] = sum(sd1$Route==routes[i])
+  visits2[i] = sum(sd2$Route==routes[i])
+}
+```
+
+### Lajikohtaiset A ja B
+
+```{r }
+# COMPUTE MEASURES A AND B
+selroutes = routes[which(visits2>=2)]
+nsr = length(selroutes)
+
+Ap1=matrix(NA,nrow = nsr,ncol = ns)
+Ap2=matrix(NA,nrow = nsr,ncol = ns)
+Ay=matrix(NA,nrow = nsr,ncol = ns)
+
+for (j in 1:ns) {
+  for (i in 1:nsr){
+    take = which(sd2$Route == selroutes[i] & y2[,j]>-1)
+    Ap1[i,j] = mean(pm1p2[take,j])  
+    Ap2[i,j] = mean(pm2p2[take,j])
+    Ay[i,j] = mean(y2[take,j],na.rm=T)
+  }}
+
+A = rep(NA,ns)
+B = rep(NA,ns)
+for (i in 1:ns){
+  A[i] = cor(Ap2[,i],Ay[,i],use="na.or.complete")   #lis‰sin t‰h‰n m‰‰reen
+  B[i] = cor(Ap1[,i],Ay[,i],use="na.or.complete")
+}
+
+plot(A,B)+abline(0,1)
+```
+
+### Reittikohtaiset A ja B
+
+```{r }
+## Reittikohtainen korrelaatio, kaikki lajit samanaikaisesti
+selroutes1=as.data.frame(selroutes)
+
+selroutes1$corA=NA
+selroutes1$corB=NA
+
+for(i in 1:nrow(Ap1)){
+  selroutes1$corB[i]=cor(Ap1[i,],Ay[i,],use="na.or.complete")
+}
+
+for(i in 1:nrow(Ap2)){
+  selroutes1$corA[i]=cor(Ap2[i,],Ay[i,],use="na.or.complete")
+}
+```
+
+### Lajikohtaiset C ja D
+
+```{r }
+# COMPUTE MEASURES C AND D
+selroutes = routes[which(visits1>=2 & visits2>=2)]
+nsr = length(selroutes)
+
+Ap1=matrix(NA,nrow = nsr,ncol = ns)
+Ap2=matrix(NA,nrow = nsr,ncol = ns)
+Ay=matrix(NA,nrow = nsr,ncol = ns)
+
+for (j in 1:ns){
+  for (i in 1:nsr){
+    take1 = which(sd1$Route == selroutes[i] & y1[,j]>-1)
+    take2 = which(sd2$Route == selroutes[i]& y2[,j]>-1)
+    Ap1[i,j] = mean(pm1p2[take2,j])-mean(pm1p1[take1,j]) #ka laskettava vain vuosilta, jolloin lajia on havaittu
+    Ap2[i,j] = mean(pm2p2[take2,j])-mean(pm2p1[take1,j]) #riitt‰‰, ett‰ on edes kerran pystytty laskemaan lajia
+    Ay[i,j] = mean(y2[take2,j],na.rm=T)- mean(y1[take1,j],na.rm=T) #NA:t eiv‰t saa est‰‰ keskiarvon laskemista koko lajille.
+  }}
+
+C = rep(NA,ns)
+D = rep(NA,ns)
+for (i in 1:ns){
+  C[i] = cor(Ap2[,i],Ay[,i],use="na.or.complete")    #lis‰sin t‰h‰n m‰‰reen
+  D[i] = cor(Ap1[,i],Ay[,i],use="na.or.complete")
+}
+plot(C,D)+abline(0,1)
+```
+
+HUOM! Abundance aineistolla riitt‰‰, ett‰ lajia on kunkin periodin aikana havaittu edes kerran. PA-aineistolla havaintoja piti olla v‰hint‰‰n kaksi. 
+
+### Lajikohtaiset ennustustarkkuudet, ABU
+
+```{r }
+meres=c(mean(A,na.rm = TRUE),mean(B,na.rm = TRUE),mean(C,na.rm = TRUE),mean(D,na.rm = TRUE))
+names(meres)=c("A","B","C","D")
+meres
+```
+
+Myˆs abu-aineistolla varsinkin muutoksen ennustaminen on vaikeaa.
+
+```{r }
+#save as datatable
+species=colnames(Y)
+abu_results=data.frame(species,A,B,C,D)
+setnames(abu_results,c("A","B","C","D"),c("abu_A","abu_B","abu_C","abu_D"))
+write.csv(abu_results, "abu_results.csv",row.names = F)
+```
+
+### Reittikohtaiset ennustustarkkuudet, ABU
+
+```{r }
+## Reittikohtainen korrelaatio, kaikki lajit samanaikaisesti
+selroutes2=as.data.frame(selroutes)
+
+selroutes2$corC=NA
+selroutes2$corD=NA
+
+for(i in 1:nrow(Ap1)){
+  selroutes2$corD[i]=cor(Ap1[i,],Ay[i,],use="na.or.complete")
+}
+
+for(i in 1:nrow(Ap2)){
+  selroutes2$corC[i]=cor(Ap2[i,],Ay[i,],use="na.or.complete")
+}
+
+#collect all to one table
+selroutes12<-left_join(selroutes1,selroutes2, by="selroutes")
+colMeans(selroutes12[,2:5],na.rm = T)
+```
+
+Myˆs abu-aineistolla reittikohtaiset ennustustarkkuudet ovat hieman parempia.
+
+
+#### Selitt‰‰kˆ pituusaste ennustustarkkuutta?
+
+```{r }
+#liitet‰‰n koordinaatit
+selroutes12<-left_join(selroutes12,xy,by=c("selroutes"="Route"))
+
+#tallenna erikseen jos tarve piirt‰‰ GIS:ll‰ karttoja
+#write.csv(selroutes12,"selroutes12_abu.csv",row.names = F,na="")
+
+#ennustustarkkuuksien jakautuminen
+ggplot(selroutes12, aes(corD)) + 
+  geom_histogram()
+
+#kuvaajia, plotataan linjakohtaiset ennustustarkkuudet latitudea vasten
+ggplot(selroutes12, aes(x=y, y=corA))+ geom_point()+geom_smooth()
+ggplot(selroutes12, aes(x=y, y=corB))+ geom_point()+geom_smooth()
+
+ggplot(selroutes12, aes(x=y, y=corC))+ geom_point()+geom_smooth()
+ggplot(selroutes12, aes(x=y, y=corD))+ geom_point()+geom_smooth()
+
+#testataan selitt‰‰kˆ latitude (y) ennustustarkkuutta (corD)
+selroutes_D<-subset(selroutes12,!is.na(corD))
+M1=lm(corD~y,data = selroutes_D)
+summary(M1)
+
+#mallin validointi
+op<-par(mfrow=c(2,2),mar=c(5,4,1,2))
+plot(M1,add.smooth = F,which = 1)
+E<-resid(M1)
+hist(E, xlab = "residuals",main = "")
+plot(selroutes_D$corD,E,xlab = "accuracy(D)",ylab="residuals")
+par(op)
+```
+
+### Todelliset ja ennustetut muutokset esiintymistodenn‰kˆisyyksiss‰ periodien 1 ja 2 v‰lill‰
+
+```{r }
+#kannanmuutostrendien tarkastelu, lasketaan kaikilta linjoilta ennustetut ja todelliset kannanmuutokset
+Ap1<-as.data.frame(Ap1)
+Ap2<-as.data.frame(Ap2)
+Ay<-as.data.frame(Ay)
+
+#aineisto, jossa kullekin lajille laskettu kaikilta linjoilta ennustettu ja todellinen muutoksen keskiarvo (EI siis korrelaatio
+# ennusteiden ja oikeiden muutosten v‰lill‰ kuten aiemmin on laskettu)
+kat=colnames(Y)
+kat=as.data.frame(kat)
+kat$Ap1k=colMeans(Ap1,na.rm = T)
+kat$Ap2k<-colMeans(Ap2,na.rm = T)
+kat$Ayk<-colMeans(Ay,na.rm = T)
+```
+
+Tyyli C.
+
+```{r }
+#C, ennusteet tehty k‰ytt‰en aineistoa vuoteen 2016
+ggplot(kat, aes(x=Ap2k, y=Ayk))+ 
+  geom_point()+ geom_hline(yintercept = 0, color = "black")+ 
+  geom_vline(xintercept = 0, color = "black")+
+  xlab("Mean predicted change, C")+
+  ylab("Mean observed change")+ 
+  geom_abline(intercept = 0, slope = 1, color="red",linetype="dashed", size=1.5)
+```
+
+Sama kuva mutta lajit merkitty.
+
+```{r }
+ggplot(kat, aes(x=Ap2k, y=Ayk))+ geom_point()+ 
+  geom_hline(yintercept = 0, color = "black")+ 
+  geom_vline(xintercept = 0, color = "black")+
+  xlab("Mean predicted change, C")+
+  ylab("Mean observed change")+ 
+  geom_abline(intercept = 0, slope = 1, color="red",linetype="dashed", size=1.5)+
+  geom_text(aes(label=kat),hjust=0, vjust=0)                                                                                                                      
+```
+
+Tyyli D.
+
+```{r }                                                                                        
+
+#D, ennusteet tehty k‰ytt‰en aineistoa vuoteen 2006
+ggplot(kat, aes(x=Ap1k, y=Ayk))+ 
+  geom_point()+ geom_hline(yintercept = 0, color = "black")+ 
+  geom_vline(xintercept = 0, color = "black")+
+  xlab("Mean predicted change, D")+
+  ylab("Mean observed change")+ 
+  geom_abline(intercept = 0, slope = 1, color="red",linetype="dashed", size=1.5)
+```
+
+Sama kuva mutta lajit merkitty.
+
+```{r }
+ggplot(kat, aes(x=Ap1k, y=Ayk))+ 
+  geom_point()+ geom_hline(yintercept = 0, color = "black")+ 
+  geom_vline(xintercept = 0, color = "black")+
+  xlab("Mean predicted change, D")+
+  ylab("Mean observed change")+ 
+  geom_abline(intercept = 0, slope = 1, color="red",linetype="dashed", size=1.5)+
+  geom_text(aes(label=kat),hjust=0, vjust=0)
+
+write.csv(kat,"mean_observed_predicted_changes_abu.csv",row.names = F)
