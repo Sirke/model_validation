@@ -4,61 +4,80 @@ author: "me"
 date: "4 joulukuuta 2019"
 output: html_document
 ---
-#
+# Comparing validation methods
+
+Verrataan neljällä eri metodilla laskettuja ennustustarkkuuksia. 
 
 ```{r , include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-```
-
-```{r }
-# SET DIRECTORIES (START) ####################################################################
-getwd()
-localDir = "."
-PredictionDir = file.path(localDir, "data")
-```
-
-```
-```{r }
-# SET DIRECTORIES AND LOAD LIBRARIES
-
-setwd("C:/Users/U1701911/OneDrive - University of Helsinki/mallinnus/ennusteet/csc_models")
-#setwd("C:/Users/Sirke Piirainen/OneDrive - University of Helsinki/mallinnus/ennusteet/csc_models")
-
 packages<-c("readr","tidyr","dplyr","plyr","magrittr","purrr","data.table","plotrix","jtools")
 lapply(packages,library,character.only=T)
+```
 
-#read data
-pa <- read_delim("pa_results.csv", ",", 
-                      escape_double = FALSE, trim_ws = TRUE)
-abu <- read_delim("abu_results.csv", ",", 
-                       escape_double = FALSE, trim_ws = TRUE)
+```{r }
+getwd()
+res<-read.csv("results.csv",header=T,sep=",")
+```
 
-#combine data frames
-res=inner_join(pa,abu,by="species")
+## Lajikohtaiset ennustustarkkuudet
 
-#save as csv for further analysis
-write.csv(res,"results.csv",row.names = F)
+### Keskiarvot
 
+```{r }
 #Compute means and standard errors
 res %>% dplyr::select(2:9)%>%colMeans()
 res %>% dplyr::select(2:9)%>%std.error()
+
+#kuvaaja
+boxplot(res[-1])
 ```
 
+Kuvaajissa olisi varmaan hyvä pitää pa ja abu erillään?
+
+
+### Onko metodien välillä eroja?
+
+Eroavatko metodit A ja B toisistaan? Eli kun ennustetaan yhteen ajanhetkeen.
+
+#### pa 
 ```{r }
 #testataan onko merkitsevää eroa
 #A ja B välillä
 #pa
 t.test(res$pa_A,res$pa_B, paired=TRUE)
+```
+
+Pientä eroa.
+
+#### abu
+
+```{r }
 #abu
 t.test(res$abu_A,res$abu_B, paired=TRUE)
 ```
 
+Ei juurikaan eroa.
+
+### Onko pa ja abu -aineistojen välillä eroja?
+
+Onko helpompi ennustaa esiintymistodennäköisyyttä vai runsautta?  
+Voiko tällaista vertailua tehdä?
+
+#### metodi A
+
 ```{r }
 #A pa ja abu välillä
 t.test(res$pa_A,res$abu_A, paired=TRUE)
+```
+
+#### metodi B
+
+```{r }
 #B pa ja abu välillä
 t.test(res$pa_B,res$abu_B, paired=TRUE)
 ```
+
+
 
 ```{r }
 #change pa ja abu välillä
@@ -79,7 +98,7 @@ Line=cbind(Line,Line3)
 
 Line=as.data.frame(Line)
 
-pdf("Fig1abcdef.pdf")
+pdf("Fig1.pdf")
 #jpeg("Fig1abcdef.jpeg")
 #png("Fig1abcdef.png")
 
@@ -128,30 +147,12 @@ lines(Line$Line3,Line$Line,col="grey",lty="dashed")
 
 text(-0.5,0.8,"d) Abundance, 2 km",cex=0.8)
 
-# e) 
-plot(pool_pa~pa_past,data=res,xlim=c(-1,1),
-     ylim=c(-1,1),cex.axis=0.8,xlab="Prediction accuracy (past)",
-     ylab="Prediction accuracy (change)")
-lines(Line$Line,Line$Line2,lty="dashed")
-lines(Line$Line,Line$Line3,col="grey",lty="dashed")
-lines(Line$Line3,Line$Line,col="grey",lty="dashed")
-
-text(-0.5,0.8,"e) Distribution, 50 km",cex=0.8)
-
-# f)
-plot(pool_abu~abu_past,data=res,xlim=c(-1,1),
-     ylim=c(-1,1),cex.axis=0.8,xlab="Prediction accuracy (past)",
-     ylab="Prediction accuracy (change)")
-lines(Line$Line,Line$Line2,lty="dashed")
-lines(Line$Line,Line$Line3,col="grey",lty="dashed")
-lines(Line$Line3,Line$Line,col="grey",lty="dashed")
-
-text(-0.5,0.8,"f) Abundance, 50km", cex=0.8)
-
 dev.off()
 ```
 
-
+```{r echo=F, out.width='60%'}
+knitr::include_graphics('./Fig1.pdf')
+```
 
 
 
