@@ -1,0 +1,263 @@
+---
+title: "part4"
+author: "me"
+date: "12 joulukuuta 2019"
+output: html_document
+---
+
+# Poolaus
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r }
+getwd()
+localDir = "."
+PredictionDir = file.path(localDir, "data")
+```
+
+
+#alkua poolauskoodille
+
+setwd("C:/Users/U1701911/OneDrive - University of Helsinki/mallinnus/ennusteet/csc_models")
+#setwd("C:/Users/Sirke Piirainen/OneDrive - University of Helsinki/mallinnus/ennusteet/csc_models")
+
+localDir = "."
+PredictionDir = file.path(localDir, "predictions_99_constant")
+
+paketit<-c("readr","tidyr","dplyr","plyr","magrittr","purrr","data.table","plotrix","jtools","sp","GISTools","rgdal","sf","spatialEco")
+lapply(paketit,library,character.only=T)
+
+
+samples = 1000
+thin = 10
+nChains = 4
+modeltype = 1 #1 on pa-aineistolle
+
+#model 1: data until 2006; model 2: full data
+#mpred1: posterior mean based on model 1; mpred2: posterior mean based on model 2
+
+filename = file.path(PredictionDir, paste("predictions_",c("pa","abundance")[modeltype],
+                                          "_chains_",as.character(nChains),"_thin_", as.character(thin),"_samples_", as.character(samples),
+                                       
+                                          ".Rdata",sep = ""))
+load(filename) #mpred1, mpred2, Y, studyDesign
+routes=levels(studyDesign$Route)
+nr=length(routes)
+years=levels(studyDesign$Year)
+dim(mpred1)
+ns=dim(mpred1)[2]
+dim(mpred2)
+dim(Y)
+dim(studyDesign)
+
+#m??ritell??n periodit 
+period1=(studyDesign$Year=="Year_1996" | studyDesign$Year=="Year_1997" | studyDesign$Year=="Year_1998" | studyDesign$Year=="Year_1999")
+period2=(studyDesign$Year=="Year_2013" | studyDesign$Year=="Year_2014" | studyDesign$Year=="Year_2015" | studyDesign$Year=="Year_2016")
+
+#valitaan ennusteista ja havainnoista oikeat vuodet
+pm1p1=mpred1[period1,]  #t?ss? siis k?ytet??n m1, model1 eli kalibroinnissa k?ytetty aineistoa vain 2006 vuoteen asti
+pm1p2=mpred1[period2,] #pm1p2 = predictions by model 1 to period 2
+
+y1=Y[period1,]
+y2=Y[period2,]
+
+#lasketaan kuinka monta kertaa kullakin linjalla on k?yty
+sd1 = studyDesign[period1,]
+sd2 = studyDesign[period2,]
+
+visits1 = rep(NA,nr)
+visits2 = rep(NA,nr)
+for (i in 1:nr){
+  visits1[i] = sum(sd1$Route==routes[i])
+  visits2[i] = sum(sd2$Route==routes[i])
+}
+
+#lasketaan kullekin linjalle (jolla on k?yty kahdesti kummankin periodin aikana, yhteens? 592 kpl) keskiarvot periodeittain
+#havainnot ja ennusteet erikseen, periodit 1 ja 2 erikseen
+selroutes = routes[which(visits1>=2 & visits2>=2)]
+nsr = length(selroutes)
+
+Ap1=matrix(NA,nrow = nsr,ncol = ns)
+Ap2=matrix(NA,nrow = nsr,ncol = ns)
+Ay1=matrix(NA,nrow = nsr,ncol = ns)
+Ay2=matrix(NA,nrow = nsr,ncol = ns)
+
+for (i in 1:nsr){
+  take1 = which(sd1$Route == selroutes[i] )
+  take2 = which(sd2$Route == selroutes[i] )
+  Ap1[i,] = colMeans(pm1p1[take1,])
+  Ap2[i,] = colMeans(pm1p2[take2,]) 
+  Ay1[i,] = colMeans(y1[take1,]) #Suomen vesilintujen NA:t s?ilyv?t laskuissa
+  Ay2[i,] = colMeans(y2[take2,])
+}
+
+#lis?t??n kullekin linjalle koordinaatit
+routeyear<-read.csv("studydesign.csv",header=T,sep=",")
+xy<-read.csv("xy.csv",header=T,sep=",")
+
+#koordinaateista puuttuu nollia
+xy<-xy%>%
+  mutate(x = x * 1000) %>%
+  mutate(y = y * 1000) 
+
+#jotta koordinaatit saa liitetty? oikealle linjalle, tehd??n taulukko, jossa reiteill? on molemmat koodaukset (alkuper?iset ja 1-2591)
+Route<-unique(routeyear$Route)
+routeid<-c(1:2591)
+d<-data.frame(Route,routeid)
+
+#matriisit on muutettava dataframeiksi
+Ap1=as.data.frame(Ap1)  
+Ap1=cbind(selroutes,Ap1)
+setnames(Ap1,"selroutes","Route")
+
+Ap2=as.data.frame(Ap2)
+Ap2=cbind(selroutes,Ap2)
+setnames(Ap2,"selroutes","Route")
+
+Ay1=as.data.frame(Ay1)
+Ay1=cbind(selroutes,Ay1)
+setnames(Ay1,"selroutes","Route")
+
+Ay2=as.data.frame(Ay2)
+Ay2=cbind(selroutes,Ay2)
+setnames(Ay2,"selroutes","Route")
+
+#lis?t??n havaintoihin ja ennusteisiin ensin oikeat reittikoodit (1-2591)
+Ap1<-left_join(Ap1,d,by="Route")
+Ap2<-left_join(Ap2,d,by="Route")
+Ay1<-left_join(Ay1,d,by="Route")
+Ay2<-left_join(Ay2,d,by="Route")
+
+#...ja vihdoin my?s koordinaatit
+Ap1<-left_join(Ap1,xy,by=c("routeid"="route"))
+Ap2<-left_join(Ap2,xy,by=c("routeid"="route"))
+Ay1<-left_join(Ay1,xy,by=c("routeid"="route"))
+Ay2<-left_join(Ay2,xy,by=c("routeid"="route"))
+
+#tallennan, jotta voin tarkastella my?s kartalla GIS:ll? paremmin
+write.csv(Ay1,"pa_obs_per1.csv",row.names = F)
+write.csv(Ay2,"pa_obs_per2.csv",row.names = F)
+write.csv(Ap1,"pa_pred_per1.csv",row.names = F)
+write.csv(Ap2,"pa_pred_per2.csv",row.names = F)
+
+#turha v?livaihe mutta helpottaa tarkastamista
+Ay1<-read.csv("pa_obs_per1.csv",header=T,sep=",")
+Ay2<-read.csv("pa_obs_per2.csv",header=T,sep=",")
+Ap1<-read.csv("pa_pred_per1.csv",header=T,sep=",")
+Ap2<-read.csv("pa_pred_per2.csv",header=T,sep=",")
+
+#sitten itse poolaus
+#luetaan sis??n linjat..
+coordinates(Ay1)<-c("x","y")
+plot(Ay1)
+proj4string(Ay1) <-CRS("+init=EPSG:3035")
+
+coordinates(Ay2)<-c("x","y")
+plot(Ay2)
+proj4string(Ay2) <-CRS("+init=EPSG:3035")
+
+coordinates(Ap1)<-c("x","y")
+plot(Ap1)
+proj4string(Ap1) <-CRS("+init=EPSG:3035")
+
+coordinates(Ap2)<-c("x","y")
+plot(Ap2)
+proj4string(Ap2) <-CRS("+init=EPSG:3035")
+
+#ja gridi.
+#gridi<- readOGR(dsn="C:/Users/U1701911/OneDrive - University of Helsinki/mallinnus/ennusteet/ennusteet_100/poolaus", layer="grid50km")
+#gridi<- readOGR(dsn="C:/Users/Sirke Piirainen/OneDrive - University of Helsinki/mallinnus/ennusteet/ennusteet_100/poolaus", layer="grid50km")
+gridi<- readOGR(dsn="C:/Users/U1701911/OneDrive - University of Helsinki/mallinnus/ennusteet/ennusteet_100/poolaus", layer="grid100km")
+
+proj4string(gridi)
+plot(gridi)
+
+#liitet??n kuhunkin linjaan tieto, mill? gridin ruudulla se on
+pts.poly <- point.in.poly(Ay1, gridi)
+data<-as.data.frame(pts.poly)
+
+#ryhmitell??n linjat gridiruuduittain ja lasketaan keskiarvot kullekin sarakkeelle, eli lajeittain.
+data%>%
+  group_by(grid_id) %>%
+  summarise_at(vars(-Route), list(~mean(., na.rm=T))) %>% #jos jollain lajilla on yhdell? linjalla NA:ta se ei vaikuta keskiarvon laskemiseen. 
+  write.csv(.,file = "pool_pa_obs_per1.csv",row.names=F)
+
+#ja sama muille aineistoille
+pts.poly <- point.in.poly(Ay2, gridi)
+data<-as.data.frame(pts.poly)
+data%>%
+  group_by(grid_id) %>%
+  summarise_at(vars(-Route), list(~mean(., na.rm=T))) %>%
+  write.csv(.,file = "pool_pa_obs_per2.csv",row.names=F)
+
+pts.poly <- point.in.poly(Ap1, gridi)
+data<-as.data.frame(pts.poly)
+data%>%
+  group_by(grid_id) %>%
+  summarise_at(vars(-Route), list(~mean(., na.rm=T))) %>%
+  write.csv(.,file = "pool_pa_pred_per1.csv",row.names=F)
+
+pts.poly <- point.in.poly(Ap2, gridi)
+data<-as.data.frame(pts.poly)
+data%>%
+  group_by(grid_id) %>%
+  summarise_at(vars(-Route), list(~mean(., na.rm=T))) %>%
+  write.csv(.,file = "pool_pa_pred_per2.csv",row.names=F)
+
+#lasketaan poolatulla aineistolla uudelleen ennustustarkkuus, tavalla D
+#peruspoolaus
+
+#luetaan aineisto takaisin sis??n
+paY1<-read.csv("pool_pa_obs_per1.csv",header=T,sep=",")
+paY2<-read.csv("pool_pa_obs_per2.csv",header=T,sep=",")
+papred1<-read.csv("pool_pa_pred_per1.csv",header=T,sep=",")
+papred2<-read.csv("pool_pa_pred_per2.csv",header=T,sep=",")
+
+#heivataan turhat sarakkeet
+names(paY1)
+drops <- c("routeid","left","top","right","bottom","coords.x1","coords.x2")
+paY1<-paY1[ , !(names(paY1) %in% drops)]
+paY2<-paY2[ , !(names(paY2) %in% drops)]
+papred1<-papred1[ , !(names(papred1) %in% drops)]
+papred2<-papred2[ , !(names(papred2) %in% drops)]
+
+#korjataan sarakkeiden lajinimet kunnollisiksi
+a<-colnames(Y)
+b<-"grid_id"
+a<-c(b,a)
+
+names(paY1)<-a
+names(paY2)<-a
+names(papred1)<-a
+names(papred2)<-a
+
+#lasketaan erotukset periodin 1 ja 2 v?lil?
+#pa
+#obs
+pacounts_gather<-gather(paY1,key="Yspecies",value="Yper1",Acrocephalus_palustris:Vanellus_vanellus)
+pacounts_gather2<-gather(paY2,key="Yspecies",value="Yper2",Acrocephalus_palustris:Vanellus_vanellus)
+payhd<-left_join(pacounts_gather,pacounts_gather2,by=c("grid_id"="grid_id","Yspecies"="Yspecies"))
+payhd$difY<-payhd$Yper2-payhd$Yper1
+
+#pred
+papred_gather<-gather(papred1,key="Pspecies",value="Pper1",Acrocephalus_palustris:Vanellus_vanellus)
+papred_gather2<-gather(papred2,key="Pspecies",value="Pper2",Acrocephalus_palustris:Vanellus_vanellus)
+payhdPred<-left_join(papred_gather,papred_gather2,by=c("grid_id"="grid_id","Pspecies"="Pspecies"))
+payhdPred$difPred<-payhdPred$Pper2-payhdPred$Pper1
+
+#yhdistet??n tulokset, havainnot ja ennusteet samaan dataframeen
+paKor<-left_join(payhd,payhdPred,by=c("grid_id"="grid_id","Yspecies"="Pspecies"))
+keep<-c("Yspecies","difPred","difY")
+paKor<-paKor[,keep,drop=F]
+
+#lasketaan korrelaatiot
+paKor %>%
+  group_by(Yspecies) %>%
+  dplyr::summarise(pool_pa_change= cor(difPred, difY, use= "na.or.complete"))%T>%
+  write.csv('pool_kor_change_pa_99_constant_100kmgrid.csv',row.names=F)
+
+
