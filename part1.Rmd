@@ -225,9 +225,7 @@ colMeans(selroutes_pa[,2:5],na.rm = T)
 Reittikohtaiset ennustustarkkuudet ovat hieman parempia. Tosin edelleen tyyleille C ja D alakanttiin.
 
 
-#### Selittääkö leveysaste ennustustarkkuutta?
-
-Onko pohjoisen tai etelän lajeja helpompi/vaikeampi mallintaa luotettavasti?
+Liitetään reitteihin koordinaatit ja tallennetaan aineisto
 
 ```{r}
 #Liitetaan kullekin linjalle koordinaatit
@@ -248,36 +246,9 @@ selroutes_pa<-left_join(selroutes_pa,xy,by=c("selroutes"="Route"))
 
 #tallenna erikseen jos tarve piirt?? GIS:ll? karttoja
 #write.csv(selroutes_pa,"route_specific_pa.csv",row.names = F,na="")
-
-#ennustustarkkuuksien jakauma
-ggplot(selroutes_pa, aes(pa_corD)) + 
-  geom_histogram()
-
-#kuvaajia, plotataan linjakohtaiset ennustustarkkuudet latitudea vasten
-ggplot(selroutes_pa, aes(x=y, y=pa_corA))+ geom_point()+ geom_smooth()
-ggplot(selroutes_pa, aes(x=y, y=pa_corB))+ geom_point()+ geom_smooth()
-
-ggplot(selroutes_pa, aes(x=y, y=pa_corC))+ geom_point()+ geom_smooth()
-ggplot(selroutes_pa, aes(x=y, y=pa_corD))+ geom_point()+ geom_smooth()
-
-#Kaikki mukaan valikoituneet reitit kartalla
-ggplot(selroutes_pa,aes(x=x,y=y))+geom_point()
-
-#testataan selittääkö latitude (y) ennustustarkkuutta (corD)
-selroutes_D<-subset(selroutes_pa,!is.na(pa_corD))
-M1=lm(pa_corD~y,data = selroutes_D)
-summary(M1)
-
-#mallin validointi
-op<-par(mfrow=c(2,2),mar=c(5,4,1,2))
-plot(M1,add.smooth = F,which = 1)
-E<-resid(M1)
-hist(E, xlab = "residuals",main = "")
-plot(selroutes_D$pa_corD,E,xlab = "accuracy(D)",ylab="residuals")
-par(op)
 ```
 
-Ennustustarkkuus näyttäisi aluksi nousevan kohti pohjoista ja laskevan aivan pohjoisessa. GAM?
+
 
 
 ### Todelliset ja ennustetut muutokset esiintymistodennäköisyyksissä periodien 1 ja 2 välillä
@@ -521,44 +492,20 @@ colMeans(selroutes_abu[,2:5],na.rm = T)
 Myös abu-aineistolla reittikohtaiset ennustustarkkuudet ovat hieman parempia.
 
 
-#### Selittääkö leveysaste ennustustarkkuutta?
+Liitetään koordinaatit ja tallennetaan aineisto.
 
 ```{r }
 #liitetaan koordinaatit
-selroutes_abu<-left_join(selroutes_abu,xy,by=c("selroutes"="Route"))
-
-#ennustustarkkuuksien jakautuminen
-ggplot(selroutes_abu, aes(abu_corD)) + 
-  geom_histogram()
-
-#kuvaajia, plotataan linjakohtaiset ennustustarkkuudet latitudea vasten
-ggplot(selroutes_abu, aes(x=y, y=abu_corA))+ geom_point()+geom_smooth()
-ggplot(selroutes_abu, aes(x=y, y=abu_corB))+ geom_point()+geom_smooth()
-
-ggplot(selroutes_abu, aes(x=y, y=abu_corC))+ geom_point()+geom_smooth()
-ggplot(selroutes_abu, aes(x=y, y=abu_corD))+ geom_point()+geom_smooth()
-
-#testataan selittääkö latitude (y) ennustustarkkuutta (corD)
-selroutes_D<-subset(selroutes_abu,!is.na(abu_corD))
-M1=lm(abu_corD~y,data = selroutes_D)
-summary(M1)
-
-#mallin validointi
-op<-par(mfrow=c(2,2),mar=c(5,4,1,2))
-plot(M1,add.smooth = F,which = 1)
-E<-resid(M1)
-hist(E, xlab = "residuals",main = "")
-plot(selroutes_D$abu_corD,E,xlab = "accuracy(D)",ylab="residuals")
-par(op)
+selroutes_abu2<-left_join(selroutes_abu,xy,by=c("selroutes"="Route"))
 
 #combine data frames
 lines=inner_join(selroutes_pa,selroutes_abu,by="selroutes")
-lines<-lines[-c(7:8,14:15)]
+lines<-lines[-6]
+lines=lines[c(1,2,3,4,5,8,9,10,11,6,7)]
 
 #save as csv for further analysis
 write.csv(lines,"route_results.csv",row.names = F,na="")
 ```
-
 
 
 
