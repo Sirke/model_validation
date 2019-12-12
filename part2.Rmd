@@ -37,30 +37,51 @@ Kuvaajissa olisi varmaan hyvä pitää pa ja abu erillään?
 
 ### Onko metodien välillä eroja?
 
-Eroavatko metodit A ja B toisistaan? Eli kun ennustetaan yhteen ajanhetkeen.
+Jaetaan aineisto pa ja abu-aineistoihin ja selvitetään, vaikuttavatko validointimetodi tai laji ennustustarkkuuteen. Selvitetään myös, mitkä metodit eroavat toisistaan.
 
 #### pa 
+
 ```{r }
-#testataan onko merkitsevää eroa
-#A ja B välillä
 #pa
-t.test(res$pa_A,res$pa_B, paired=TRUE)
+res_pa=res[,1:5]
+res_pa=gather(res_pa,"method","accuracy",2:5)
+res_pa$method=as.factor(res_pa$method)
+summary(res_pa)
+
+#two-way anova
+anova(lm(res_pa$accuracy~res_pa$method+res_pa$species))
+
+#pairwise comparisons, bonferroni correction for multiple testing
+pairwise.t.test(res_pa$accuracy, res_pa$method, p.adj="bonferroni")
 ```
 
-Pientä eroa.
+Validointimetodi ja laji vaikuttavat ennustustarkkuuteen. Metodit A ja B eroavat metodeista C ja D. 
 
 #### abu
 
 ```{r }
 #abu
-t.test(res$abu_A,res$abu_B, paired=TRUE)
+res_abu=res[,c(1,6:9)]
+res_abu=gather(res_abu,"method","accuracy",2:5)
+res_abu$method=as.factor(res_abu$method)
+summary(res_abu)
+
+
+#two-way anova
+anova(lm(res_abu$accuracy~res_abu$method+res_abu$species))
+
+#pairwise comparisons, bonferroni correction for multiple testing
+pairwise.t.test(res_abu$accuracy, res_abu$method, p.adj="bonferroni")
+
 ```
 
-Ei juurikaan eroa.
+Sama tulos.
+
 
 ### Onko pa ja abu -aineistojen välillä eroja?
 
 Onko helpompi ennustaa esiintymistodennäköisyyttä vai runsautta?  
+
 Voiko tällaista vertailua tehdä?
 
 #### metodi A
@@ -77,16 +98,27 @@ t.test(res$pa_A,res$abu_A, paired=TRUE)
 t.test(res$pa_B,res$abu_B, paired=TRUE)
 ```
 
+#### metodi C
 
+```{r }
+#change pa ja abu välillä
+t.test(res$pa_C,res$abu_C, paired=TRUE)
+```
 
+#### metodi D
 ```{r }
 #change pa ja abu välillä
 t.test(res$pa_D,res$abu_D, paired=TRUE)
 ```
 
-```{r }
-# Piirretään kuvaaja, Figure 1ABCDEF
-#mitä oikeastaan halutaan vertailla?
+Vain metodi D tekee eroa pa ja abu-aineistojen välille. Pa-aineiston ennustustarkkuudet ovat hitusen verran paremmat.
+
+### Kuvaaja
+
+Tätä pitäisi vielä miettiä, mitä plotataan ja mitä vasten? Alun perin verrattiin metodi D:tä pa/abu_past-arvoihin eli vähän sama kuin vertailu metodi A:han. siis, voitaisiinko jo hyvin yksinkertaisella validointimenetelmällä saada samoja tuloksia kuin monimutkaisemmalla metodilla?
+
+```{r, fig.width=14, fig.height=12}
+# Piirretään kuvaaja, Fig1
 
 #määritetään kuvalle raamit ja nimi
 Line=c(-1,1)
@@ -98,12 +130,11 @@ Line=cbind(Line,Line3)
 
 Line=as.data.frame(Line)
 
-pdf("Fig1.pdf")
+#pdf("Fig1.pdf")
 #jpeg("Fig1abcdef.jpeg")
 #png("Fig1abcdef.png")
 
-#määrittää 3x3 matriisin johon kuvat piirretään, esim. seitsemättä kuvaa ei ole joten
-#se jää piirtämättä.
+#määrittää 3x3 matriisin johon kuvat piirretään
 layout(matrix(c(1,2,7,3,4,7,5,6,7), 3, 3, byrow = TRUE))
 
 # a)
@@ -116,7 +147,6 @@ lines(Line$Line3,Line$Line,col="grey",lty="dashed")
 
 text(-0.5,0.8,"a) Distribution",cex=0.8)
 
-
 # b)
 plot(abu_B~abu_A,data=res,xlim=c(-1,1),
      ylim=c(-1,1),cex.axis=0.8,xlab="Prediction accuracy (A)",
@@ -128,8 +158,8 @@ lines(Line$Line3,Line$Line,col="grey",lty="dashed")
 text(-0.5,0.8,"b) Abundance",cex=0.8)
 
 # c)
-plot(pa_D~pa_A,data=res,xlim=c(-1,1),
-     ylim=c(-1,1),cex.axis=0.8,xlab="Prediction accuracy (A)",
+plot(pa_D~pa_C,data=res,xlim=c(-1,1),
+     ylim=c(-1,1),cex.axis=0.8,xlab="Prediction accuracy (C)",
      ylab="Prediction accuracy (D)")
 lines(Line$Line,Line$Line2,lty="dashed")
 lines(Line$Line,Line$Line3,col="grey",lty="dashed")
@@ -138,8 +168,8 @@ lines(Line$Line3,Line$Line,col="grey",lty="dashed")
 text(-0.5,0.8,"c) Distribution, 2 km",cex=0.8)
 
 # d)
-plot(abu_D~abu_A,data=res,xlim=c(-1,1),
-     ylim=c(-1,1),cex.axis=0.8,xlab="Prediction accuracy (A)",
+plot(abu_D~abu_C,data=res,xlim=c(-1,1),
+     ylim=c(-1,1),cex.axis=0.8,xlab="Prediction accuracy (C)",
      ylab="Prediction accuracy (D)")
 lines(Line$Line,Line$Line2,lty="dashed")
 lines(Line$Line,Line$Line3,col="grey",lty="dashed")
@@ -147,13 +177,14 @@ lines(Line$Line3,Line$Line,col="grey",lty="dashed")
 
 text(-0.5,0.8,"d) Abundance, 2 km",cex=0.8)
 
-dev.off()
+#dev.off()
 ```
 
-```{r echo=F, out.width='60%'}
-knitr::include_graphics('./Fig1.pdf')
-```
 
+Millainen kuvaaja olisi hyvä?
+
+
+## Reittikohtaiset ennustustarkkuudet
 
 
 

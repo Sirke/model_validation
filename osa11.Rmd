@@ -2,7 +2,9 @@
 title: "Counting prediction accuracies PA and ABU"
 author: "me"
 date: "3 joulukuuta 2019"
-output: html_document
+output: 
+  html_document:
+  toc: TRUE
 ---
   
 ```{r, include=FALSE}
@@ -10,9 +12,9 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 # Counting prediction accuracies
 
-Malli on nyt ajettu 120 lajilla, joiden prevalenssi on ollut vähintään 0.05. Tällä hetkellä saatavilla on ollut vasta thin=10 aineisto. Mallista on ajettu kahta versiota. Toisessa on käytetty aineistoa vain vuoteen 1999 asti ja toisessa vuoteen 2016 asti.
+Malli on nyt ajettu 120 lajilla, joiden prevalenssi on ollut v?hint??n 0.05. T?ll? hetkell? saatavilla on ollut vasta thin=10 aineisto. Mallista on ajettu kahta versiota. Toisessa on k?ytetty aineistoa vain vuoteen 1999 asti ja toisessa vuoteen 2016 asti.
 
-Malleja, joiden tekemisessä oli käytetty aineistoa vain vuoteen 1999 asti, pyydettiin ennustamaan tulevaisuutta niin, että kaikki muut muuttujat paitsi vuosi muuttuivat. Vuosi fiksattiin paikoilleen vuoteen 1997.
+Malleja, joiden tekemisess? oli k?ytetty aineistoa vain vuoteen 1999 asti, pyydettiin ennustamaan tulevaisuutta niin, ett? kaikki muut muuttujat paitsi vuosi muuttuivat. Vuosi fiksattiin paikoilleen vuoteen 1997.
 
 Malli: 
 XFormula = ~ JunJul + DJF + AprMay + Year + Urb + Br + Co + Op + Ma + We + Effort*Method
@@ -95,9 +97,9 @@ knitr::include_graphics('./methods.png')
 
 ### Lasketaan lajikohtaiset ennustustarkkuudet metodeilla A ja B
 
-Lasketaan ennustustarkkuus kun ennustetaan kunkin lajin esiintymistodennäköisyyttä yhtenä ajanhetkenä (periodi 2)  
-A: mallin kalibrointiin on käytetty aineistoa samalta ajalta  
-B: mallin kalibrointiin EI ole käytetty aineistoa samalta ajalta
+Lasketaan ennustustarkkuus kun ennustetaan kunkin lajin esiintymistodenn?k?isyytt? yhten? ajanhetken? (periodi 2)  
+A: mallin kalibrointiin on k?ytetty aineistoa samalta ajalta  
+B: mallin kalibrointiin EI ole k?ytetty aineistoa samalta ajalta
 
 
 ```{r}
@@ -126,7 +128,7 @@ plot(A,B) + abline(0,1)
 
 ### Lasketaan reittikohtaiset ennustustarkkuudet metodeilla A ja B
 
-Lasketaan ennustustarkkuudet myös reittikohtaisesti, kullakin neljällä tyylillä (A,B,C,D).   
+Lasketaan ennustustarkkuudet my?s reittikohtaisesti, kullakin nelj?ll? tyylill? (A,B,C,D).   
 Ensin A ja B:
 
 ```{r}
@@ -147,9 +149,9 @@ for(i in 1:nrow(Ap2)){
 
 ### Lasketaan lajikohtaiset ennustustarkkuudet metodeilla C ja D
 
-Lasketaan ennustustarkkuus kun ennustetaan kunkin lajin esiintymistodennäköisyyden muutosta periodien 1 ja 2 välillä  
-C: mallin kalibrointiin on käytetty aineistoa samalta ajalta   
-D: mallin kalibrointiin EI ole käytetty aineistoa samalta ajalta (periodin 2 osalta)
+Lasketaan ennustustarkkuus kun ennustetaan kunkin lajin esiintymistodenn?k?isyyden muutosta periodien 1 ja 2 v?lill?  
+C: mallin kalibrointiin on k?ytetty aineistoa samalta ajalta   
+D: mallin kalibrointiin EI ole k?ytetty aineistoa samalta ajalta (periodin 2 osalta)
 
 ```{r}
 # COMPUTE MEASURES C AND D
@@ -176,7 +178,7 @@ for (i in 1:ns){
 plot(C,D) + abline(0,1)
 ```
 
-Presence/absence aineistossa mm. Suomen vesilinnut ovat NA:ta ennen vuotta 2006. Periodi 1:sen kaikki arvot vesilinnuille Suomessa ovat siis NA, eivätkä tule mukaan laskelmiin. Korrelaatiota laskiessa argumentti "use="na.or.complete"" varmistaa, että korrelaatio lasketaan muista kuin NA-arvoista.
+Presence/absence aineistossa mm. Suomen vesilinnut ovat NA:ta ennen vuotta 2006. Periodi 1:sen kaikki arvot vesilinnuille Suomessa ovat siis NA, eiv?tk? tule mukaan laskelmiin. Korrelaatiota laskiessa argumentti "use="na.or.complete"" varmistaa, ett? korrelaatio lasketaan muista kuin NA-arvoista.
 
 
 ### Lajikohtaiset ennustustarkkuudet, PA
@@ -189,7 +191,7 @@ meres
 #write.csv(meres,file="pa_species_specific_route_level.csv")
 ```
 
-Keskiarvot näyttävät suht surkeilta tyyleille C ja D. Eli nimenomaan muutoksen ennustaminen on vaikeaa. Vaikka mallin kalibrointii olisi käytetty aineistoa samalta ajalta kuin mihin yritetään ennustaa.
+Keskiarvot n?ytt?v?t suht surkeilta tyyleille C ja D. Eli nimenomaan muutoksen ennustaminen on vaikeaa. Vaikka mallin kalibrointii olisi k?ytetty aineistoa samalta ajalta kuin mihin yritet??n ennustaa.
 
 ```{r}
 #save results as datatable for further analysis
@@ -225,9 +227,9 @@ colMeans(selroutes_pa[,2:5],na.rm = T)
 Reittikohtaiset ennustustarkkuudet ovat hieman parempia. Tosin edelleen tyyleille C ja D alakanttiin.
 
 
-#### Selittääkö leveysaste ennustustarkkuutta?
+#### Selitt??k? leveysaste ennustustarkkuutta?
 
-Onko pohjoisen tai etelän lajeja helpompi/vaikeampi mallintaa luotettavasti?
+Onko pohjoisen tai etel?n lajeja helpompi/vaikeampi mallintaa luotettavasti?
 
 ```{r}
 #Liitetaan kullekin linjalle koordinaatit
@@ -263,7 +265,7 @@ ggplot(selroutes_pa, aes(x=y, y=pa_corD))+ geom_point()+ geom_smooth()
 #Kaikki mukaan valikoituneet reitit kartalla
 ggplot(selroutes_pa,aes(x=x,y=y))+geom_point()
 
-#testataan selittääkö latitude (y) ennustustarkkuutta (corD)
+#testataan selittaako latitude (y) ennustustarkkuutta (corD)
 selroutes_D<-subset(selroutes_pa,!is.na(pa_corD))
 M1=lm(pa_corD~y,data = selroutes_D)
 summary(M1)
@@ -277,12 +279,12 @@ plot(selroutes_D$pa_corD,E,xlab = "accuracy(D)",ylab="residuals")
 par(op)
 ```
 
-Ennustustarkkuus näyttäisi aluksi nousevan kohti pohjoista ja laskevan aivan pohjoisessa. GAM?
+Ennustustarkkuus n?ytt?isi aluksi nousevan kohti pohjoista ja laskevan aivan pohjoisessa. GAM?
 
 
-### Todelliset ja ennustetut muutokset esiintymistodennäköisyyksissä periodien 1 ja 2 välillä
+### Todelliset ja ennustetut muutokset esiintymistodenn?k?isyyksiss? periodien 1 ja 2 v?lill?
 
-Tarkastellaan vielä absoluuttisia todellisia ja ennustettuja muutoksia esiintymistodennäköisyyksissä. Ennusteet on tehty joko tyyliin C tai D, eli koko aineistoa tai osittaista aineistoa hyödyntämällä.
+Tarkastellaan viel? absoluuttisia todellisia ja ennustettuja muutoksia esiintymistodenn?k?isyyksiss?. Ennusteet on tehty joko tyyliin C tai D, eli koko aineistoa tai osittaista aineistoa hy?dynt?m?ll?.
 
 ```{r}
 #kannanmuutostrendien tarkastelu, lasketaan kaikilta linjoilta ennustetut ja todelliset kannanmuutokset
@@ -299,7 +301,7 @@ kat$Ap2k<-colMeans(Ap2,na.rm = T)
 kat$Ayk<-colMeans(Ay,na.rm = T)
 ```
 
-Ensin tyyliin C, eli käyttäen koko aineistoa vuoteen 2016.
+Ensin tyyliin C, eli k?ytt?en koko aineistoa vuoteen 2016.
 
 ```{r }
 #C, ennusteet tehty k?ytt?en aineistoa vuoteen 2016
@@ -323,7 +325,7 @@ ggplot(kat, aes(x=Ap2k, y=Ayk))+ geom_point()+
   geom_text(aes(label=kat),hjust=0, vjust=0)                                                                                                                      
 ```
 
-Tyyli D, eli käyttäen aineistoa vuoteen 1999.
+Tyyli D, eli k?ytt?en aineistoa vuoteen 1999.
 
 ```{r }                                                                                        
 #D, ennusteet tehty k?ytt?en aineistoa vuoteen 2006
@@ -353,7 +355,7 @@ write.csv(kat,"mean_observed_predicted_changes_pa.csv",row.names = F)
 
 ##Abundance-aineisto
 
-Lasketaan kaikki samat asiat abundance -aineistolla myös.
+Lasketaan kaikki samat asiat abundance -aineistolla my?s.
 
 ```{r }
 modeltype = 2 #2 on abu-aineistolle
@@ -371,7 +373,7 @@ dim(Y)
 dim(studyDesign)
 ```
 
-### Periodien määrittely
+### Periodien m??rittely
 
 ```{r }
 pm1p1=mpred1[period1,]
@@ -470,7 +472,7 @@ for (i in 1:ns){
 plot(C,D)+abline(0,1)
 ```
 
-HUOM! Abundance aineistolla riittää, että lajia on kunkin periodin aikana havaittu edes kerran. PA-aineistolla havaintoja piti olla vähintään kaksi. 
+HUOM! Abundance aineistolla riitt??, ett? lajia on kunkin periodin aikana havaittu edes kerran. PA-aineistolla havaintoja piti olla v?hint??n kaksi. 
 
 ### Lajikohtaiset ennustustarkkuudet, ABU
 
@@ -480,7 +482,7 @@ names(meres)=c("A","B","C","D")
 meres
 ```
 
-Myös abu-aineistolla varsinkin muutoksen ennustaminen on vaikeaa.
+My?s abu-aineistolla varsinkin muutoksen ennustaminen on vaikeaa.
 
 ```{r }
 #save as datatable
@@ -518,10 +520,10 @@ selroutes_abu<-left_join(selroutes1,selroutes2, by="selroutes")
 colMeans(selroutes_abu[,2:5],na.rm = T)
 ```
 
-Myös abu-aineistolla reittikohtaiset ennustustarkkuudet ovat hieman parempia.
+My?s abu-aineistolla reittikohtaiset ennustustarkkuudet ovat hieman parempia.
 
 
-#### Selittääkö leveysaste ennustustarkkuutta?
+#### Selitt??k? pituusaste ennustustarkkuutta?
 
 ```{r }
 #liitetaan koordinaatit
@@ -538,7 +540,7 @@ ggplot(selroutes_abu, aes(x=y, y=abu_corB))+ geom_point()+geom_smooth()
 ggplot(selroutes_abu, aes(x=y, y=abu_corC))+ geom_point()+geom_smooth()
 ggplot(selroutes_abu, aes(x=y, y=abu_corD))+ geom_point()+geom_smooth()
 
-#testataan selittääkö latitude (y) ennustustarkkuutta (corD)
+#testataan selitt??k? latitude (y) ennustustarkkuutta (corD)
 selroutes_D<-subset(selroutes_abu,!is.na(abu_corD))
 M1=lm(abu_corD~y,data = selroutes_D)
 summary(M1)
@@ -551,6 +553,7 @@ hist(E, xlab = "residuals",main = "")
 plot(selroutes_D$abu_corD,E,xlab = "accuracy(D)",ylab="residuals")
 par(op)
 
+
 #combine data frames
 lines=inner_join(selroutes_pa,selroutes_abu,by="selroutes")
 lines<-lines[-c(7:8,14:15)]
@@ -559,10 +562,7 @@ lines<-lines[-c(7:8,14:15)]
 write.csv(lines,"route_results.csv",row.names = F,na="")
 ```
 
-
-
-
-### Todelliset ja ennustetut muutokset esiintymistodennäköisyyksissä periodien 1 ja 2 välillä
+### Todelliset ja ennustetut muutokset esiintymistodenn?k?isyyksiss? periodien 1 ja 2 v?lill?
 
 ```{r }
 #kannanmuutostrendien tarkastelu, lasketaan kaikilta linjoilta ennustetut ja todelliset kannanmuutokset
@@ -582,7 +582,7 @@ kat$Ayk<-colMeans(Ay,na.rm = T)
 Tyyli C.
 
 ```{r }
-#C, ennusteet tehty käyttäen aineistoa vuoteen 2016
+#C, ennusteet tehty k?ytt?en aineistoa vuoteen 2016
 ggplot(kat, aes(x=Ap2k, y=Ayk))+ 
   geom_point()+ geom_hline(yintercept = 0, color = "black")+ 
   geom_vline(xintercept = 0, color = "black")+
@@ -607,7 +607,7 @@ Tyyli D.
 
 ```{r }                                                                                        
 
-#D, ennusteet tehty käyttäen aineistoa vuoteen 2006
+#D, ennusteet tehty k?ytt?en aineistoa vuoteen 2006
 ggplot(kat, aes(x=Ap1k, y=Ayk))+ 
   geom_point()+ geom_hline(yintercept = 0, color = "black")+ 
   geom_vline(xintercept = 0, color = "black")+
