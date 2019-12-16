@@ -159,7 +159,7 @@ Luetaan ensin kaikki aineisto koordinaatteineen sisälle.
 Ay1 ja 2 ovat todellisia havaintoja, periodeittain. Ap1 ja 2 ovat ennusteita.
 
 ```{r}
-#luetaan sisään linjat..
+#luetaan sisään reitit, havainnot ja ennusteet
 coordinates(Ay1)<-c("x","y")
 plot(Ay1)
 proj4string(Ay1) <-CRS("+init=EPSG:3035")
@@ -169,11 +169,9 @@ plot(Ay2)
 proj4string(Ay2) <-CRS("+init=EPSG:3035")
 
 coordinates(Ap1)<-c("x","y")
-plot(Ap1)
 proj4string(Ap1) <-CRS("+init=EPSG:3035")
 
 coordinates(Ap2)<-c("x","y")
-plot(Ap2)
 proj4string(Ap2) <-CRS("+init=EPSG:3035")
 ```
 
@@ -185,18 +183,18 @@ gridi<- readOGR(dsn="./gridit", layer="grid50km")
 proj4string(gridi)
 ```
 
-Itse poolaus tapahtuu niin, että liitetään kuhunkin reittiin tieto, millä gridin ruudulla se on, jonka jälkeen ryhmitellään kaikki reitit gridiruuduittain ja lasketaan niille keskiarvot. Tallennan taas kaikki tiedot niin, että ne on helppo lukea ja tarkistaa GIS:llä.
+Itse poolaus tapahtuu niin, että liitetään kuhunkin reittiin tieto, millä gridin ruudulla (id-numero) se on, jonka jälkeen ryhmitellään kaikki reitit gridiruuduittain ja lasketaan niille keskiarvot. Tallennan taas kaikki tiedot niin, että ne on helppo lukea ja tarkistaa GIS:llä.
 
 
 ```{r}
-#liiteään kuhunkin linjaan tieto, millä gridin ruudulla se on
+#liiteään kuhunkin reittiin tieto, millä gridin ruudulla se on
 pts.poly <- point.in.poly(Ay1, gridi)
 data<-as.data.frame(pts.poly)
 
-#ryhmitell??n linjat gridiruuduittain ja lasketaan keskiarvot kullekin sarakkeelle, eli lajeittain.
+#ryhmitelään linjat gridiruuduittain ja lasketaan keskiarvot kullekin sarakkeelle, eli lajeittain.
 data%>%
   group_by(grid_id) %>%
-  summarise_at(vars(-Route), list(~mean(., na.rm=T))) %>% #jos jollain lajilla on yhdell? linjalla NA:ta se ei vaikuta keskiarvon laskemiseen. 
+  summarise_at(vars(-Route), list(~mean(., na.rm=T))) %>% #jos jollain lajilla on yhdellä linjalla NA:ta se ei vaikuta keskiarvon laskemiseen. 
   write.csv(.,file = "pool_pa_obs_per1.csv",row.names=F)
 
 #ja sama muille aineistoille
@@ -254,7 +252,7 @@ names(papred1)<-a
 names(papred2)<-a
 ```
 
-Lasketaan periodien välinen muutos havainnoille ja ennusteille ja näiden korrelaatiot.
+Lasketaan periodien välinen muutos havainnoille ja ennusteille ja näiden korrelaatiot. (primitiivinen koodaus, voi parannella myöhemmin..)
 
 ```{r}
 #lasketaan erotukset periodin 1 ja 2 välilä
@@ -442,7 +440,7 @@ data%>%
 
 Aineiston siivous:
 
-(Koodissa olioiden nimissä on hämäävästi 'pa' mutta nämä ovat silti abu-aineistoa.)
+(Huom! Koodissa olioiden nimissä on hämäävästi 'pa' mutta nämä ovat silti abu-aineistoa.)
 
 ```{r}
 paY1<-read.csv("pool_abu_obs_per1.csv",header=T,sep=",")
@@ -472,7 +470,7 @@ names(papred2)<-a
 Muutokset periodien välillä ja korrelaatiot:
 
 ```{r}
-#seuraavaksi lasketaan erotukset periodin 1 ja 2 v?lil?
+#seuraavaksi lasketaan erotukset periodin 1 ja 2 välilä
 #abu
 #obs
 pacounts_gather<-gather(paY1,key="Yspecies",value="Yper1",Acrocephalus_palustris:Vanellus_vanellus)
@@ -539,33 +537,54 @@ Näyttää siltä, että poolaus on parantanut ennustustarkkuuksia vain hitusen.
 Testataan:
 
 ```{r}
-#valitaan D ja poolatut D arvot
+#valitaan metodi D ja poolatut D arvot
 #pa
 res4=subset(res3,method=="pool_pa_change"|method=="pa_D")
 #testi (two-way anova)
 anova(lm(res4$accuracy~res4$species+res4$method))
+```
 
+Pa-aineistolla poolaus näyttää parantaneen tilastollisesti merkitsevästi metodi D:n ennustustarkkuutta. Sekä metodien että lajien väliset erot ovat merkitseviä. Huomaa, että 'laji' on vahvempi selittävä muuttuja.
+
+```{r}
 #abu
 res4=subset(res3,method=="pool_abu_change"|method=="abu_D")
 #testi (two-way anova)
 anova(lm(res4$accuracy~res4$species+res4$method))
 ```
 
+Abu-aineistolla poolaus näyttää myös parantaneen ennustustarkkuutta, tosin ei yhtä vahvasti kuin pa-aineistolla. Nyt laji ei ole merkitsevä tekijä eli erot johtuvat vain metodista(?).
 
+
+Mietin, olenko tehnyt analyysit oikein. Teenkö oikein, jos tulkitsen lajin "samana yksikkönä" eli repeated measurement:nä? Vai olisiko laji pitänyt jättää huomioimatta?
 
 ```{r}
 #vai pitäisikö tehdä one-way anova?
 t.test(res2$pool_pa_change,res2$pa_D, paired = T)
 t.test(res2$pool_abu_change,res2$abu_D, paired = T)
+```
 
-#testataan onko merkitsev?? eroa
-#poolattujen change pa ja abu v?lill?
+Tuloksethan ovat samat method-muuuttujalle mutta pitäisikö lajien välisestä vaihtelusta tai sen vähyydestä vetää jotain johtopäätöksiä?
+
+
+Edelleen mietin, onko järkevää vertailla pa- ja abu-aineistoja, mutta testaanpa nyt kumminkin..
+
+```{r}
+#testataan onko merkitsevää eroa
+#poolattujen change pa ja abu välillä
+res4=subset(res3,method=="pool_abu_change"|method=="pool_pa_change")
+anova(lm(res4$accuracy~res4$species+res4$method))
+
+#tai t-testi ilman lajia selittävänä tekijänä
 t.test(res2$pool_pa_change,res2$pool_abu_change, paired=TRUE)
 ```
 
-```{r}
-#piirret??n sama kuvaaja, jossa nyt mukana my?s poolatut arvot
-# Figure 1ABCDEF
+Aineistojen välillä ei löydy merkitseviä eroja kun tarkastellaan poolattuja ennustustarkkuuksia. 
+
+### Kuvaaja
+
+```{r, fig.width=14, fig.height=12}
+#piirretään sama kuvaaja, jossa nyt mukana myös poolatut arvot
 
 #määritetään kuvalle raamit ja nimi
 Line=c(-1,1)
@@ -583,8 +602,8 @@ Line=as.data.frame(Line)
 layout(matrix(c(1,2,7,3,4,7,5,6,7), 3, 3, byrow = TRUE))
 
 # a)
-plot(pa_B~pa_past,data=res2,xlim=c(-1,1),
-     ylim=c(-1,1),cex.axis=0.8,xlab="Prediction accuracy (past)",
+plot(pa_B~pa_A,data=res2,xlim=c(-1,1),
+     ylim=c(-1,1),cex.axis=0.8,xlab="Prediction accuracy (A)",
      ylab="Prediction accuracy (B)")
 lines(Line$Line,Line$Line2,lty="dashed")
 lines(Line$Line,Line$Line3,col="grey",lty="dashed")
@@ -594,8 +613,8 @@ text(-0.5,0.8,"a) Distribution",cex=0.8)
 
 
 # b)
-plot(abu_B~abu_past,data=res2,xlim=c(-1,1),
-     ylim=c(-1,1),cex.axis=0.8,xlab="Prediction accuracy (past)",
+plot(abu_B~abu_A,data=res2,xlim=c(-1,1),
+     ylim=c(-1,1),cex.axis=0.8,xlab="Prediction accuracy (A)",
      ylab="Prediction accuracy (B)")
 lines(Line$Line,Line$Line2,lty="dashed")
 lines(Line$Line,Line$Line3,col="grey",lty="dashed")
@@ -604,8 +623,8 @@ lines(Line$Line3,Line$Line,col="grey",lty="dashed")
 text(-0.5,0.8,"b) Abundance",cex=0.8)
 
 # c)
-plot(pa_D~pa_past,data=res2,xlim=c(-1,1),
-     ylim=c(-1,1),cex.axis=0.8,xlab="Prediction accuracy (past)",
+plot(pa_D~pa_C,data=res2,xlim=c(-1,1),
+     ylim=c(-1,1),cex.axis=0.8,xlab="Prediction accuracy (C)",
      ylab="Prediction accuracy (D)")
 lines(Line$Line,Line$Line2,lty="dashed")
 lines(Line$Line,Line$Line3,col="grey",lty="dashed")
@@ -614,8 +633,8 @@ lines(Line$Line3,Line$Line,col="grey",lty="dashed")
 text(-0.5,0.8,"c) Distribution, 2 km",cex=0.8)
 
 # d)
-plot(abu_D~abu_past,data=res2,xlim=c(-1,1),
-     ylim=c(-1,1),cex.axis=0.8,xlab="Prediction accuracy (past)",
+plot(abu_D~abu_C,data=res2,xlim=c(-1,1),
+     ylim=c(-1,1),cex.axis=0.8,xlab="Prediction accuracy (C)",
      ylab="Prediction accuracy (D)")
 lines(Line$Line,Line$Line2,lty="dashed")
 lines(Line$Line,Line$Line3,col="grey",lty="dashed")
@@ -624,9 +643,9 @@ lines(Line$Line3,Line$Line,col="grey",lty="dashed")
 text(-0.5,0.8,"d) Abundance, 2 km",cex=0.8)
 
 # e) 
-plot(pool_pa_change~pa_past,data=res2,xlim=c(-1,1),
-     ylim=c(-1,1),cex.axis=0.8,xlab="Prediction accuracy (past)",
-     ylab="Prediction accuracy (change)")
+plot(pool_pa_change~pa_D,data=res2,xlim=c(-1,1),
+     ylim=c(-1,1),cex.axis=0.8,xlab="Prediction accuracy (D)",
+     ylab="Pooled prediction accuracy (change)")
 lines(Line$Line,Line$Line2,lty="dashed")
 lines(Line$Line,Line$Line3,col="grey",lty="dashed")
 lines(Line$Line3,Line$Line,col="grey",lty="dashed")
@@ -634,9 +653,9 @@ lines(Line$Line3,Line$Line,col="grey",lty="dashed")
 text(-0.5,0.8,"e) Distribution, 50 km",cex=0.8)
 
 # f)
-plot(pool_abu_change~abu_past,data=res2,xlim=c(-1,1),
-     ylim=c(-1,1),cex.axis=0.8,xlab="Prediction accuracy (past)",
-     ylab="Prediction accuracy (change)")
+plot(pool_abu_change~abu_D,data=res2,xlim=c(-1,1),
+     ylim=c(-1,1),cex.axis=0.8,xlab="Prediction accuracy (D)",
+     ylab="Pooled prediction accuracy (change)")
 lines(Line$Line,Line$Line2,lty="dashed")
 lines(Line$Line,Line$Line3,col="grey",lty="dashed")
 lines(Line$Line3,Line$Line,col="grey",lty="dashed")
@@ -646,4 +665,6 @@ text(-0.5,0.8,"f) Abundance, 50km", cex=0.8)
 #dev.off()
 ```
 
+
+Tässäkin täytyy varmaan vielä miettiä, mitä halutaan esittää kuvaajissa. Aikaisemmin verrattiin uutta validointimenetelmää D (ja uusia poolattuja arvoja) vanhaan menetelmään, joka edusti ennustustarkkuutta kun mallin validoinnissa käytettiin samoja havaintoja kuin mallin kalibroinnissa (_past oli melkein vastaava kuin metodi A). 
 
