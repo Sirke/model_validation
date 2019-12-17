@@ -18,7 +18,11 @@ Selvitetään vaikuttaako ennustustarkkuuteen laskentakertojen lukumäärä. Saa
 
 Aiemmissa analyyseissä vertailin laskentakertojen määrän vaikutusta kolmeen eri validointimetodiin (past, present ja change). Nyt teen vertailut vain metodi D:n osalta. Tarvittaessa voidaan vertailla muitakin metodeja.
 
-## Aineisto sisään
+Aiemmin tein samat analyysit myös poolatulle aineistolle. Sekin voidaan tehdä tarvittaessa.
+
+## Pa-aineisto
+
+### Aineisto sisään
 
 ```{r }
 getwd()
@@ -97,7 +101,7 @@ as.data.frame(table(ntypes))
 Vuosien 96-99 ja 13-16 reittien ntype jakauma ei ole ideaali. Ainakaan jos vertaillaan kategorioita 1, 3 ja 4 (36,93 ja 171 kpl havaintoja). 
 
 
-### ntype 1
+### Ntype 1
 ```{r}
 #ntype 1
 # COMPUTE MEASURES D
@@ -123,7 +127,7 @@ mean(t1,na.rm = TRUE)
 
 Useilla lajeilla NA:ta koska kyseessä vain kerran lasketut reitit.
 
-### ntype 3
+### Ntype 3
 ```{r}
 #ntype 3
 # COMPUTE MEASURES D
@@ -147,7 +151,7 @@ plot(t3) + abline(0,0)
 mean(t3,na.rm = TRUE)
 ```
 
-### ntype 4
+### Ntype 4
 ```{r}
 #ntype 4
 # COMPUTE MEASURES D
@@ -184,7 +188,7 @@ write.csv(pa_ntype, "pa_ntype.csv",row.names = F)
 ## Abu-aineisto
 
 
-### Aineisto
+### Aineisto sisään
 ```{r }
 modeltype = 2 #2 on abu-aineistolle
 
@@ -222,7 +226,7 @@ Abu-aineistolla on alunperin otettu mukaan reitit, joilla on käyty vähintään
 Tässä nyt kuitenkin pysytään samassa tyylissä kuin pa-aineiston analyysissä ja kategorioidaan reitit sen mukaan kuinka monta kertaa se on laskettu. Havaintojen lukumäärähän voi siis olla mitä vaan. 
 
 
-### ntype1
+### Ntype1
 ```{r }
 # COMPUTE MEASURES C AND D
 selroutes = routes[which(ntypes==1)]
@@ -247,7 +251,7 @@ plot(t1)+abline(0,0)
 mean(t1,na.rm = TRUE)
 ```
 
-### ntype3
+### Ntype3
 ```{r }
 # COMPUTE MEASURES C AND D
 selroutes = routes[which(ntypes==3)]
@@ -272,7 +276,7 @@ plot(t3)+abline(0,0)
 mean(t3,na.rm = TRUE)
 ```
 
-### ntype4
+### Ntype4
 ```{r }
 # COMPUTE MEASURES C AND D
 selroutes = routes[which(ntypes==4)]
@@ -336,7 +340,7 @@ p+ scale_x_discrete(limits=c("abu_t1", "abu_t3","abu_t4"))
 
 Ntype 1 kategorioissa suurta vaihtelua. Ei näytä siltä, että useammin lasketut reitit antaisivat parempia ennustustarkkuuksia.
 
-### tilastollinen testaus
+### Tilastollinen testaus
 
 #### pa
 

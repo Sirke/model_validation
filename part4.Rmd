@@ -176,7 +176,7 @@ output1<-model.sel(malli0,malli1,malli2,malli3,malli4,malli5,malli6,malli7,malli
 output1
 ```
 
-Malli 3 ja 8 ovat melkein yht� hyviä. Malli 3 on yksinkertaisempi. Sen mukaan paino olisi selittävä tekijä.
+Malli 3 ja 8 ovat melkein yhtä hyviä. Malli 3 on yksinkertaisempi. Sen mukaan paino olisi selittävä tekijä.
 
 ```{r }
 #tehdään model averaging
@@ -185,7 +185,9 @@ summary(model.avg(output1, revised.var = TRUE))
 
 Luettiinko model averaging taulukosta full average-arvoja? Sen mukaan mikään muuttuja (ei edes paino) ei selitä ennustustarkkuutta.  
 
-The ‘subset’ (or ‘conditional’) average only averages over the models where the parameter appears. An alternative, the ‘full’ average assumes that a variable is included in every model, but in some models the corresponding coefficient (and its respective variance) is set to zero. Unlike the ‘subset average’, it does not have a tendency of biasing the value away from zero. The ‘full’ average is a type of shrinkage estimator and for variables with a weak relationship to the response they are smaller than ‘subset’ estimators. Lisää voi lukea [täältä](https://theoreticalecology.wordpress.com/2018/05/14/model-averaging-in-ecology-a-review-of-bayesian-information-theoretic-and-tactical-approaches-for-predictive-inference/).
+The ‘subset’ (or ‘conditional’) average only averages over the models where the parameter appears. An alternative, the ‘full’ average assumes that a variable is included in every model, but in some models the corresponding coefficient (and its respective variance) is set to zero. Unlike the ‘subset average’, it does not have a tendency of biasing the value away from zero. The ‘full’ average is a type of shrinkage estimator and for variables with a weak relationship to the response they are smaller than ‘subset’ estimators.
+
+Lisää voi lukea [täältä](https://theoreticalecology.wordpress.com/2018/05/14/model-averaging-in-ecology-a-review-of-bayesian-information-theoretic-and-tactical-approaches-for-predictive-inference/).
 
 ```{r }
 # Parameter estimate Table, katsotaan tarkemmin parasta mallia

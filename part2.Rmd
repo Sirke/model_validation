@@ -4,7 +4,7 @@ author: "me"
 date: "4 joulukuuta 2019"
 output: html_document
 ---
-# Comparing validation methods
+# Validointimetodien vertailu
 
 Verrataan neljällä eri metodilla laskettuja ennustustarkkuuksia. 
 
