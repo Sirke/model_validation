@@ -368,29 +368,10 @@ Mikään ei näytä selittävän ennustustarkkuutta.
 ```{r }
 # Parameter estimate Table, katsotaan tarkemmin parasta mallia
 summary(malli0)
+summary(malli3)
 ```
 
-```{r }
-
-#KUVAAJIA
-
-#kuvaajien piirtely ei (ainakaan multa) onnistu jos log(Mass) ei ole valmiiksi laskettu omaan
-#sarakkeeseensa
-results$logmass<-log(results$Mass)
-
-#seuraavaksi mallin validointia kuvaajista: ei ongelmia homogeenisuuden,
-#normaaliuden tai riippuvuuksien kanssa. Tai miten näitä nyt tulkitsisi..
-#luokkamuuttuja "habitat" ei nyt skulaa tällä koodilla, se on character
-op<-par(mfrow=c(2,3),mar=c(5,4,1,2))
-plot(malli10,add.smooth = F,which = 1)
-E<-resid(malli10)
-hist(E, xlab = "residuals",main = "")
-plot(results$Prev,E,xlab = "prevalence",ylab="residuals")
-plot(results$Hab,E,xlab = "habitat",ylab="residuals")
-plot(results$Mig,E,xlab = "migration",ylab="residuals")
-plot(results$logmass,E,xlab = "logMass",ylab="residuals")
-par(op)
-```
+Kumpi/kampi?
 
 #### Abu-aineistolle
 
