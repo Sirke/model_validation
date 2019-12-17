@@ -1,0 +1,502 @@
+---
+title: "part4"
+author: "me"
+date: "12 joulukuuta 2019"
+output: html_document
+---
+
+# Traits analyysi
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+getwd()
+paketit<-c("nlme","readr","tidyr","dplyr","plyr","magrittr","purrr","ggplot2","ape","geiger","MuMIn","psych","Hmisc")
+lapply(paketit,library,character.only=T)
+```
+
+## Aineisto sisään ja taulukoiden kokoaminen
+
+```{r }
+#yhdistetään ennustustarkkuustulokset ja lajiominaisuudet samaan taulukkoon
+res<-read.csv("results_and_pooled.csv")
+traits<-read.csv("traits_table.csv",sep = ";")
+results<-inner_join(res,traits,by="species")
+
+#tallenna tarvittaessa omaksi taulukokseen
+#write.csv(res,"accuracies_traits.csv",row.names = F)
+```
+Tarkastellaan aineistoa kuvaajista:
+
+```{r }
+#kuvaajien piirtely ei (ainakaan multa) onnistu jos log(Mass) ei ole valmiiksi laskettu omaan
+#sarakkeeseensa
+results$logmass<-log(results$Mass)
+#pa aineisto
+op<-par(mfrow=c(2,2),mar=c(5,4,1,2))
+boxplot(pa_D~Hab,data=results,ylab="pa_D",xlab="Habitat")
+plot(pa_D~Prev, data = results,ylab="pa_D",xlab="Prevalence")
+abline(lm(pa_D~Prev,data = results))
+boxplot(pa_D~Mig,data=results,ylab="pa_D",xlab="Migration")
+plot(pa_D~logmass, data = results,ylab="pa_D",xlab="log(Mass)")
+abline(lm(pa_D~logmass,data = results))
+par(op)
+
+#abu aineisto
+op<-par(mfrow=c(2,2),mar=c(5,4,1,2))
+boxplot(abu_D~Hab,data=results,ylab="abu_D",xlab="Habitat")
+plot(abu_D~Prev, data = results,ylab="abu_D",xlab="Prevalence")
+abline(lm(abu_D~Prev,data = results))
+boxplot(abu_D~Mig,data=results,ylab="abu_D",xlab="Migration")
+plot(abu_D~logmass, data = results,ylab="abu_D",xlab="log(Mass)")
+abline(lm(abu_D~logmass,data = results))
+par(op)
+
+#poolattu pa aineisto
+op<-par(mfrow=c(2,2),mar=c(5,4,1,2))
+boxplot(pool_pa_change~Hab,data=results,ylab="pool_pa_D",xlab="Habitat")
+plot(pool_pa_change~Prev, data = results,ylab="pool_pa_D",xlab="Prevalence")
+abline(lm(pool_pa_change~Prev,data = results))
+boxplot(pool_pa_change~Mig,data=results,ylab="pool_pa_D",xlab="Migration")
+plot(pool_pa_change~logmass, data = results,ylab="pool_pa_D",xlab="log(Mass)")
+abline(lm(pool_pa_change~logmass,data = results))
+par(op)
+
+#poolattu abu aineisto
+op<-par(mfrow=c(2,2),mar=c(5,4,1,2))
+boxplot(pool_abu_change~Hab,data=results,ylab="pool_abu_D",xlab="Habitat")
+plot(pool_abu_change~Prev, data = results,ylab="pool_abu_D",xlab="Prevalence")
+abline(lm(pool_abu_change~Prev,data = results))
+boxplot(pool_abu_change~Mig,data=results,ylab="pool_abu_D",xlab="Migration")
+plot(pool_abu_change~logmass, data = results,ylab="pool_abu_D",xlab="log(Mass)")
+abline(lm(pool_abu_change~logmass,data = results))
+par(op)
+```
+
+## Fylogenian huomioinen lajien ominaisuuksia tarkastellessa
+
+BirdTree.org palvelusta on haettu lintujen sukupuu (tai itseasiassa tiedosto sisältää 100 vaihtoehtoista sukupuuta, joista valitaan yksi).
+
+```{r }
+#luetaan aineisto sisään, Multiphylo eli monta puuta
+linnut <- read.nexus("output.nex")
+#valitaan vain yksi puu, mikä tahansa sadasta
+linnut2<-linnut[[99]]
+#define a variance-covariance structure based on the model of Brownian evolution
+bm.birds=corBrownian(1,phy=linnut2)
+#tehdään fylogenialistasta matriisi
+lintupuu<-vcv.phylo(linnut2)
+#matriisin voi värittää havainnollistamaan lintulajien sukulaisuutta
+heatmap(lintupuu,Rowv = NA,Colv = NA)
+
+#aineiston rivien nimet muutetaan lattareiksi jolloin keskustelee fylogeniapuun kanssa
+rownames(results)=results$species
+```
+
+"the so called Brownian motion (also called random walk or diffusion)
+3191 model of trait evolution, which is the simplest model among the many alternative models of how
+3192 traits might evolve (Beaulieu et al., 2012)."
+
+
+
+## Traits-analyysit
+
+Selvitetään, vaikuttavatko lajien ominaisuudet (muuttokäyttäytyminen 'Mig', elinympäristö 'Hab', paino 'logMass' tai prevalenssi 'Prev') ennustustarkkuuteen. Analyysissä pitäisi huomioida, että lajit voivat olla ominaisuuksiltaan samankaltaisia (ja siten omata myös yhtä suuret ennustustarkkuudet) läheisen sukulaisuussuhteen takia. 
+
+
+### Ei-poolatulle, 2x2 km aineistolle
+
+
+#### pa-aineisto
+
+Vertailun vuoksi teen ensin analyysit huomioimatta fylogeniaa ja sen jälkeen fylogenia huomioiden.  
+Ensin ilman fylogeniaa:
+
+```{r }
+#luodaan eri mallivaihtoehtoja
+malli0 <- gls(pa_D ~ 1, data = results)
+malli1 <- gls(pa_D ~ Mig, data = results)
+malli2 <- gls(pa_D ~ Hab, data = results)
+malli3 <- gls(pa_D ~ log(Mass), data = results)
+malli4 <- gls(pa_D ~ Prev, data = results)
+malli5 <- gls(pa_D ~ Mig + Hab, data = results)
+malli6 <- gls(pa_D ~ Hab + log(Mass), data = results)
+malli7 <- gls(pa_D ~ Mig + log(Mass), data = results)
+malli8 <- gls(pa_D ~ log(Mass)+Prev, data = results)
+malli9 <- gls(pa_D ~ Mig +Prev, data = results)
+malli10 <- gls(pa_D ~ Hab+Prev, data = results)
+malli11 <- gls(pa_D ~ Mig + Hab + log(Mass), data = results)
+malli12 <- gls(pa_D ~ Mig + Hab + Prev, data = results)
+malli13 <- gls(pa_D ~ Mig + Prev + log(Mass), data = results)
+malli14 <- gls(pa_D ~ Prev + Hab + log(Mass), data = results)
+malli15 <- gls(pa_D ~ Mig + Hab + log(Mass)+Prev, data = results)
+
+#mallin valintaa MuMin paketin avulla
+output1<-model.sel(malli0,malli1,malli2,malli3,malli4,malli5,malli6,malli7,malli8,malli9,malli10,malli11,malli12,malli13,malli14,malli15) 
+
+# AICc Table
+output1
+```
+
+Malli0 näyttäisi olevan näistä paras. Mikään ei siis selitä ennustustarkkuutta.
+
+
+```{r }
+# Parameter estimate Table, katsotaan tarkemmin parasta mallia
+summary(malli0)
+```
+
+
+Samat mallit fylogenia huomioiden:
+
+```{r }
+#sama fylogenia huomioiden
+#luodaan eri mallivaihtoehtoja
+malli0 <- gls(pa_D ~ 1, data = results,correlation=bm.birds,method="ML" )
+malli1 <- gls(pa_D ~ Mig, data = results,correlation=bm.birds,method="ML")
+malli2 <- gls(pa_D ~ Hab, data = results,correlation=bm.birds,method="ML")
+malli3 <- gls(pa_D ~ log(Mass), data = results,correlation=bm.birds,method="ML")
+malli4 <- gls(pa_D ~ Prev, data = results,correlation=bm.birds,method="ML")
+malli5 <- gls(pa_D ~ Mig + Hab, data = results,correlation=bm.birds,method="ML")
+malli6 <- gls(pa_D ~ Hab + log(Mass), data = results,correlation=bm.birds,method="ML")
+malli7 <- gls(pa_D ~ Mig + log(Mass), data = results,correlation=bm.birds,method="ML")
+malli8 <- gls(pa_D ~ log(Mass)+Prev, data = results,correlation=bm.birds,method="ML")
+malli9 <- gls(pa_D ~ Mig +Prev, data = results,correlation=bm.birds,method="ML")
+malli10 <- gls(pa_D ~ Hab+Prev, data = results,correlation=bm.birds,method="ML")
+malli11 <- gls(pa_D ~ Mig + Hab + log(Mass), data = results,correlation=bm.birds,method="ML")
+malli12 <- gls(pa_D ~ Mig + Hab + Prev, data = results,correlation=bm.birds,method="ML")
+malli13 <- gls(pa_D ~ Mig + Prev + log(Mass), data = results,correlation=bm.birds,method="ML")
+malli14 <- gls(pa_D ~ Prev + Hab + log(Mass), data = results,correlation=bm.birds,method="ML")
+malli15 <- gls(pa_D ~ Mig + Hab + log(Mass)+Prev, data = results,correlation=bm.birds,method="ML")
+
+#mallin valintaa MuMin paketin avulla
+output1<-model.sel(malli0,malli1,malli2,malli3,malli4,malli5,malli6,malli7,malli8,malli9,malli10,malli11,malli12,malli13,malli14,malli15) 
+
+# AICc Table
+output1
+```
+
+Malli 3 ja 8 ovat melkein yhtä hyviä. Malli 3 on yksinkertaisempi. Sen mukaan paino olisi selittävä tekijä.
+
+```{r }
+#tehdään model averaging
+summary(model.avg(output1, revised.var = TRUE))
+```
+
+Luettiinko model averaging taulukosta full average-arvoja? Sen mukaan mikään muuttuja (ei edes paino) ei selitä ennustustarkkuutta.  
+
+The ‘subset’ (or ‘conditional’) average only averages over the models where the parameter appears. An alternative, the ‘full’ average assumes that a variable is included in every model, but in some models the corresponding coefficient (and its respective variance) is set to zero. Unlike the ‘subset average’, it does not have a tendency of biasing the value away from zero. The ‘full’ average is a type of shrinkage estimator and for variables with a weak relationship to the response they are smaller than ‘subset’ estimators.
+
+Lisää voi lukea [täältä](https://theoreticalecology.wordpress.com/2018/05/14/model-averaging-in-ecology-a-review-of-bayesian-information-theoretic-and-tactical-approaches-for-predictive-inference/).
+
+```{r }
+# Parameter estimate Table, katsotaan tarkemmin parasta mallia
+summary(malli3)
+```
+
+Paino näyttäisi olevan merkitsevä, mutta rajoilla.
+
+#### Abu-aineisto
+
+Ensin ilman fylogeniaa:
+
+```{r }
+#luodaan eri mallivaihtoehtoja
+malli0 <- gls(abu_D ~ 1, data = results)
+malli1 <- gls(abu_D ~ Mig, data = results)
+malli2 <- gls(abu_D ~ Hab, data = results)
+malli3 <- gls(abu_D ~ log(Mass), data = results)
+malli4 <- gls(abu_D ~ Prev, data = results)
+malli5 <- gls(abu_D ~ Mig + Hab, data = results)
+malli6 <- gls(abu_D ~ Hab + log(Mass), data = results)
+malli7 <- gls(abu_D ~ Mig + log(Mass), data = results)
+malli8 <- gls(abu_D ~ log(Mass)+Prev, data = results)
+malli9 <- gls(abu_D ~ Mig +Prev, data = results)
+malli10 <- gls(abu_D ~ Hab+Prev, data = results)
+malli11 <- gls(abu_D ~ Mig + Hab + log(Mass), data = results)
+malli12 <- gls(abu_D ~ Mig + Hab + Prev, data = results)
+malli13 <- gls(abu_D ~ Mig + Prev + log(Mass), data = results)
+malli14 <- gls(abu_D ~ Prev + Hab + log(Mass), data = results)
+malli15 <- gls(abu_D ~ Mig + Hab + log(Mass)+Prev, data = results)
+
+#mallin valintaa MuMin paketin avulla
+output1<-model.sel(malli0,malli1,malli2,malli3,malli4,malli5,malli6,malli7,malli8,malli9,malli10,malli11,malli12,malli13,malli14,malli15) 
+
+# AICc Table
+output1
+```
+
+Mikään ei näytä selittävän ennustustarkkuutta.
+
+```{r }
+# Parameter estimate Table, katsotaan tarkemmin parasta mallia
+summary(malli0)
+#mikään muuttuja ei ole merkitsevä.
+```
+
+Samat mallit, fylogenia huomioiden:
+
+```{r }
+
+#sama fylogenia huomioiden
+#luodaan eri mallivaihtoehtoja
+malli0 <- gls(abu_D ~ 1, data = results,correlation=bm.birds,method="ML" )
+malli1 <- gls(abu_D ~ Mig, data = results,correlation=bm.birds,method="ML")
+malli2 <- gls(abu_D ~ Hab, data = results,correlation=bm.birds,method="ML")
+malli3 <- gls(abu_D ~ log(Mass), data = results,correlation=bm.birds,method="ML")
+malli4 <- gls(abu_D ~ Prev, data = results,correlation=bm.birds,method="ML")
+malli5 <- gls(abu_D ~ Mig + Hab, data = results,correlation=bm.birds,method="ML")
+malli6 <- gls(abu_D ~ Hab + log(Mass), data = results,correlation=bm.birds,method="ML")
+malli7 <- gls(abu_D ~ Mig + log(Mass), data = results,correlation=bm.birds,method="ML")
+malli8 <- gls(abu_D ~ log(Mass)+Prev, data = results,correlation=bm.birds,method="ML")
+malli9 <- gls(abu_D ~ Mig +Prev, data = results,correlation=bm.birds,method="ML")
+malli10 <- gls(abu_D ~ Hab+Prev, data = results,correlation=bm.birds,method="ML")
+malli11 <- gls(abu_D ~ Mig + Hab + log(Mass), data = results,correlation=bm.birds,method="ML")
+malli12 <- gls(abu_D ~ Mig + Hab + Prev, data = results,correlation=bm.birds,method="ML")
+malli13 <- gls(abu_D ~ Mig + Prev + log(Mass), data = results,correlation=bm.birds,method="ML")
+malli14 <- gls(abu_D ~ Prev + Hab + log(Mass), data = results,correlation=bm.birds,method="ML")
+malli15 <- gls(abu_D ~ Mig + Hab + log(Mass)+Prev, data = results,correlation=bm.birds,method="ML")
+
+#mallin valintaa MuMin paketin avulla
+output1<-model.sel(malli0,malli1,malli2,malli3,malli4,malli5,malli6,malli7,malli8,malli9,malli10,malli11,malli12,malli13,malli14,malli15) 
+
+# AICc Table
+output1
+```
+
+Malli13 paras. Kaikki paitsi Hab merkitseviä muuttujia. Yksinkertaisempi malli9 ei kuitenkaan kaukana.
+
+```{r }
+#tehdään model averaging
+summary(model.avg(output1, revised.var = TRUE))
+#tässä mikään muuttuja ei ole merkitsevä? 
+```
+
+Prevalenssi enää merkitsevä jos tehdään model averaging?
+
+```{r }
+# Parameter estimate Table, katsotaan tarkemmin parasta mallia
+summary(malli9)
+summary(malli13)
+```
+
+Eli, selittääkö vain prevalenssi ennustustarkkuutta?
+
+### Poolatulle, 50 x 50 km aineistolle
+
+#### Pa-aineisto
+
+```{r }
+#luodaan eri mallivaihtoehtoja
+malli0 <- gls(pool_pa_change ~ 1, data = results)
+malli1 <- gls(pool_pa_change ~ Mig, data = results)
+malli2 <- gls(pool_pa_change ~ Hab, data = results)
+malli3 <- gls(pool_pa_change ~ log(Mass), data = results)
+malli4 <- gls(pool_pa_change ~ Prev, data = results)
+malli5 <- gls(pool_pa_change ~ Mig + Hab, data = results)
+malli6 <- gls(pool_pa_change ~ Hab + log(Mass), data = results)
+malli7 <- gls(pool_pa_change ~ Mig + log(Mass), data = results)
+malli8 <- gls(pool_pa_change ~ log(Mass)+Prev, data = results)
+malli9 <- gls(pool_pa_change ~ Mig +Prev, data = results)
+malli10 <- gls(pool_pa_change ~ Hab+Prev, data = results)
+malli11 <- gls(pool_pa_change ~ Mig + Hab + log(Mass), data = results)
+malli12 <- gls(pool_pa_change ~ Mig + Hab + Prev, data = results)
+malli13 <- gls(pool_pa_change ~ Mig + Prev + log(Mass), data = results)
+malli14 <- gls(pool_pa_change ~ Prev + Hab + log(Mass), data = results)
+malli15 <- gls(pool_pa_change ~ Mig + Hab + log(Mass)+Prev, data = results)
+
+#mallin valintaa MuMin paketin avulla
+output1<-model.sel(malli0,malli1,malli2,malli3,malli4,malli5,malli6,malli7,malli8,malli9,malli10,malli11,malli12,malli13,malli14,malli15) 
+
+# AICc Table
+output1
+```
+
+Malli4 on paras mutta malli0 on melkeinpä yhtä hyvä ja yksinkertaisempi. 
+
+```{r }
+#tehdään model averaging
+summary(model.avg(output1, revised.var = TRUE))
+```
+
+Mikään ei taida selittää ennustustarkkuutta.
+
+```{r }
+# Parameter estimate Table, katsotaan tarkemmin parasta mallia
+summary(malli0)
+```
+
+Samat mallit fylogenia huomioiden:
+
+```{r }
+#luodaan eri mallivaihtoehtoja
+malli0 <- gls(pool_pa_change ~ 1, data = results,correlation=bm.birds,method="ML" )
+malli1 <- gls(pool_pa_change ~ Mig, data = results,correlation=bm.birds,method="ML")
+malli2 <- gls(pool_pa_change ~ Hab, data = results,correlation=bm.birds,method="ML")
+malli3 <- gls(pool_pa_change ~ log(Mass), data = results,correlation=bm.birds,method="ML")
+malli4 <- gls(pool_pa_change ~ Prev, data = results,correlation=bm.birds,method="ML")
+malli5 <- gls(pool_pa_change ~ Mig + Hab, data = results,correlation=bm.birds,method="ML")
+malli6 <- gls(pool_pa_change ~ Hab + log(Mass), data = results,correlation=bm.birds,method="ML")
+malli7 <- gls(pool_pa_change ~ Mig + log(Mass), data = results,correlation=bm.birds,method="ML")
+malli8 <- gls(pool_pa_change ~ log(Mass)+Prev, data = results,correlation=bm.birds,method="ML")
+malli9 <- gls(pool_pa_change ~ Mig +Prev, data = results,correlation=bm.birds,method="ML")
+malli10 <- gls(pool_pa_change ~ Hab+Prev, data = results,correlation=bm.birds,method="ML")
+malli11 <- gls(pool_pa_change ~ Mig + Hab + log(Mass), data = results,correlation=bm.birds,method="ML")
+malli12 <- gls(pool_pa_change ~ Mig + Hab + Prev, data = results,correlation=bm.birds,method="ML")
+malli13 <- gls(pool_pa_change ~ Mig + Prev + log(Mass), data = results,correlation=bm.birds,method="ML")
+malli14 <- gls(pool_pa_change ~ Prev + Hab + log(Mass), data = results,correlation=bm.birds,method="ML")
+malli15 <- gls(pool_pa_change ~ Mig + Hab + log(Mass)+Prev, data = results,correlation=bm.birds,method="ML")
+
+#mallin valintaa MuMin paketin avulla
+output1<-model.sel(malli0,malli1,malli2,malli3,malli4,malli5,malli6,malli7,malli8,malli9,malli10,malli11,malli12,malli13,malli14,malli15) 
+
+# AICc Table
+output1
+#malli #10 on paras mutta seuraava malli on 0.27 AICc yksikön päässä.
+```
+
+Mallit 3 ja 0 lähekkäin. 
+
+```{r }
+#tehdään model averaging
+summary(model.avg(output1, revised.var = TRUE))
+```
+
+Mikään ei näytä selittävän ennustustarkkuutta.
+
+
+```{r }
+# Parameter estimate Table, katsotaan tarkemmin parasta mallia
+summary(malli0)
+```
+
+```{r }
+
+#KUVAAJIA
+
+#kuvaajien piirtely ei (ainakaan multa) onnistu jos log(Mass) ei ole valmiiksi laskettu omaan
+#sarakkeeseensa
+results$logmass<-log(results$Mass)
+
+#seuraavaksi mallin validointia kuvaajista: ei ongelmia homogeenisuuden,
+#normaaliuden tai riippuvuuksien kanssa. Tai miten näitä nyt tulkitsisi..
+#luokkamuuttuja "habitat" ei nyt skulaa tällä koodilla, se on character
+op<-par(mfrow=c(2,3),mar=c(5,4,1,2))
+plot(malli10,add.smooth = F,which = 1)
+E<-resid(malli10)
+hist(E, xlab = "residuals",main = "")
+plot(results$Prev,E,xlab = "prevalence",ylab="residuals")
+plot(results$Hab,E,xlab = "habitat",ylab="residuals")
+plot(results$Mig,E,xlab = "migration",ylab="residuals")
+plot(results$logmass,E,xlab = "logMass",ylab="residuals")
+par(op)
+```
+
+#### Abu-aineistolle
+
+Ilman fylogeniaa:
+
+```{r }
+#luodaan eri mallivaihtoehtoja
+malli0 <- gls(pool_abu_change ~ 1, data = results)
+malli1 <- gls(pool_abu_change ~ Mig, data = results)
+malli2 <- gls(pool_abu_change ~ Hab, data = results)
+malli3 <- gls(pool_abu_change ~ log(Mass), data = results)
+malli4 <- gls(pool_abu_change ~ Prev, data = results)
+malli5 <- gls(pool_abu_change ~ Mig + Hab, data = results)
+malli6 <- gls(pool_abu_change ~ Hab + log(Mass), data = results)
+malli7 <- gls(pool_abu_change ~ Mig + log(Mass), data = results)
+malli8 <- gls(pool_abu_change ~ log(Mass)+Prev, data = results)
+malli9 <- gls(pool_abu_change ~ Mig +Prev, data = results)
+malli10 <- gls(pool_abu_change ~ Hab+Prev, data = results)
+malli11 <- gls(pool_abu_change ~ Mig + Hab + log(Mass), data = results)
+malli12 <- gls(pool_abu_change ~ Mig + Hab + Prev, data = results)
+malli13 <- gls(pool_abu_change ~ Mig + Prev + log(Mass), data = results)
+malli14 <- gls(pool_abu_change ~ Prev + Hab + log(Mass), data = results)
+malli15 <- gls(pool_abu_change ~ Mig + Hab + log(Mass)+Prev, data = results)
+
+#mallin valintaa MuMin paketin avulla
+output1<-model.sel(malli0,malli1,malli2,malli3,malli4,malli5,malli6,malli7,malli8,malli9,malli10,malli11,malli12,malli13,malli14,malli15) 
+
+# AICc Table
+output1
+```
+
+Malli0 on paras.
+
+```{r }
+# Parameter estimate Table, katsotaan tarkemmin parasta mallia
+summary(malli0)
+```
+
+Fylogenia huomioiden:
+
+```{r }
+#luodaan eri mallivaihtoehtoja
+malli0 <- gls(pool_abu_change ~ 1, data = results,correlation=bm.birds,method="ML" )
+malli1 <- gls(pool_abu_change ~ Mig, data = results,correlation=bm.birds,method="ML")
+malli2 <- gls(pool_abu_change ~ Hab, data = results,correlation=bm.birds,method="ML")
+malli3 <- gls(pool_abu_change ~ log(Mass), data = results,correlation=bm.birds,method="ML")
+malli4 <- gls(pool_abu_change ~ Prev, data = results,correlation=bm.birds,method="ML")
+malli5 <- gls(pool_abu_change ~ Mig + Hab, data = results,correlation=bm.birds,method="ML")
+malli6 <- gls(pool_abu_change ~ Hab + log(Mass), data = results,correlation=bm.birds,method="ML")
+malli7 <- gls(pool_abu_change ~ Mig + log(Mass), data = results,correlation=bm.birds,method="ML")
+malli8 <- gls(pool_abu_change ~ log(Mass)+Prev, data = results,correlation=bm.birds,method="ML")
+malli9 <- gls(pool_abu_change ~ Mig +Prev, data = results,correlation=bm.birds,method="ML")
+malli10 <- gls(pool_abu_change ~ Hab+Prev, data = results,correlation=bm.birds,method="ML")
+malli11 <- gls(pool_abu_change ~ Mig + Hab + log(Mass), data = results,correlation=bm.birds,method="ML")
+malli12 <- gls(pool_abu_change ~ Mig + Hab + Prev, data = results,correlation=bm.birds,method="ML")
+malli13 <- gls(pool_abu_change ~ Mig + Prev + log(Mass), data = results,correlation=bm.birds,method="ML")
+malli14 <- gls(pool_abu_change ~ Prev + Hab + log(Mass), data = results,correlation=bm.birds,method="ML")
+malli15 <- gls(pool_abu_change ~ Mig + Hab + log(Mass)+Prev, data = results,correlation=bm.birds,method="ML")
+
+#mallin valintaa MuMin paketin avulla
+output1<-model.sel(malli0,malli1,malli2,malli3,malli4,malli5,malli6,malli7,malli8,malli9,malli10,malli11,malli12,malli13,malli14,malli15) 
+
+# AICc Table
+output1
+```
+
+Mallit 14, 15 ja 13 lähekkäin.
+
+```{r }
+#tehdään model averaging
+summary(model.avg(output1, revised.var = TRUE))
+```
+
+Paino ja prevalenssi merkitseviä. Eli malli8?
+
+```{r }
+# Parameter estimate Table
+summary(malli14)
+summary(malli15)
+summary(malli13)
+summary(malli8)
+```
+
+Mikä näistä nyt siis on paras vaihtoehto?
+
+
+### Mallien validointia kuvaajista, koodi
+
+Esimerkkinä viimeisimmän aineiston malli14.
+
+```{r }
+#seuraavaksi mallin validointia kuvaajista
+op<-par(mfrow=c(2,3),mar=c(5,4,1,2))
+plot(malli14,add.smooth = F,which = 1)
+E<-resid(malli14)
+hist(E, xlab = "residuals",main = "")
+plot(results$Prev,E,xlab = "prevalence",ylab="residuals")
+plot(results$Hab,E,xlab = "habitat",ylab="residuals")
+plot(results$Mig,E,xlab = "migration",ylab="residuals")
+plot(results$logmass,E,xlab = "logMass",ylab="residuals")
+par(op)
+```
+
+Residuaalit eivät ole tasaisesti jakautuneita. Ei hyvä.
+
+
+
+
+

@@ -1,0 +1,365 @@
+---
+title: "part5"
+author: "Sirke"
+date: "17 joulukuuta 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+getwd()
+paketit<-c("readr","tidyr","dplyr","plyr","magrittr","purrr","data.table","plotrix","jtools","sp","GISTools","rgdal","sf","spatialEco","ggplot2","ggrepel")
+lapply(paketit,library,character.only=T)
+```
+
+# Laskentakertojen vaikutus
+
+Selvitetään vaikuttaako ennustustarkkuuteen laskentakertojen lukumäärä. Saadaanko luotettavampia ennustuksia jos valitaan vain reittejä, joita on laskettu useammin (maks. 4 kertaa).
+
+Aiemmissa analyyseissä vertailin laskentakertojen määrän vaikutusta kolmeen eri validointimetodiin (past, present ja change). Nyt teen vertailut vain metodi D:n osalta. Tarvittaessa voidaan vertailla muitakin metodeja.
+
+## Aineisto sisään
+
+```{r }
+getwd()
+localDir = "."
+PredictionDir = file.path(localDir, "data")
+```
+
+```{r }
+#model 1: data until 1999; model 2: full data
+#mpred1: posterior mean based on model 1; mpred2: posterior mean based on model 2
+
+samples = 1000
+thin = 10
+nChains = 4
+modeltype = 1 #1 on pa-aineistolle
+
+filename = file.path(PredictionDir, paste("predictions_",c("pa","abundance")[modeltype],
+                                          "_chains_",as.character(nChains),"_thin_", as.character(thin),"_samples_", as.character(samples),
+                                          ".Rdata",sep = ""))
+load(filename) #mpred1, mpred2, Y, studyDesign
+
+routes=levels(studyDesign$Route)
+nr=length(routes)
+years=levels(studyDesign$Year)
+dim(mpred1)
+ns=dim(mpred1)[2]
+dim(mpred2)
+dim(Y)
+dim(studyDesign)
+```
+
+###Periodien määrittely
+
+```{r}
+period1=(studyDesign$Year=="Year_1996" | studyDesign$Year=="Year_1997" | studyDesign$Year=="Year_1998" | studyDesign$Year=="Year_1999")
+period2=(studyDesign$Year=="Year_2013" | studyDesign$Year=="Year_2014" | studyDesign$Year=="Year_2015" | studyDesign$Year=="Year_2016")
+
+pm1p1=mpred1[period1,]
+pm2p1=mpred2[period1,]
+
+pm1p2=mpred1[period2,] #pm1p2 = predictions by model 1 to period 2
+pm2p2=mpred2[period2,]
+
+y1=Y[period1,]
+y2=Y[period2,]
+
+sd1 = studyDesign[period1,]
+sd2 = studyDesign[period2,]
+
+visits1 = rep(NA,nr)
+visits2 = rep(NA,nr)
+for (i in 1:nr){
+  visits1[i] = sum(sd1$Route==routes[i])
+  visits2[i] = sum(sd2$Route==routes[i])
+}
+
+ntypes=rep(NA,nr)
+ntypes[visits1==0 & visits2==0]=0
+ntypes[visits1>=1 & visits2==0]=0
+ntypes[visits1==0 & visits2>=1]=0
+
+ntypes[visits1==1 & visits2==1]=1
+
+ntypes[visits1==1 & visits2>1]=2
+ntypes[visits1>1 & visits2==1]=2
+
+ntypes[visits1==2 & visits2>1]=3
+ntypes[visits1>1 & visits2==2]=3
+
+ntypes[visits1>=3 & visits2>=3]=4
+
+#tarkistetaan kuinka monta reittiä kussakin kategoriassa on
+as.data.frame(table(ntypes))
+```
+
+Vuosien 96-99 ja 13-16 reittien ntype jakauma ei ole ideaali. Ainakaan jos vertaillaan kategorioita 1, 3 ja 4 (36,93 ja 171 kpl havaintoja). 
+
+
+### ntype 1
+```{r}
+#ntype 1
+# COMPUTE MEASURES D
+selroutes = routes[which(ntypes==1)]
+nsr = length(selroutes)
+
+Ap1=matrix(NA,nrow = nsr,ncol = ns)
+Ay=matrix(NA,nrow = nsr,ncol = ns)
+for (i in 1:nsr){
+  take1 = which(sd1$Route == selroutes[i])
+  take2 = which(sd2$Route == selroutes[i])
+  Ap1[i,] = pm1p2[take2,]-pm1p1[take1,] #huom! ei ColSums koska vain yksi arvo, josta lasketaan
+  Ay[i,] = y2[take2,]- y1[take1,]   #osassa NA:ta
+}
+t1 = rep(NA,ns)
+for (i in 1:ns){
+  t1[i] = cor(Ap1[,i],Ay[,i], use="na.or.complete")
+}
+
+plot(t1) + abline(0,0)
+mean(t1,na.rm = TRUE)
+```
+
+Useilla lajeilla NA:ta koska kyseessä vain kerran lasketut reitit.
+
+### ntype 3
+```{r}
+#ntype 3
+# COMPUTE MEASURES D
+selroutes = routes[which(ntypes==3)]
+nsr = length(selroutes)
+
+Ap1=matrix(NA,nrow = nsr,ncol = ns)
+Ay=matrix(NA,nrow = nsr,ncol = ns)
+for (i in 1:nsr){
+  take1 = which(sd1$Route == selroutes[i])
+  take2 = which(sd2$Route == selroutes[i])
+  Ap1[i,] = colMeans(pm1p2[take2,])-colMeans(pm1p1[take1,]) #ennusteisiin ei tule NA:ta mutta seuraavissa laskuissa havaintojen NA eliminoi ennusteissa olevat virheet 
+  Ay[i,] = colMeans(y2[take2,])- colMeans(y1[take1,])   #Suomen vesilintujen NA:t s?ilyv?t
+}
+t3 = rep(NA,ns)
+for (i in 1:ns){
+  t3[i] = cor(Ap1[,i],Ay[,i], use="na.or.complete")
+}
+
+plot(t3) + abline(0,0)
+mean(t3,na.rm = TRUE)
+```
+
+### ntype 4
+```{r}
+#ntype 4
+# COMPUTE MEASURES D
+selroutes = routes[which(ntypes==4)]
+nsr = length(selroutes)
+
+Ap1=matrix(NA,nrow = nsr,ncol = ns)
+Ay=matrix(NA,nrow = nsr,ncol = ns)
+for (i in 1:nsr){
+  take1 = which(sd1$Route == selroutes[i])
+  take2 = which(sd2$Route == selroutes[i])
+  Ap1[i,] = colMeans(pm1p2[take2,])-colMeans(pm1p1[take1,]) #ennusteisiin ei tule NA:ta mutta seuraavissa laskuissa havaintojen NA eliminoi ennusteissa olevat virheet 
+  Ay[i,] = colMeans(y2[take2,])- colMeans(y1[take1,])   #Suomen vesilintujen NA:t s?ilyv?t
+}
+t4 = rep(NA,ns)
+for (i in 1:ns){
+  t4[i] = cor(Ap1[,i],Ay[,i], use="na.or.complete")
+}
+
+plot(t4) + abline(0,0)
+mean(t4,na.rm = TRUE)
+```
+
+
+```{r}
+#save results as datatable for further analysis
+species=colnames(Y)
+pa_ntype=data.frame(species,t1,t3,t4)
+setnames(pa_ntype,c("t1","t3","t4"),c("pa_t1","pa_t3","pa_t4"))
+write.csv(pa_ntype, "pa_ntype.csv",row.names = F)
+```
+
+
+## Abu-aineisto
+
+
+### Aineisto
+```{r }
+modeltype = 2 #2 on abu-aineistolle
+
+filename = file.path(PredictionDir, paste("predictions_",c("pa","abundance")[modeltype],                                    "_chains_",as.character(nChains),"_thin_", as.character(thin),"_samples_", as.character(samples),".Rdata",sep = ""))
+
+load(filename) #mpred1, mpred2, Y, studyDesign
+routes=levels(studyDesign$Route)
+nr=length(routes)
+years=levels(studyDesign$Year)
+dim(mpred1)
+ns=dim(mpred1)[2]
+dim(mpred2)
+dim(Y)
+dim(studyDesign)
+```
+
+### Periodien määrittely
+
+```{r }
+pm1p1=mpred1[period1,]
+pm2p1=mpred2[period1,]
+
+pm1p2=mpred1[period2,] #pm1p2 = predictions by model 1 to period 2
+pm2p2=mpred2[period2,]
+
+y1=Y[period1,]
+y2=Y[period2,]
+
+sd1 = studyDesign[period1,]
+sd2 = studyDesign[period2,]
+```
+
+Abu-aineistolla on alunperin otettu mukaan reitit, joilla on käyty vähintään kaksi kertaa mutta laskut ovat edelleen voineet perustua vain yhteen havaintoon, eli kun lintuja on laskettu enemmän kuin nolla reitillä. Eli ntype-analyysin kaltainen vertailu on vaikeampaa tai sen pitäisi perustua havaintokertojen lukumäärään eikä reitin laskentakertojen lukumäärään.  
+
+Tässä nyt kuitenkin pysytään samassa tyylissä kuin pa-aineiston analyysissä ja kategorioidaan reitit sen mukaan kuinka monta kertaa se on laskettu. Havaintojen lukumäärähän voi siis olla mitä vaan. 
+
+
+### ntype1
+```{r }
+# COMPUTE MEASURES C AND D
+selroutes = routes[which(ntypes==1)]
+nsr = length(selroutes)
+
+Ap1=matrix(NA,nrow = nsr,ncol = ns)
+Ay=matrix(NA,nrow = nsr,ncol = ns)
+
+for (j in 1:ns){
+  for (i in 1:nsr){
+    take1 = which(sd1$Route == selroutes[i] & y1[,j]>-1)
+    take2 = which(sd2$Route == selroutes[i]& y2[,j]>-1)
+    Ap1[i,j] = mean(pm1p2[take2,j])-mean(pm1p1[take1,j]) #ka laskettava vain vuosilta, jolloin lajia on havaittu
+    Ay[i,j] = mean(y2[take2,j],na.rm=T)- mean(y1[take1,j],na.rm=T) #NA:t eiv?t saa est?? keskiarvon laskemista koko lajille.
+  }}
+
+t1 = rep(NA,ns)
+for (i in 1:ns){
+  t1[i] = cor(Ap1[,i],Ay[,i],use="na.or.complete")
+}
+plot(t1)+abline(0,0)
+mean(t1,na.rm = TRUE)
+```
+
+### ntype3
+```{r }
+# COMPUTE MEASURES C AND D
+selroutes = routes[which(ntypes==3)]
+nsr = length(selroutes)
+
+Ap1=matrix(NA,nrow = nsr,ncol = ns)
+Ay=matrix(NA,nrow = nsr,ncol = ns)
+
+for (j in 1:ns){
+  for (i in 1:nsr){
+    take1 = which(sd1$Route == selroutes[i] & y1[,j]>-1)
+    take2 = which(sd2$Route == selroutes[i]& y2[,j]>-1)
+    Ap1[i,j] = mean(pm1p2[take2,j])-mean(pm1p1[take1,j]) #ka laskettava vain vuosilta, jolloin lajia on havaittu
+    Ay[i,j] = mean(y2[take2,j],na.rm=T)- mean(y1[take1,j],na.rm=T) #NA:t eiv?t saa est?? keskiarvon laskemista koko lajille.
+  }}
+
+t3 = rep(NA,ns)
+for (i in 1:ns){
+  t3[i] = cor(Ap1[,i],Ay[,i],use="na.or.complete")
+}
+plot(t3)+abline(0,0)
+mean(t3,na.rm = TRUE)
+```
+
+### ntype4
+```{r }
+# COMPUTE MEASURES C AND D
+selroutes = routes[which(ntypes==4)]
+nsr = length(selroutes)
+
+Ap1=matrix(NA,nrow = nsr,ncol = ns)
+Ay=matrix(NA,nrow = nsr,ncol = ns)
+
+for (j in 1:ns){
+  for (i in 1:nsr){
+    take1 = which(sd1$Route == selroutes[i] & y1[,j]>-1)
+    take2 = which(sd2$Route == selroutes[i]& y2[,j]>-1)
+    Ap1[i,j] = mean(pm1p2[take2,j])-mean(pm1p1[take1,j]) #ka laskettava vain vuosilta, jolloin lajia on havaittu
+    Ay[i,j] = mean(y2[take2,j],na.rm=T)- mean(y1[take1,j],na.rm=T) #NA:t eiv?t saa est?? keskiarvon laskemista koko lajille.
+  }}
+
+t4 = rep(NA,ns)
+for (i in 1:ns){
+  t4[i] = cor(Ap1[,i],Ay[,i],use="na.or.complete")
+}
+plot(t4)+abline(0,0)
+mean(t4,na.rm = TRUE)
+```
+
+
+```{r}
+#save results as datatable for further analysis
+species=colnames(Y)
+abu_ntype=data.frame(species,t1,t3,t4)
+setnames(abu_ntype,c("t1","t3","t4"),c("abu_t1","abu_t3","abu_t4"))
+nres=inner_join(pa_ntype,abu_ntype,by="species")
+```
+
+
+## Laskentakertojen vaikutus, vertailu
+
+### keskiarvot ja kuvaajia
+```{r}
+##lasketaan kaikille arvoille keskiarvot ja se:t
+nres %>% dplyr::select(2:7)%>%colMeans(,na.rm = T)
+nres %>% dplyr::select(2:7)%>%std.error()
+```
+
+Keskiarvoissa ainakaan ei näytä olevan suuria eroja. Vaihtelu suurinta ntype1 kategorioissa.
+
+```{r}
+#muokataan aineistoa
+nres2=gather(nres,"method","accuracy",2:7)
+nres2$method=as.factor(nres2$method)
+
+#plottailua
+p=ggplot(nres2,aes(x=method,y=accuracy))+geom_boxplot()
+p + scale_x_discrete(limits=c("pa_t1", "pa_t3","pa_t4"))
+```
+
+
+
+```{r}
+p+ scale_x_discrete(limits=c("abu_t1", "abu_t3","abu_t4"))
+```
+
+Ntype 1 kategorioissa suurta vaihtelua. Ei näytä siltä, että useammin lasketut reitit antaisivat parempia ennustustarkkuuksia.
+
+### tilastollinen testaus
+
+#### pa
+
+```{r }
+#valitaan vain pa-aineisto
+nres2_pa=subset(nres2,nres2$method=="pa_t1" | nres2$method == "pa_t3" | nres2$method == "pa_t4")
+
+#two-way anova
+anova(lm(nres2_pa$accuracy~nres2_pa$method+nres2_pa$species))
+```
+
+Lajit eroavat toisistaan mutta laskentakertojen määrä -metodi ei.
+
+
+#### abu
+```{r }
+#valitaan vain pa-aineisto
+nres2_abu=subset(nres2,nres2$method=="abu_t1" | nres2$method == "abu_t3" | nres2$method == "abu_t4")
+
+#two-way anova
+anova(lm(nres2_abu$accuracy~nres2_abu$method+nres2_abu$species))
+```
+
+Ei eroja.
+
+

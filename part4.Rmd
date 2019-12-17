@@ -1,5 +1,5 @@
 ---
-title: "part3"
+title: "part4"
 author: "me"
 date: "12 joulukuuta 2019"
 output: html_document
@@ -176,7 +176,7 @@ output1<-model.sel(malli0,malli1,malli2,malli3,malli4,malli5,malli6,malli7,malli
 output1
 ```
 
-Malli 3 ja 8 ovat melkein yhtä hyviä. Malli 3 on yksinkertaisempi. Sen mukaan paino olisi selittävä tekijä.
+Malli 3 ja 8 ovat melkein yht� hyviä. Malli 3 on yksinkertaisempi. Sen mukaan paino olisi selittävä tekijä.
 
 ```{r }
 #tehdään model averaging

@@ -8,7 +8,7 @@ output: html_document
 ```{r, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-# Counting prediction accuracies
+# Ennustustarkkuuksien laskeminen
 
 Malli on nyt ajettu 120 lajilla, joiden prevalenssi on ollut vähintään 0.05. Tällä hetkellä saatavilla on ollut vasta thin=10 aineisto. Mallista on ajettu kahta versiota. Toisessa on käytetty aineistoa vain vuoteen 1999 asti ja toisessa vuoteen 2016 asti.
 
@@ -18,7 +18,7 @@ Malli:
 XFormula = ~ JunJul + DJF + AprMay + Year + Urb + Br + Co + Op + Ma + We + Effort*Method
 
 
-## Presence/absence data 
+## Presence/absence aineisto 
 
 ### Aineisto sisälle ja tarkastelu
 ```{r }
@@ -32,7 +32,7 @@ lapply(paketit,library,character.only=T)
 ```
 
 ```{r }
-#model 1: data until 2006; model 2: full data
+#model 1: data until 1999; model 2: full data
 #mpred1: posterior mean based on model 1; mpred2: posterior mean based on model 2
 
 samples = 1000

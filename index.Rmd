@@ -5,11 +5,10 @@ output:
   html_document:
     theme: readable
     toc: true
-    toc_depth: 2
+    toc_depth: 3
     fig_caption: true
     fig_width: 6
     fig_height: 4
-    code_folding: "hide"
     warning: "hide"
     message: "hide"
 ---
@@ -20,8 +19,6 @@ output:
 ```
   
 ***
-
-
 ***
   
 ```{r child = "part2.Rmd"}
@@ -34,11 +31,15 @@ output:
 ```
   
 ***
-
-
 ***
   
-```{r child = "part4.Rmd"}
+```{r child = "part14.Rmd"}
+```
+  
+***
+***
+  
+```{r child = "part5.Rmd"}
 ```
   
 ***
