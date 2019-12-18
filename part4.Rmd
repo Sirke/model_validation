@@ -28,6 +28,8 @@ results<-inner_join(res,traits,by="species")
 ```
 Tarkastellaan aineistoa kuvaajista:
 
+2 x 2 km aineisto, pa ja abu:
+
 ```{r }
 #kuvaajien piirtely ei (ainakaan multa) onnistu jos log(Mass) ei ole valmiiksi laskettu omaan
 #sarakkeeseensa
@@ -51,7 +53,12 @@ boxplot(abu_D~Mig,data=results,ylab="abu_D",xlab="Migration")
 plot(abu_D~logmass, data = results,ylab="abu_D",xlab="log(Mass)")
 abline(lm(abu_D~logmass,data = results))
 par(op)
+```
 
+
+Poolattu 50 x 50 km aineisto, pa ja abu:
+
+```{r }
 #poolattu pa aineisto
 op<-par(mfrow=c(2,2),mar=c(5,4,1,2))
 boxplot(pool_pa_change~Hab,data=results,ylab="pool_pa_D",xlab="Habitat")

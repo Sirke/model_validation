@@ -185,8 +185,37 @@ write.csv(pa_ntype, "pa_ntype.csv",row.names = F)
 ```
 
 
+### Tarkistus
+
+Tarkistan laskut valitsemalla mukaan reitit kategorioista 3 ja 4 ja laskemalla laskut uusiksi. Tulokseksi pitäisi siis tulla perus metodi D:n mukaiset tulokset pa-aineistolle. Eli ~0.023.
+```{r}
+# COMPUTE MEASURES D
+selroutes = routes[which(ntypes>=3)] #tässä siis kategoriat 3 ja 4 mukana!
+nsr = length(selroutes)
+
+Ap1=matrix(NA,nrow = nsr,ncol = ns)
+Ay=matrix(NA,nrow = nsr,ncol = ns)
+for (i in 1:nsr){
+  take1 = which(sd1$Route == selroutes[i])
+  take2 = which(sd2$Route == selroutes[i])
+  Ap1[i,] = colMeans(pm1p2[take2,])-colMeans(pm1p1[take1,]) #ennusteisiin ei tule NA:ta mutta seuraavissa laskuissa havaintojen NA eliminoi ennusteissa olevat virheet 
+  Ay[i,] = colMeans(y2[take2,])- colMeans(y1[take1,])   #Suomen vesilintujen NA:t s?ilyv?t
+}
+t4 = rep(NA,ns)
+for (i in 1:ns){
+  t4[i] = cor(Ap1[,i],Ay[,i], use="na.or.complete")
+}
+
+plot(t4) + abline(0,0)
+mean(t4,na.rm = TRUE)
+```
+
+Tulos on odotettu. Laskut ovat oikein.
+
+
 ## Abu-aineisto
 
+Tehdään samat laskut abu-aineistolle:
 
 ### Aineisto sisään
 ```{r }
@@ -200,9 +229,6 @@ nr=length(routes)
 years=levels(studyDesign$Year)
 dim(mpred1)
 ns=dim(mpred1)[2]
-dim(mpred2)
-dim(Y)
-dim(studyDesign)
 ```
 
 ### Periodien määrittely
@@ -314,13 +340,19 @@ nres=inner_join(pa_ntype,abu_ntype,by="species")
 ## Laskentakertojen vaikutus, vertailu
 
 ### keskiarvot ja kuvaajia
+
+Lasketaan kaikille kategorioille keskiarvot ja se:t
+
+
 ```{r}
 ##lasketaan kaikille arvoille keskiarvot ja se:t
 nres %>% dplyr::select(2:7)%>%colMeans(,na.rm = T)
 nres %>% dplyr::select(2:7)%>%std.error()
 ```
 
-Keskiarvoissa ainakaan ei näytä olevan suuria eroja. Vaihtelu suurinta ntype1 kategorioissa.
+Keskiarvoissa ei näytä olevan suuria eroja. Vaihtelu suurinta ntype1 kategorioissa.
+
+Video standard deviation ja standard error of the mean -aiheesta löytyy [täältä](https://www.youtube.com/watch?v=3UPYpOLeRJg).
 
 ```{r}
 #muokataan aineistoa
@@ -365,5 +397,36 @@ anova(lm(nres2_abu$accuracy~nres2_abu$method+nres2_abu$species))
 ```
 
 Ei eroja.
+
+
+Vertailu on sinänsä ongelmallinen, että vertaillaan eri määrää reittejä sekä eri paikoissa sijaitsevia reittejä keskenään. Tarkastetaan kartalta, missä kunkin kategorian reitit sijaitsevat.  
+
+Ensin kaikki reitit:
+
+```{r}
+xy<-read.csv("xy.csv",header=T,sep=",")
+xy=cbind(xy,ntypes)
+ggplot(xy,aes(x=x,y=y))+geom_point()
+```
+
+Ntype1 reitit:
+
+```{r}
+n1=subset(xy,xy$ntypes==1)
+ggplot(n1,aes(x=x,y=y))+geom_point()
+```
+Ntype3 reitit:
+```{r}
+n3=subset(xy,xy$ntypes==3)
+ggplot(n3,aes(x=x,y=y))+geom_point()
+```
+Ntype4 reitit:
+```{r}
+n4=subset(xy,xy$ntypes==4)
+ggplot(n4,aes(x=x,y=y))+geom_point()
+```
+
+
+Tosin reittien sijainnit eivät ole enää niin pahasti ryhmittyneitä kuin aiemmissa analyyseissä. Hieman ntype4 kategoria meinaa painottua Etelä-Ruotsiin. Suomi ei ole kovin hyvin edustettuna aineistossa.
 
 
