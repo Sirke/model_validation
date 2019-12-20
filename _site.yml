@@ -1,6 +1,0 @@
-name: "my-website"
-navbar:
-  title: "My Website"
-left:
-  - text: "indeksi"
-    href: index.html
