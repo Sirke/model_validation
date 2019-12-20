@@ -256,6 +256,7 @@ ggplot(laji, aes(x=pred,y=obs)) + geom_point() + xlim(-1,1) + ylim(-1,1) + geom_
 Yksi piste on siis yhden lajin ennustettu ja havaittu muutos tällä reitillä. 
 
 
+
 Liitetään reitteihin koordinaatit ja tallennetaan aineisto.
 
 ```{r}
@@ -279,8 +280,28 @@ selroutes_pa<-left_join(selroutes_pa,xy,by=c("selroutes"="Route"))
 #write.csv(selroutes_pa,"route_specific_pa.csv",row.names = F,na="")
 ```
 
+```{r}
+#plotataan kaikki reitit kartalle
+#luetaan sisään reitit, havainnot ja ennusteet
+#coordinates(selroutes_pa)<-c("x","y")
+#proj4string(selroutes_pa) <-CRS("+init=EPSG:3035")
 
 
+#maiden rajat
+#rajat<- readOGR(dsn="./gridit", layer="NOFISWE_borders")
+#proj4string(rajat)
+#plot(rajat)
+#plot(selroutes_pa,add=T,pch=16)
+
+#jatkuu...
+
+```
+Homma kesken. Yritän työstää tällaisia karttoja R:llä:
+
+```{r echo=F, out.width='60%'}
+knitr::include_graphics('./pa_route_accuracies.jpg')
+knitr::include_graphics('./abu_route_accuracies.jpg')
+```
 
 ### Todelliset ja ennustetut muutokset esiintymistodennäköisyyksissä periodien 1 ja 2 välillä
 
