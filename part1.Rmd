@@ -176,7 +176,21 @@ for (i in 1:ns){
 plot(C,D) + abline(0,1)
 ```
 
-Presence/absence aineistossa mm. Suomen vesilinnut ovat NA:ta ennen vuotta 2006. Periodi 1:sen kaikki arvot vesilinnuille Suomessa ovat siis NA, eivätkä tule mukaan laskelmiin. Korrelaatiota laskiessa argumentti "use="na.or.complete"" varmistaa, että korrelaatio lasketaan muista kuin NA-arvoista.
+Presence/absence aineistossa mm. Suomen vesilinnut ovat NA:ta ennen vuotta 2006. Periodi 1:sen kaikki arvot vesilinnuille Suomessa ovat siis NA, eivätkä tule mukaan laskelmiin. Korrelaatiota laskiessa argumentti "use="na.or.complete"" varmistaa, että korrelaatio lasketaan muista kuin NA-arvoista.  
+
+Plottaan yhdelle lajille ennustetut (D) ja todelliset muutokset reiteittäin. Yksi piste on siis yksi reitti. 
+
+```{r}
+pred=Ap1[,21]
+obs=Ay[,21]
+laji=as.data.frame(cbind(pred,obs))
+#tarkistus
+cor(pred,obs, use="na.or.complete")
+#kuvaaja
+ggplot(laji, aes(x=pred,y=obs))+ geom_point()+ xlim(-1,1)+ylim(-1,1)+ geom_abline(intercept = 0, slope =1) + geom_hline(yintercept=0) + geom_vline(xintercept = 0) +ggtitle("Viherpeippo")
+```
+
+Yhtä lajia tarkastellessa huomaa miten pa-aineistolla ennusteet ovat lähellä nollaa mutta havainnot vaihtelevat "rajummin" -1 ja 1 välillä. Ennusteet ovat positiivisia mutta havainnot taitavat olla suuremmaksi osaksi nollaa tai negatiivisia. Viherpeipon ennustustarkkuus olikin pa-aineistolle -0.12.
 
 
 ### Lajikohtaiset ennustustarkkuudet, PA
@@ -222,10 +236,27 @@ selroutes_pa<-left_join(selroutes1,selroutes2, by="selroutes")
 colMeans(selroutes_pa[,2:5],na.rm = T)
 ```
 
-Reittikohtaiset ennustustarkkuudet ovat hieman parempia. Tosin edelleen tyyleille C ja D alakanttiin.
+Reittikohtaiset ennustustarkkuudet ovat hieman parempia. Tosin edelleen tyyleille C ja D alakanttiin.  
+
+Plottaan testiksi yhden reitin lajikohtaiset ennustetut ja todelliset muutokset.
+
+```{r}
+pred=Ap1[1,]
+obs=Ay[1,]
+laji=as.data.frame(rbind(pred,obs))
+#tarkistus
+cor(pred,obs, use="na.or.complete")
+#kuvaaja
+laji=transpose(laji)
+laji=dplyr::rename(laji, pred=V1)
+laji=dplyr::rename(laji, obs=V2)
+ggplot(laji, aes(x=pred,y=obs)) + geom_point() + xlim(-1,1) + ylim(-1,1) + geom_abline(intercept = 0, slope =1) + geom_hline(yintercept=0) + geom_vline(xintercept = 0) + ggtitle("reitti #106")
+```
+
+Yksi piste on siis yhden lajin ennustettu ja havaittu muutos tällä reitillä. 
 
 
-Liitetään reitteihin koordinaatit ja tallennetaan aineisto
+Liitetään reitteihin koordinaatit ja tallennetaan aineisto.
 
 ```{r}
 #Liitetaan kullekin linjalle koordinaatit
@@ -467,6 +498,23 @@ res=inner_join(pa_results,abu_results,by="species")
 write.csv(res,"results.csv",row.names = F)
 ```
 
+Plottaan malliksi taas viherpeipon.
+
+```{r}
+pred=Ap1[,21]
+obs=Ay[,21]
+laji=as.data.frame(cbind(pred,obs))
+#tarkistus
+cor(pred,obs, use="na.or.complete")
+#kuvaaja
+ggplot(laji, aes(x=pred,y=obs))+ geom_point()+ xlim(-2,2)+ylim(-2,2)+ geom_abline(intercept = 0, slope =1) + geom_hline(yintercept=0) + geom_vline(xintercept = 0) +ggtitle("Viherpeippo")
+```
+
+Abu-aineistolla viherpeipon muutoksen ennusteet ovat suurimmaksi osaksi hieman negatiivisia ja havainnot (joissa taas suurta vaihtelua) ovat myös suurimmaksi osaksi lähellä nollaa tai negatiivisia. Viherpeipon ennustustarkkuus onkin abu-aineistolla (0.016) hieman parempi kuin pa-aineistolla (-0.12).  
+
+Muista, että arvot ovat yksilömäärien logaritmeja. 
+
+
 ### Reittikohtaiset ennustustarkkuudet, ABU
 
 ```{r }
@@ -491,6 +539,21 @@ colMeans(selroutes_abu[,2:5],na.rm = T)
 
 Myös abu-aineistolla reittikohtaiset ennustustarkkuudet ovat hieman parempia.
 
+
+Plottaan taas testiksi yhden reitin:
+
+```{r}
+pred=Ap1[1,]
+obs=Ay[1,]
+laji=as.data.frame(rbind(pred,obs))
+#tarkistus
+cor(pred,obs, use="na.or.complete")
+#kuvaaja
+laji=transpose(laji)
+laji=dplyr::rename(laji, pred=V1)
+laji=dplyr::rename(laji, obs=V2)
+ggplot(laji, aes(x=pred,y=obs))+ geom_point()+ xlim(-1,1)+ylim(-1,1)+ geom_abline(intercept = 0, slope =1) + geom_hline(yintercept=0) + geom_vline(xintercept = 0) +ggtitle("reitti #106")
+```
 
 Liitetään koordinaatit ja tallennetaan aineisto.
 
