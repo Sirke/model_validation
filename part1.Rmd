@@ -14,8 +14,34 @@ Malli on nyt ajettu 120 lajilla, joiden prevalenssi on ollut vähintään 0.05. 
 
 Malleja, joiden tekemisessä oli käytetty aineistoa vain vuoteen 1999 asti, pyydettiin ennustamaan tulevaisuutta niin, että kaikki muut muuttujat paitsi vuosi muuttuivat. Vuosi fiksattiin paikoilleen vuoteen 1997.
 
-Malli: 
-XFormula = ~ JunJul + DJF + AprMay + Year + Urb + Br + Co + Op + Ma + We + Effort*Method
+Malli: XFormula = ~ JunJul + DJF + AprMay +Year + Urb + Br + Co + Op + Ma + We + Effort*Method  
+
+Alla vielä koko koodi:
+
+```{r}
+#Malli:  
+
+#XFormula = ~ JunJul + DJF + AprMay+
+#  Year+Urb + Br + Co + Op + Ma + We + Effort*Method
+#for (thin in c(1)){
+#  samples = 1000
+#  nChains = 4
+#  for (modeltype in 1:2){
+#    for (model in 1:2){
+#      set.seed(1)
+#      sel = if(model==1){sel1} else {sel2}
+#      m = Hmsc(Y=if(modeltype==1){1*(Y[sel,]>0)} else {Yabu[sel,]},
+#               XData = XData[sel,],  XFormula=XFormula,
+#               distr=if(modeltype==1){"probit"} else {"normal"},
+#               studyDesign=studyDesign[sel,])
+#      
+#      ptm = proc.time()
+#      m = sampleMcmc(m, samples = samples, thin=thin,
+#                     transient = ceiling(0.5*samples*thin),
+#                     nChains = nChains, nParallel = nChains)
+```
+
+Meneehän malli varmasti oikein? Method ja Effort ovat nyt mielestäni kumpiakin samassa muuttujassa sekaisin. Method (P ja L, point ja line) Effort (esim. 20 pistettä tai 7000 metriä).
 
 
 ## Presence/absence aineisto 
@@ -57,6 +83,8 @@ dim(studyDesign)
 
 ###Periodien määrittely
 
+Päädyttiiin valitsemaan aikaisempi ajankohta periodi 1:lle. Näin ennusteet tehdään pidemmälle aikavälille ja ehkä muutoksetkin ovat silloin isompia ja helpommin ennustettavia. Alunperin ajankohta oli 2003-2006 koska silloin aineistoa oli enemmän ja laadukkaammin saatavilla.
+
 ```{r}
 period1=(studyDesign$Year=="Year_1996" | studyDesign$Year=="Year_1997" | studyDesign$Year=="Year_1998" | studyDesign$Year=="Year_1999")
 period2=(studyDesign$Year=="Year_2013" | studyDesign$Year=="Year_2014" | studyDesign$Year=="Year_2015" | studyDesign$Year=="Year_2016")
@@ -85,11 +113,15 @@ for (i in 1:nr){
 ### 4 erilaista validointimetodia
 
 Vaihtoehdot A,B,C,D.  
+
 A ja B katsovat yhtä ajanhetkeä.  
-C ja D katsovat muutosta tietyn ajanjakson aikana.
+C ja D katsovat muutosta tietyn ajanjakson aikana.  
+
+A ja C interpoloivat.
+B ja D ekstrapoloivat.
 
 ```{r echo=F, out.width='60%'}
-knitr::include_graphics('./methods.png')
+knitr::include_graphics('./ABCD_erikseen.png')
 ```
 
 
@@ -121,29 +153,11 @@ for (i in 1:ns){
   B[i] = cor(Ap1[,i],Ay[,i])
 }
 
-plot(A,B) + abline(0,1)
+plot(A,B,xlim=c(-1,1), ylim=c(-1,1)) + abline(0,1)+ abline(h=0)+ abline(v=0)
 ```
 
-### Lasketaan reittikohtaiset ennustustarkkuudet metodeilla A ja B
+Molemmat metodit ennustavat hyvin. A:lle ennusteet ovat vähän parempia kuin B:lle. 
 
-Lasketaan ennustustarkkuudet myös reittikohtaisesti, kullakin neljällä tyylillä (A,B,C,D).   
-Ensin A ja B:
-
-```{r}
-## Reittikohtainen korrelaatio, kaikki lajit samanaikaisesti
-selroutes1=as.data.frame(selroutes)
-
-selroutes1$pa_corA=NA
-selroutes1$pa_corB=NA
-
-for(i in 1:nrow(Ap1)){
-  selroutes1$pa_corB[i]=cor(Ap1[i,],Ay[i,],use="na.or.complete")
-}
-
-for(i in 1:nrow(Ap2)){
-  selroutes1$pa_corA[i]=cor(Ap2[i,],Ay[i,],use="na.or.complete")
-}
-```
 
 ### Lasketaan lajikohtaiset ennustustarkkuudet metodeilla C ja D
 
@@ -162,23 +176,27 @@ Ay=matrix(NA,nrow = nsr,ncol = ns)
 for (i in 1:nsr){
   take1 = which(sd1$Route == selroutes[i])
   take2 = which(sd2$Route == selroutes[i])
-  Ap1[i,] = colMeans(pm1p2[take2,])-colMeans(pm1p1[take1,]) #ennusteisiin ei tule NA:ta mutta seuraavissa laskuissa havaintojen NA eliminoi ennusteissa olevat virheet 
+  Ap1[i,] = colMeans(pm1p2[take2,])-colMeans(pm1p1[take1,]) #ennusteisiin ei tule NA:ta mutta seuraavissa laskuissa havaintojen NA eliminoi tämän ongelman 
   Ap2[i,] = colMeans(pm2p2[take2,])-colMeans(pm2p1[take1,])
-  Ay[i,] = colMeans(y2[take2,])- colMeans(y1[take1,])   #Suomen vesilintujen NA:t s?ilyv?t
+  Ay[i,] = colMeans(y2[take2,])- colMeans(y1[take1,])   #Suomen vesilintujen NA:t säilyvät
 }
 C = rep(NA,ns)
 D = rep(NA,ns)
 for (i in 1:ns){
-  C[i] = cor(Ap2[,i],Ay[,i], use="na.or.complete")  #NA:t eiv?t est? korrelaation laskemista koko lajille
+  C[i] = cor(Ap2[,i],Ay[,i], use="na.or.complete")  #NA:t eivät estä korrelaation laskemista koko lajille
   D[i] = cor(Ap1[,i],Ay[,i], use="na.or.complete")
 }
 
-plot(C,D) + abline(0,1)
+plot(C,D,xlim=c(-1,1), ylim=c(-1,1)) + abline(0,1)+ abline(h=0)+ abline(v=0)
 ```
+Molemmille metodeille ennusteet aika huonoja.
 
-Presence/absence aineistossa mm. Suomen vesilinnut ovat NA:ta ennen vuotta 2006. Periodi 1:sen kaikki arvot vesilinnuille Suomessa ovat siis NA, eivätkä tule mukaan laskelmiin. Korrelaatiota laskiessa argumentti "use="na.or.complete"" varmistaa, että korrelaatio lasketaan muista kuin NA-arvoista.  
 
-Plottaan yhdelle lajille ennustetut (D) ja todelliset muutokset reiteittäin. Yksi piste on siis yksi reitti. 
+**HUOM!** Presence/absence aineistossa mm. Suomen vesilinnut ovat NA:ta ennen vuotta 2006. Periodi 1:sen kaikki arvot vesilinnuille Suomessa ovat siis NA, eivätkä tule mukaan laskelmiin. Korrelaatiota laskiessa argumentti "use="na.or.complete"" varmistaa, että korrelaatio lasketaan muista kuin NA-arvoista.  
+
+
+
+Plottaan yhdelle lajille ennustetut (D) ja todelliset muutokset reiteittäin. Yksi piste on siis yksi reitti.
 
 ```{r}
 pred=Ap1[,21]
@@ -188,9 +206,18 @@ laji=as.data.frame(cbind(pred,obs))
 cor(pred,obs, use="na.or.complete")
 #kuvaaja
 ggplot(laji, aes(x=pred,y=obs))+ geom_point()+ xlim(-1,1)+ylim(-1,1)+ geom_abline(intercept = 0, slope =1) + geom_hline(yintercept=0) + geom_vline(xintercept = 0) +ggtitle("Viherpeippo")
+
+#entäpä tikli?
+pred=Ap1[,20]
+obs=Ay[,20]
+laji=as.data.frame(cbind(pred,obs))
+#tarkistus
+cor(pred,obs, use="na.or.complete")
+#kuvaaja
+ggplot(laji, aes(x=pred,y=obs))+ geom_point()+ xlim(-1,1)+ylim(-1,1)+ geom_abline(intercept = 0, slope =1) + geom_hline(yintercept=0) + geom_vline(xintercept = 0) +ggtitle("Tikli")
 ```
 
-Yhtä lajia tarkastellessa huomaa miten pa-aineistolla ennusteet ovat lähellä nollaa mutta havainnot vaihtelevat "rajummin" -1 ja 1 välillä. Ennusteet ovat positiivisia mutta havainnot taitavat olla suuremmaksi osaksi nollaa tai negatiivisia. Viherpeipon ennustustarkkuus olikin pa-aineistolle -0.12.
+Yhtä lajia tarkastellessa huomaa miten pa-aineistolla ennusteet ovat lähellä nollaa mutta havainnot vaihtelevat "rajummin" -1 ja 1 välillä. Ennusteet ovat positiivisia mutta havainnot taitavat olla suuremmaksi osaksi nollaa tai negatiivisia. Viherpeipon ennustustarkkuus olikin pa-aineistolle -0.12. Tiklille tarkkuus oli parempi 0.37.
 
 
 ### Lajikohtaiset ennustustarkkuudet, PA
@@ -203,7 +230,7 @@ meres
 #write.csv(meres,file="pa_species_specific_route_level.csv")
 ```
 
-Keskiarvot näyttävät suht surkeilta tyyleille C ja D. Eli nimenomaan muutoksen ennustaminen on vaikeaa. Vaikka mallin kalibrointii olisi käytetty aineistoa samalta ajalta kuin mihin yritetään ennustaa.
+Keskiarvot näyttävät suht surkeilta tyyleille C ja D. Eli nimenomaan muutoksen ennustaminen on vaikeaa. Vaikka mallin kalibrointiin olisi käytetty aineistoa samalta ajalta kuin mihin yritetään ennustaa (C).
 
 ```{r}
 #save results as datatable for further analysis
@@ -211,102 +238,20 @@ species=colnames(Y)
 pa_results=data.frame(species,A,B,C,D)
 setnames(pa_results,c("A","B","C","D"),c("pa_A","pa_B","pa_C","pa_D"))
 write.csv(pa_results, "pa_results.csv",row.names = F)
+pa_results
 ```
 
-
-
-### Reittikohtaiset ennustustarkkuudet, PA
-
-```{r}
-## metodit C ja D
-selroutes2=as.data.frame(selroutes)
-
-selroutes2$pa_corC=NA
-selroutes2$pa_corD=NA
-
-for(i in 1:nrow(Ap1)){
-  selroutes2$pa_corD[i]=cor(Ap1[i,],Ay[i,],use="na.or.complete")
-}
-
-for(i in 1:nrow(Ap2)){
-  selroutes2$pa_corC[i]=cor(Ap2[i,],Ay[i,],use="na.or.complete")
-}
-#collect all to one table
-selroutes_pa<-left_join(selroutes1,selroutes2, by="selroutes")
-colMeans(selroutes_pa[,2:5],na.rm = T)
-```
-
-Reittikohtaiset ennustustarkkuudet ovat hieman parempia. Tosin edelleen tyyleille C ja D alakanttiin.  
-
-Plottaan testiksi yhden reitin lajikohtaiset ennustetut ja todelliset muutokset.
-
-```{r}
-pred=Ap1[1,]
-obs=Ay[1,]
-laji=as.data.frame(rbind(pred,obs))
-#tarkistus
-cor(pred,obs, use="na.or.complete")
-#kuvaaja
-laji=transpose(laji)
-laji=dplyr::rename(laji, pred=V1)
-laji=dplyr::rename(laji, obs=V2)
-ggplot(laji, aes(x=pred,y=obs)) + geom_point() + xlim(-1,1) + ylim(-1,1) + geom_abline(intercept = 0, slope =1) + geom_hline(yintercept=0) + geom_vline(xintercept = 0) + ggtitle("reitti #106")
-```
-
-Yksi piste on siis yhden lajin ennustettu ja havaittu muutos tällä reitillä. 
+Poimintoja, Metodi D:  
+parhaat: Tikli 0.37, Peippo 0.33, Mustarastas 0.33, Järripeippo 0.32
+huonoimmat: Sepelrastas -0.34, Fasaani -0.33, Satakieli -0.22, Hemppo -0.22
 
 
 
-Liitetään reitteihin koordinaatit ja tallennetaan aineisto.
+### Todelliset ja ennustetut muutokset tutkimusalueella
 
-```{r}
-#Liitetaan kullekin linjalle koordinaatit
-routeyear<-read.csv("studydesign.csv",header=T,sep=",")
-xy<-read.csv("xy.csv",header=T,sep=",")
+Tarkastellaan absoluuttisia todellisia ja ennustettuja muutoksia esiintymistodennäköisyyksissä koko tutkimusalueella. Ennusteet on tehty joko tyyliin C tai D, eli koko aineistoa tai osittaista aineistoa hyödyntämällä. Paperiin voisi varmaan valita vain metodin D.
 
-#koordinaateista puuttuu nollia
-xy<-xy%>%
-  mutate(x = x * 1000) %>%
-  mutate(y = y * 1000) 
-
-#jotta koordinaatit saa liitetty? oikealle linjalle, tehd??n taulukko, jossa reiteill? on molemmat koodaukset (alkuper?iset ja 1-2591)
-Route<-unique(routeyear$Route)
-routeid<-c(1:2591)
-d<-data.frame(Route,routeid)
-xy<-left_join(xy,d,by=c("route"="routeid"))
-selroutes_pa<-left_join(selroutes_pa,xy,by=c("selroutes"="Route"))
-
-#tallenna erikseen jos tarve piirt?? GIS:ll? karttoja
-#write.csv(selroutes_pa,"route_specific_pa.csv",row.names = F,na="")
-```
-
-```{r}
-#plotataan kaikki reitit kartalle
-#luetaan sisään reitit, havainnot ja ennusteet
-#coordinates(selroutes_pa)<-c("x","y")
-#proj4string(selroutes_pa) <-CRS("+init=EPSG:3035")
-
-
-#maiden rajat
-#rajat<- readOGR(dsn="./gridit", layer="NOFISWE_borders")
-#proj4string(rajat)
-#plot(rajat)
-#plot(selroutes_pa,add=T,pch=16)
-
-#jatkuu...
-
-```
-Homma kesken. Yritän työstää tällaisia karttoja R:llä:
-
-```{r echo=F, out.width='60%'}
-knitr::include_graphics('./pa_route_accuracies.jpg')
-knitr::include_graphics('./abu_route_accuracies.jpg')
-```
-
-### Todelliset ja ennustetut muutokset esiintymistodennäköisyyksissä periodien 1 ja 2 välillä
-
-Tarkastellaan vielä absoluuttisia todellisia ja ennustettuja muutoksia esiintymistodennäköisyyksissä. Ennusteet on tehty joko tyyliin C tai D, eli koko aineistoa tai osittaista aineistoa hyödyntämällä.
-
+ 
 ```{r}
 #kannanmuutostrendien tarkastelu, lasketaan kaikilta linjoilta ennustetut ja todelliset kannanmuutokset
 Ap1<-as.data.frame(Ap1)
@@ -314,7 +259,7 @@ Ap2<-as.data.frame(Ap2)
 Ay<-as.data.frame(Ay)
 
 #aineisto, jossa kullekin lajille laskettu kaikilta linjoilta ennustettu ja todellinen muutoksen keskiarvo (EI siis korrelaatio
-# ennusteiden ja oikeiden muutosten v?lill? kuten aiemmin on laskettu)
+# ennusteiden ja oikeiden muutosten välillä kuten aiemmin on laskettu)
 kat=colnames(Y)
 kat=as.data.frame(kat)
 kat$Ap1k=colMeans(Ap1,na.rm = T)
@@ -325,58 +270,39 @@ kat$Ayk<-colMeans(Ay,na.rm = T)
 Ensin tyyliin C, eli käyttäen koko aineistoa vuoteen 2016.
 
 ```{r }
-#C, ennusteet tehty k?ytt?en aineistoa vuoteen 2016
-ggplot(kat, aes(x=Ap2k, y=Ayk))+ 
-  geom_point()+ geom_hline(yintercept = 0, color = "black")+ 
-  geom_vline(xintercept = 0, color = "black")+
-  xlab("Mean predicted change, C")+
-  ylab("Mean observed change")+ 
-  geom_abline(intercept = 0, slope = 1, color="red",linetype="dashed", size=1.5)
-```
-
-Sama kuva mutta lajit merkitty.
-
-```{r }
 ggplot(kat, aes(x=Ap2k, y=Ayk))+ geom_point()+ 
   geom_hline(yintercept = 0, color = "black")+ 
-  geom_vline(xintercept = 0, color = "black")+
+  geom_vline(xintercept = 0, color = "black")+ 
   xlab("Mean predicted change, C")+
   ylab("Mean observed change")+ 
   geom_abline(intercept = 0, slope = 1, color="red",linetype="dashed", size=1.5)+
-  geom_text(aes(label=kat),hjust=0, vjust=0)                                                                                                                      
+  geom_text(aes(label=kat),hjust=0, vjust=0) + geom_smooth(method=lm,se=F)                                                                                        
 ```
 
-Tyyli D, eli käyttäen aineistoa vuoteen 1999.
+Kuvassa yksi piste on yksi laji. X-akselilla on lajin ennustetun esiintymistod.näk. muutos. Y-akselilla todellinen muutos. Nämä on laskettu tutkimusalueen jokaisen reitin (missä lajia on havaittu) keskiarvona. Punainen katkoviiva merkkaa täydellista vastaavuutta. Mitä lähempänä viivaa havainto on, sitä paremmin ennuste on mennyt nappiin. Sininen viiva on aineiston regressiokäyrä.
 
-```{r }                                                                                        
-#D, ennusteet tehty k?ytt?en aineistoa vuoteen 2006
-ggplot(kat, aes(x=Ap1k, y=Ayk))+ 
-  geom_point()+ geom_hline(yintercept = 0, color = "black")+ 
-  geom_vline(xintercept = 0, color = "black")+
-  xlab("Mean predicted change, D")+
-  ylab("Mean observed change")+ 
-  geom_abline(intercept = 0, slope = 1, color="red",linetype="dashed", size=1.5)
-```
 
-Sama kuva mutta lajit merkitty.
+Tyyli D, eli käyttäen aineistoa vuoteen 1999:
 
 ```{r }
 ggplot(kat, aes(x=Ap1k, y=Ayk))+ 
   geom_point()+ geom_hline(yintercept = 0, color = "black")+ 
-  geom_vline(xintercept = 0, color = "black")+
+  geom_vline(xintercept = 0, color = "black")+ 
   xlab("Mean predicted change, D")+
   ylab("Mean observed change")+ 
   geom_abline(intercept = 0, slope = 1, color="red",linetype="dashed", size=1.5)+
-  geom_text(aes(label=kat),hjust=0, vjust=0)
+  geom_text(aes(label=kat),hjust=0, vjust=0)+  geom_smooth(method=lm,se=F) 
 
 #tallennetaan tarvittaessa
 write.csv(kat,"mean_observed_predicted_changes_pa.csv",row.names = F)
 ```
+Huomaa kuvissa hieman eri skaala. Kun mallintamisessa käytetään vähemmän aineistoa (-1999) ennustetut muutokset ovat joillekin lajeille (yläkulman Sylvia) hieman pienempiä.  
 
+Näitä kuvia täytyy vielä säätää, jos niitä aiotaan käyttää julkaisussa jotenkin. 
 
 ##Abundance-aineisto
 
-Lasketaan kaikki samat asiat abundance -aineistolla myös.
+Lasketaan kaikki samat asiat abundance-aineistolla.
 
 ```{r }
 modeltype = 2 #2 on abu-aineistolle
@@ -439,30 +365,13 @@ for (j in 1:ns) {
 A = rep(NA,ns)
 B = rep(NA,ns)
 for (i in 1:ns){
-  A[i] = cor(Ap2[,i],Ay[,i],use="na.or.complete")   #lis?sin t?h?n m??reen
+  A[i] = cor(Ap2[,i],Ay[,i],use="na.or.complete")   #lisäsin tähän määreen
   B[i] = cor(Ap1[,i],Ay[,i],use="na.or.complete")
 }
 
-plot(A,B)+abline(0,1)
+plot(A,B,xlim=c(-1,1), ylim=c(-1,1)) + abline(0,1)+ abline(h=0)+ abline(v=0)
 ```
-
-### Reittikohtaiset A ja B
-
-```{r }
-## Reittikohtainen korrelaatio, kaikki lajit samanaikaisesti
-selroutes1=as.data.frame(selroutes)
-
-selroutes1$abu_corA=NA
-selroutes1$abu_corB=NA
-
-for(i in 1:nrow(Ap1)){
-  selroutes1$abu_corB[i]=cor(Ap1[i,],Ay[i,],use="na.or.complete")
-}
-
-for(i in 1:nrow(Ap2)){
-  selroutes1$abu_corA[i]=cor(Ap2[i,],Ay[i,],use="na.or.complete")
-}
-```
+Molemmat metodit suht hyviä. A:lle ennusteet parempia.
 
 ### Lajikohtaiset C ja D
 
@@ -480,20 +389,21 @@ for (j in 1:ns){
     take1 = which(sd1$Route == selroutes[i] & y1[,j]>-1)
     take2 = which(sd2$Route == selroutes[i]& y2[,j]>-1)
     Ap1[i,j] = mean(pm1p2[take2,j])-mean(pm1p1[take1,j]) #ka laskettava vain vuosilta, jolloin lajia on havaittu
-    Ap2[i,j] = mean(pm2p2[take2,j])-mean(pm2p1[take1,j]) #riitt??, ett? on edes kerran pystytty laskemaan lajia
-    Ay[i,j] = mean(y2[take2,j],na.rm=T)- mean(y1[take1,j],na.rm=T) #NA:t eiv?t saa est?? keskiarvon laskemista koko lajille.
+    Ap2[i,j] = mean(pm2p2[take2,j])-mean(pm2p1[take1,j]) #riittää, että on edes kerran pystytty laskemaan lajia
+    Ay[i,j] = mean(y2[take2,j],na.rm=T)- mean(y1[take1,j],na.rm=T) #NA:t eivät saa estää keskiarvon laskemista koko lajille.
   }}
 
 C = rep(NA,ns)
 D = rep(NA,ns)
 for (i in 1:ns){
-  C[i] = cor(Ap2[,i],Ay[,i],use="na.or.complete")    #lis?sin t?h?n m??reen
+  C[i] = cor(Ap2[,i],Ay[,i],use="na.or.complete")    #lisäsin tähän määreen
   D[i] = cor(Ap1[,i],Ay[,i],use="na.or.complete")
 }
-plot(C,D)+abline(0,1)
+plot(C,D,xlim=c(-1,1), ylim=c(-1,1)) + abline(0,1)+ abline(h=0)+ abline(v=0)
 ```
+Molemmat metodit arvioivat ennusteet suht huonoiksi.
 
-HUOM! Abundance aineistolla riittää, että lajia on kunkin periodin aikana havaittu edes kerran. PA-aineistolla havaintoja piti olla vähintään kaksi. 
+**HUOM!** Abundance aineistolla riittää, että lajia on kunkin periodin aikana havaittu edes kerran. PA-aineistolla havaintoja piti olla vähintään kaksi. 
 
 ### Lajikohtaiset ennustustarkkuudet, ABU
 
@@ -517,7 +427,13 @@ res=inner_join(pa_results,abu_results,by="species")
 
 #save as csv for further analysis
 write.csv(res,"results.csv",row.names = F)
+abu_results
 ```
+Poimintoja, D:  
+
+parhaat: Pohjansirkku 0.95!!, Lehtokurppa 0.40, Pyrstötiainen 0.40, Sääksi 0.39
+huonoimmat: Tukkasotka -0.35, merihanhi -0.34, Punavarpunen -0.33, Sinirinta -0.30
+
 
 Plottaan malliksi taas viherpeipon.
 
@@ -529,71 +445,27 @@ laji=as.data.frame(cbind(pred,obs))
 cor(pred,obs, use="na.or.complete")
 #kuvaaja
 ggplot(laji, aes(x=pred,y=obs))+ geom_point()+ xlim(-2,2)+ylim(-2,2)+ geom_abline(intercept = 0, slope =1) + geom_hline(yintercept=0) + geom_vline(xintercept = 0) +ggtitle("Viherpeippo")
+
+#entäpä pohjansirkku?
+pred=Ap1[,40]
+obs=Ay[,40]
+laji=as.data.frame(cbind(pred,obs))
+#tarkistus
+cor(pred,obs, use="na.or.complete")
+#kuvaaja
+ggplot(laji, aes(x=pred,y=obs))+ geom_point()+ xlim(-2,2)+ylim(-2,2)+ geom_abline(intercept = 0, slope =1) + geom_hline(yintercept=0) + geom_vline(xintercept = 0) +ggtitle("Pohjansirkku")
 ```
 
 Abu-aineistolla viherpeipon muutoksen ennusteet ovat suurimmaksi osaksi hieman negatiivisia ja havainnot (joissa taas suurta vaihtelua) ovat myös suurimmaksi osaksi lähellä nollaa tai negatiivisia. Viherpeipon ennustustarkkuus onkin abu-aineistolla (0.016) hieman parempi kuin pa-aineistolla (-0.12).  
 
-Muista, että arvot ovat yksilömäärien logaritmeja. 
+Pohjansirkun hyvä ennustustarkkuus (0.95) selittyy sillä, että siitä on havaintoja vain kolmelta reitiltä. Ntype-analyysissähän tarkasteltiin kuinka ennustustarkkuuteen vaikuttaa se, kuinka monta kertaa kukin reitti on laskettu. Tarkkuus näyttää myös vaihtelevan sen mukaan kuinka monelta reitiltä havainnot on kerätty. Sitähän me ei olla kontrolloitu laskuissa muuten kuin prevalenssilla (0.05). Prevalenssi on kuitenkin laskettu koko aineistosta. Muutosta laskiessa huomioidaan vain periodien 1 ja 2 reitit. pa-aineistolla laskuihin päätyvät vähintään kahteen kertaan lasketut reitit. Abu-aineistolla riittää yksikin havainto.
 
-
-### Reittikohtaiset ennustustarkkuudet, ABU
-
-```{r }
-## Reittikohtainen korrelaatio, kaikki lajit samanaikaisesti
-selroutes2=as.data.frame(selroutes)
-
-selroutes2$abu_corC=NA
-selroutes2$abu_corD=NA
-
-for(i in 1:nrow(Ap1)){
-  selroutes2$abu_corD[i]=cor(Ap1[i,],Ay[i,],use="na.or.complete")
-}
-
-for(i in 1:nrow(Ap2)){
-  selroutes2$abu_corC[i]=cor(Ap2[i,],Ay[i,],use="na.or.complete")
-}
-
-#collect all to one table
-selroutes_abu<-left_join(selroutes1,selroutes2, by="selroutes")
-colMeans(selroutes_abu[,2:5],na.rm = T)
-```
-
-Myös abu-aineistolla reittikohtaiset ennustustarkkuudet ovat hieman parempia.
-
-
-Plottaan taas testiksi yhden reitin:
-
-```{r}
-pred=Ap1[1,]
-obs=Ay[1,]
-laji=as.data.frame(rbind(pred,obs))
-#tarkistus
-cor(pred,obs, use="na.or.complete")
-#kuvaaja
-laji=transpose(laji)
-laji=dplyr::rename(laji, pred=V1)
-laji=dplyr::rename(laji, obs=V2)
-ggplot(laji, aes(x=pred,y=obs))+ geom_point()+ xlim(-1,1)+ylim(-1,1)+ geom_abline(intercept = 0, slope =1) + geom_hline(yintercept=0) + geom_vline(xintercept = 0) +ggtitle("reitti #106")
-```
-
-Liitetään koordinaatit ja tallennetaan aineisto.
-
-```{r }
-#liitetaan koordinaatit
-selroutes_abu2<-left_join(selroutes_abu,xy,by=c("selroutes"="Route"))
-
-#combine data frames
-lines=inner_join(selroutes_pa,selroutes_abu,by="selroutes")
-lines<-lines[-6]
-lines=lines[c(1,2,3,4,5,8,9,10,11,6,7)]
-
-#save as csv for further analysis
-write.csv(lines,"route_results.csv",row.names = F,na="")
-```
+**Huom!** Muista, että arvot ovat yksilömäärien logaritmeja.
 
 
 
-### Todelliset ja ennustetut muutokset esiintymistodennäköisyyksissä periodien 1 ja 2 välillä
+
+### Todelliset ja ennustetut muutokset tutkimusalueella
 
 ```{r }
 #kannanmuutostrendien tarkastelu, lasketaan kaikilta linjoilta ennustetut ja todelliset kannanmuutokset
@@ -613,41 +485,16 @@ kat$Ayk<-colMeans(Ay,na.rm = T)
 Tyyli C.
 
 ```{r }
-#C, ennusteet tehty käyttäen aineistoa vuoteen 2016
-ggplot(kat, aes(x=Ap2k, y=Ayk))+ 
-  geom_point()+ geom_hline(yintercept = 0, color = "black")+ 
-  geom_vline(xintercept = 0, color = "black")+
-  xlab("Mean predicted change, C")+
-  ylab("Mean observed change")+ 
-  geom_abline(intercept = 0, slope = 1, color="red",linetype="dashed", size=1.5)
-```
-
-Sama kuva mutta lajit merkitty.
-
-```{r }
 ggplot(kat, aes(x=Ap2k, y=Ayk))+ geom_point()+ 
   geom_hline(yintercept = 0, color = "black")+ 
   geom_vline(xintercept = 0, color = "black")+
   xlab("Mean predicted change, C")+
   ylab("Mean observed change")+ 
   geom_abline(intercept = 0, slope = 1, color="red",linetype="dashed", size=1.5)+
-  geom_text(aes(label=kat),hjust=0, vjust=0)                                                                                                                      
+  geom_text(aes(label=kat),hjust=0, vjust=0) +  geom_smooth(method=lm,se=F)                                                                                                                      
 ```
 
 Tyyli D.
-
-```{r }                                                                                        
-
-#D, ennusteet tehty käyttäen aineistoa vuoteen 2006
-ggplot(kat, aes(x=Ap1k, y=Ayk))+ 
-  geom_point()+ geom_hline(yintercept = 0, color = "black")+ 
-  geom_vline(xintercept = 0, color = "black")+
-  xlab("Mean predicted change, D")+
-  ylab("Mean observed change")+ 
-  geom_abline(intercept = 0, slope = 1, color="red",linetype="dashed", size=1.5)
-```
-
-Sama kuva mutta lajit merkitty.
 
 ```{r }
 ggplot(kat, aes(x=Ap1k, y=Ayk))+ 
@@ -656,6 +503,9 @@ ggplot(kat, aes(x=Ap1k, y=Ayk))+
   xlab("Mean predicted change, D")+
   ylab("Mean observed change")+ 
   geom_abline(intercept = 0, slope = 1, color="red",linetype="dashed", size=1.5)+
-  geom_text(aes(label=kat),hjust=0, vjust=0)
+  geom_text(aes(label=kat),hjust=0, vjust=0)+  geom_smooth(method=lm,se=F) +xlim(-0.3,0.3)+ylim(-1,1)
 
 write.csv(kat,"mean_observed_predicted_changes_abu.csv",row.names = F)
+```
+
+Kuvien skaalat eroavat taas hieman. Skaalan säätäminen tehtävä niin, että labeleistä pystyisi lukemaan edes jotain. 

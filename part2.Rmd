@@ -10,7 +10,7 @@ Verrataan neljällä eri metodilla laskettuja ennustustarkkuuksia.
 
 ```{r , include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-packages<-c("readr","tidyr","dplyr","plyr","magrittr","purrr","data.table","plotrix","jtools","ggplot2")
+packages<-c("readr","tidyr","dplyr","plyr","magrittr","purrr","data.table","plotrix","jtools","ggplot2","lme4")
 lapply(packages,library,character.only=T)
 ```
 
@@ -21,7 +21,7 @@ res<-read.csv("results.csv",header=T,sep=",")
 
 ## Lajikohtaiset ennustustarkkuudet
 
-### Keskiarvot
+### Keskiarvot ja keskivirheet
 
 ```{r }
 #Compute means and standard errors
@@ -46,6 +46,7 @@ Jaetaan aineisto pa ja abu-aineistoihin ja selvitetään, vaikuttavatko validoin
 res_pa=res[,1:5]
 res_pa=gather(res_pa,"method","accuracy",2:5)
 res_pa$method=as.factor(res_pa$method)
+str(res_pa)
 summary(res_pa)
 
 #two-way anova
@@ -76,6 +77,32 @@ pairwise.t.test(res_abu$accuracy, res_abu$method, p.adj="bonferroni")
 ```
 
 Sama tulos.
+
+Vai sekamalli, jossa pa ja abu aineistot samassa analyysissä?
+```{r}
+#aineiston muokkaus:
+res_pa=res[,1:5]
+res_pa=gather(res_pa,"method","accuracy",2:5)
+res_pa$method=as.factor(res_pa$method)
+res_pa$method=revalue(res_pa$method,c("pa_A"="A","pa_B"="B","pa_C"="C","pa_D"="D"))
+res_pa$pa=1
+
+res_abu=res[,c(1,6:9)]
+res_abu=gather(res_abu,"method","accuracy",2:5)
+res_abu$method=as.factor(res_abu$method)
+res_abu$method=revalue(res_abu$method,c("abu_A"="A","abu_B"="B","abu_C"="C","abu_D"="D"))
+res_abu$pa=0
+
+res2=rbind(res_pa,res_abu)
+```
+
+
+Tähän jäin. Kehittele alla olevaa mallia..
+```{r}
+#sekamalli, joka huomioi lajin random-tekijänä
+m1=lmer(accuracy~method*pa+(1|species),data=res2)
+summary(m1)
+```
 
 
 ### Onko pa ja abu -aineistojen välillä eroja?
