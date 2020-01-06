@@ -4,13 +4,13 @@ author: "me"
 date: "4 joulukuuta 2019"
 output: html_document
 ---
-# Validointimetodien vertailu
+# 2. Validointimetodien vertailu
 
 Verrataan neljällä eri metodilla laskettuja ennustustarkkuuksia. 
 
 ```{r , include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-packages<-c("readr","tidyr","dplyr","plyr","magrittr","purrr","data.table","plotrix","jtools","ggplot2","lme4")
+packages<-c("readr","tidyr","dplyr","plyr","magrittr","purrr","data.table","plotrix","jtools","ggplot2","lme4","nlme")
 lapply(packages,library,character.only=T)
 ```
 
@@ -19,9 +19,9 @@ getwd()
 res<-read.csv("results.csv",header=T,sep=",")
 ```
 
-## Lajikohtaiset ennustustarkkuudet
+## 2.1 Keskiarvot ja keskivirheet
 
-### Keskiarvot ja keskivirheet
+Lasketaan ennustustarkkuuksien keskiarvot ja keskivirheet kullekin metodille.
 
 ```{r }
 #Compute means and standard errors
@@ -35,112 +35,100 @@ boxplot(res[-1])
 Kuvaajissa olisi varmaan hyvä pitää pa ja abu erillään?
 
 
-### Onko metodien välillä eroja?
+## 2.2 Onko metodien välillä eroja?
 
-Jaetaan aineisto pa ja abu-aineistoihin ja selvitetään, vaikuttavatko validointimetodi tai laji ennustustarkkuuteen. Selvitetään myös, mitkä metodit eroavat toisistaan.
+Mallintamista varten luodaan uusi dummy-muuttuja, joka kertoo onko käytetty aineisto pa- vai abu-aineistoa. Muutan myös method-muuttujan koodausta.
 
-#### pa 
-
-```{r }
-#pa
-res_pa=res[,1:5]
-res_pa=gather(res_pa,"method","accuracy",2:5)
-res_pa$method=as.factor(res_pa$method)
-str(res_pa)
-summary(res_pa)
-
-#two-way anova
-anova(lm(res_pa$accuracy~res_pa$method+res_pa$species))
-
-#pairwise comparisons, bonferroni correction for multiple testing
-pairwise.t.test(res_pa$accuracy, res_pa$method, p.adj="bonferroni")
-```
-
-Validointimetodi ja laji vaikuttavat ennustustarkkuuteen. Metodit A ja B eroavat metodeista C ja D. 
-
-#### abu
-
-```{r }
-#abu
-res_abu=res[,c(1,6:9)]
-res_abu=gather(res_abu,"method","accuracy",2:5)
-res_abu$method=as.factor(res_abu$method)
-summary(res_abu)
-
-
-#two-way anova
-anova(lm(res_abu$accuracy~res_abu$method+res_abu$species))
-
-#pairwise comparisons, bonferroni correction for multiple testing
-pairwise.t.test(res_abu$accuracy, res_abu$method, p.adj="bonferroni")
-
-```
-
-Sama tulos.
-
-Vai sekamalli, jossa pa ja abu aineistot samassa analyysissä?
 ```{r}
 #aineiston muokkaus:
 res_pa=res[,1:5]
 res_pa=gather(res_pa,"method","accuracy",2:5)
-res_pa$method=as.factor(res_pa$method)
-res_pa$method=revalue(res_pa$method,c("pa_A"="A","pa_B"="B","pa_C"="C","pa_D"="D"))
-res_pa$pa=1
+res_pa$method=as.factor(revalue(res_pa$method,c("pa_A"="A","pa_B"="B","pa_C"="C","pa_D"="D")))
+res_pa$pa=as.factor("pa")
 
 res_abu=res[,c(1,6:9)]
 res_abu=gather(res_abu,"method","accuracy",2:5)
-res_abu$method=as.factor(res_abu$method)
-res_abu$method=revalue(res_abu$method,c("abu_A"="A","abu_B"="B","abu_C"="C","abu_D"="D"))
-res_abu$pa=0
+res_abu$method=as.factor(revalue(res_abu$method,c("abu_A"="A","abu_B"="B","abu_C"="C","abu_D"="D")))
+res_abu$pa=as.factor("abu")
 
 res2=rbind(res_pa,res_abu)
+str(res2)
 ```
 
+Teen uuden kuvaajan tällä aineistolla.
 
-Tähän jäin. Kehittele alla olevaa mallia..
 ```{r}
-#sekamalli, joka huomioi lajin random-tekijänä
-m1=lmer(accuracy~method*pa+(1|species),data=res2)
-summary(m1)
+ggplot(res2,aes(x=method, y=accuracy))+geom_boxplot()+facet_grid(.~pa)
+```
+Varmaankin se pohjansirkku (0.95) on tuo abu_D outlier oikeassa yläkulmassa. Pitäisi varmaan poistaa? Voisi ainakin kokeilla tehdä sama analyysi ilman ko. havaintoa.
+
+Varsinainen malli on lineaarinen sekamuuttujamalli, jossa ennustustarkkuutta selittävät metodi ja aineistotyyppi sekä niiden välinen interaktio. Lisäksi malli huomioi lajin random-tekijänä.
+
+Testailua...
+```{r}
+m0=lm(accuracy~method*pa,data=res2)
+summary(m0)
+drop1(m0,test="F")
 ```
 
+Perus lineaarinen malli näyttää, että interaktio on tärkeä.
 
-### Onko pa ja abu -aineistojen välillä eroja?
-
-Onko helpompi ennustaa esiintymistodennäköisyyttä vai runsautta?  
-
-Voiko tällaista vertailua tehdä?
-
-#### metodi A
-
-```{r }
-#A pa ja abu välillä
-t.test(res$pa_A,res$abu_A, paired=TRUE)
+```{r}
+E1=rstandard(m0)
+F1=fitted(m0)
+par(mfrow=c(2,2), mar=c(5,5,2,2))
+plot(x=F1,y=E1,xlab="fitted",ylab="residuals",data=res2)
+abline(h=0,lty=2)
+boxplot(E1~method,xlab="method",ylab="residuals",data=res2)
+abline(h=0,lty=2)
+boxplot(E1~pa,xlab="pa",ylab="residuals",data=res2)
+abline(h=0,lty=2)
+boxplot(E1~species,xlab="species",ylab="residuals",data=res2)
+abline(h=0,lty=2)
 ```
 
-#### metodi B
+Mutta mallin validointi paljastaa, että species sisältää vielä vaihtelua. Se pitäisi ottaa mukaan malliin. Tehdään siis sekamalli, jossa species mukana random-tekijänä (120 leveliä, 8 havaintoa per level (pa ja abu-aineistoilla 4 metodia)).
 
-```{r }
-#B pa ja abu välillä
-t.test(res$pa_B,res$abu_B, paired=TRUE)
+```{r}
+A1=gls(accuracy~method*pa,method="REML",data=res2)
+A2=lme(accuracy~method*pa,data=res2,random=~1|species,method="REML")
+
+AIC(A1,A2)
+anova(A1,A2)
+summary(A2)
+
+A2=lme(accuracy~method*pa,data=res2,random=~1|species,method="REML")
+
+E1=resid(A2, type="normalized")
+F1=fitted(A2)
+
+par(mfrow=c(2,2), mar=c(5,5,2,2))
+plot(x=F1,y=E1,xlab="fitted",ylab="residuals")
+abline(h=0,lty=2)
+boxplot(E1~method,xlab="method",ylab="residuals",data=res2)
+abline(h=0,lty=2)
+boxplot(E1~pa,xlab="pa",ylab="residuals",data=res2)
+abline(h=0,lty=2)
+boxplot(E1~species,xlab="species",ylab="residuals",data=res2)
+abline(h=0,lty=2)
+
+A2full=lme(accuracy~method*pa,data=res2,random=~1|species,method="ML")
+A2.a=lme(accuracy~method+pa,data=res2,random=~1|species,method="ML")
+A2.b=lme(accuracy~method,data=res2,random=~1|species,method="ML")
+A2.c=lme(accuracy~pa,data=res2,random=~1|species,method="ML")
+
+anova(A2full,A2.a)
+AIC(A2full,A2.a,A2.b,A2.c)
+
+A2=lme(accuracy~method*pa,data=res2,random=~1|species,method="REML")
+
+
 ```
 
-#### metodi C
+Eli ennustustarkkuuteen vaikuttavat sekä metodi että aineisto. Huonoimmat tulokset saa abu-aineistolla ja metodilla D. 
 
-```{r }
-#change pa ja abu välillä
-t.test(res$pa_C,res$abu_C, paired=TRUE)
-```
 
-#### metodi D
-```{r }
-#change pa ja abu välillä
-t.test(res$pa_D,res$abu_D, paired=TRUE)
-```
-
-Vain metodi D tekee eroa pa ja abu-aineistojen välille. Pa-aineiston ennustustarkkuudet ovat hitusen verran paremmat.
-
-### Kuvaaja
+## Kuvaaja
 
 Tätä pitäisi vielä miettiä, mitä plotataan ja mitä vasten? Alun perin verrattiin metodi D:tä pa/abu_past-arvoihin eli vähän sama kuin vertailu metodi A:han. siis, voitaisiinko jo hyvin yksinkertaisella validointimenetelmällä saada samoja tuloksia kuin monimutkaisemmalla metodilla?
 
@@ -211,246 +199,6 @@ text(-0.5,0.8,"d) Abundance, 2 km",cex=0.8)
 Millainen kuvaaja olisi hyvä?
 
 
-## Reittikohtaiset ennustustarkkuudet
 
-### Keskiarvot
 
-```{r}
-#data in
-rres=read.csv("route_results.csv")
-```
 
-```{r }
-#Compute means and standard errors
-rres %>% dplyr::select(2:9)%>%colMeans(,na.rm=T)
-rres %>% dplyr::select(2:9)%>%std.error()
-
-#kuvaaja
-boxplot(rres[-c(1,10:11)])
-```
-
-
-### Onko metodien välillä eroja?
-
-Jaetaan aineisto pa ja abu-aineistoihin ja selvitetään, vaikuttavatko validointimetodi tai laji ennustustarkkuuteen. Selvitetään myös, mitkä metodit eroavat toisistaan.
-
-#### pa 
-
-```{r }
-#pa
-rres_pa=rres[,1:5]
-
-#omitting rows with NA's
-rres_pa=na.omit(rres_pa)
-
-rres_pa=gather(rres_pa,"method","accuracy",2:5)
-rres_pa$method=as.factor(rres_pa$method)
-summary(rres_pa)
-
-#two-way anova
-anova(lm(rres_pa$accuracy~rres_pa$method+rres_pa$selroutes))
-
-#pairwise comparisons, bonferroni correction for multiple testing
-pairwise.t.test(rres_pa$accuracy, rres_pa$method, p.adj="bonferroni")
-```
-
-Taas validointimetodi ja reitti vaikuttavat ennustustarkkuuteen. Metodi A antaa parhaimpia tuloksia. Samoin metodi B. Metodit C ja D antavat selkeästi huonompia tuloksia, ja D kaikista huonoimpia.
-
-
-#### abu
-
-```{r }
-#abu
-rres_abu=rres[,c(1,6:9)]
-
-#omitting rows with NA's
-rres_abu=na.omit(rres_abu)
-
-rres_abu=gather(rres_abu,"method","accuracy",2:5)
-rres_abu$method=as.factor(rres_abu$method)
-summary(rres_abu)
-
-#two-way anova
-anova(lm(rres_abu$accuracy~rres_abu$method+rres_abu$selroutes))
-
-#pairwise comparisons, bonferroni correction for multiple testing
-pairwise.t.test(rres_abu$accuracy, rres_abu$method, p.adj="bonferroni")
-```
-
-Samanlaiset tulokset kuin pa-aineistolle.
-
-
-### Onko pa ja abu -aineistojen välillä eroja?
-
-Onko helpompi ennustaa esiintymistodennäköisyyttä vai runsautta?  
-
-Voiko tällaista vertailua tehdä?
-
-#### metodi A
-
-```{r }
-#A pa ja abu välillä
-t.test(rres$pa_corA,rres$abu_corA, paired=TRUE)
-```
-
-#### metodi B
-
-```{r }
-#B pa ja abu välillä
-t.test(rres$pa_corB,rres$abu_corB, paired=TRUE)
-```
-
-#### metodi C
-
-```{r }
-#change pa ja abu välillä
-t.test(rres$pa_corC,rres$abu_corC, paired=TRUE)
-```
-
-#### metodi D
-```{r }
-#change pa ja abu välillä
-t.test(rres$pa_corD,rres$abu_corD, paired=TRUE)
-```
-
-Vain metodi A:n tarkkuudet ovat samansuuruisia sekä pa ja abu-aineistoilla. Metodilla B ennustustarkkuudet ovat parempia pa-aineistolla. Metodeilla C ja D tarkkuudet ovat parempia abu-aineistolla.
-
-
-### Kuvaaja
-
-Tätä pitäisi vielä miettiä, mitä plotataan ja mitä vasten? Alun perin verrattiin metodi D:tä pa/abu_past-arvoihin eli vähän sama kuin vertailu metodi A:han. siis, voitaisiinko jo hyvin yksinkertaisella validointimenetelmällä saada samoja tuloksia kuin monimutkaisemmalla metodilla?
-
-```{r, fig.width=14, fig.height=12}
-# Piirretään kuvaaja, Fig1
-
-#määritetään kuvalle raamit ja nimi
-Line=c(-1,1)
-Line2=c(-1,1)
-Line3=c(0,0)
-
-Line=cbind(Line,Line2)
-Line=cbind(Line,Line3)
-
-Line=as.data.frame(Line)
-
-#pdf("Fig1.pdf")
-#jpeg("Fig1abcdef.jpeg")
-#png("Fig1abcdef.png")
-
-#määrittää 3x3 matriisin johon kuvat piirretään
-layout(matrix(c(1,2,7,3,4,7,5,6,7), 3, 3, byrow = TRUE))
-
-# a)
-plot(pa_corB~pa_corA,data=rres,xlim=c(-1,1),
-     ylim=c(-1,1),cex.axis=0.8,xlab="Prediction accuracy (A)",
-     ylab="Prediction accuracy (B)")
-lines(Line$Line,Line$Line2,lty="dashed")
-lines(Line$Line,Line$Line3,col="grey",lty="dashed")
-lines(Line$Line3,Line$Line,col="grey",lty="dashed")
-
-text(-0.5,0.8,"a) Distribution",cex=0.8)
-
-# b)
-plot(abu_corB~abu_corA,data=rres,xlim=c(-1,1),
-     ylim=c(-1,1),cex.axis=0.8,xlab="Prediction accuracy (A)",
-     ylab="Prediction accuracy (B)")
-lines(Line$Line,Line$Line2,lty="dashed")
-lines(Line$Line,Line$Line3,col="grey",lty="dashed")
-lines(Line$Line3,Line$Line,col="grey",lty="dashed")
-
-text(-0.5,0.8,"b) Abundance",cex=0.8)
-
-# c)
-plot(pa_corD~pa_corC,data=rres,xlim=c(-1,1),
-     ylim=c(-1,1),cex.axis=0.8,xlab="Prediction accuracy (C)",
-     ylab="Prediction accuracy (D)")
-lines(Line$Line,Line$Line2,lty="dashed")
-lines(Line$Line,Line$Line3,col="grey",lty="dashed")
-lines(Line$Line3,Line$Line,col="grey",lty="dashed")
-
-text(-0.5,0.8,"c) Distribution, 2 km",cex=0.8)
-
-# d)
-plot(abu_corD~abu_corC,data=rres,xlim=c(-1,1),
-     ylim=c(-1,1),cex.axis=0.8,xlab="Prediction accuracy (C)",
-     ylab="Prediction accuracy (D)")
-lines(Line$Line,Line$Line2,lty="dashed")
-lines(Line$Line,Line$Line3,col="grey",lty="dashed")
-lines(Line$Line3,Line$Line,col="grey",lty="dashed")
-
-text(-0.5,0.8,"d) Abundance, 2 km",cex=0.8)
-
-#dev.off()
-```
-
-
-Millainen kuvaaja olisi hyvä?
-
-
-### Vaikuttaako leveyspiiri reittikohtaiseen ennustustarkkuuteen?
-
-#### pa-aineisto
-
-```{r}
-#ennustustarkkuuksien jakauma
-ggplot(rres, aes(pa_corD)) + geom_histogram()
-
-#kuvaajia, plotataan linjakohtaiset ennustustarkkuudet latitudea vasten
-ggplot(rres, aes(x=y, y=pa_corA))+ geom_point()+ geom_smooth()
-ggplot(rres, aes(x=y, y=pa_corB))+ geom_point()+ geom_smooth()
-
-ggplot(rres, aes(x=y, y=pa_corC))+ geom_point()+ geom_smooth()
-ggplot(rres, aes(x=y, y=pa_corD))+ geom_point()+ geom_smooth()
-
-#Kaikki mukaan valikoituneet reitit kartalla
-ggplot(rres,aes(x=x,y=y))+geom_point()
-
-#na.omit
-rresNA=na.omit(rres)
-
-#testataan selittääkö latitude (y) ennustustarkkuutta (corD)
-M1=lm(pa_corD~y,data = rresNA)
-summary(M1)
-
-#mallin validointi
-op<-par(mfrow=c(2,2),mar=c(5,4,1,2))
-plot(M1,add.smooth = F,which = 1)
-E<-resid(M1)
-hist(E, xlab = "residuals",main = "")
-plot(rresNA$pa_corD,E,xlab = "accuracy(D)",ylab="residuals")
-par(op)
-```
-
-Ennustustarkkuus (D) näyttäisi aluksi nousevan kohti pohjoista ja laskevan aivan pohjoisessa. GAM?
-
-Pitäisikö testata muillakin metodeilla (A, B ja C), vaikuttaako leveysaste niihinkin?  Jatka koodia tässä tarvittaessa...
-
-
-#### abu-aineisto
-
-```{r}
-#ennustustarkkuuksien jakautuminen
-ggplot(rres, aes(abu_corD)) + geom_histogram()
-
-#kuvaajia, plotataan linjakohtaiset ennustustarkkuudet latitudea vasten
-ggplot(rres, aes(x=y, y=abu_corA))+ geom_point()+geom_smooth()
-ggplot(rres, aes(x=y, y=abu_corB))+ geom_point()+geom_smooth()
-
-ggplot(rres, aes(x=y, y=abu_corC))+ geom_point()+geom_smooth()
-ggplot(rres, aes(x=y, y=abu_corD))+ geom_point()+geom_smooth()
-
-#testataan selittääkö latitude (y) ennustustarkkuutta (corD)
-M1=lm(abu_corD~y,data = rresNA)
-summary(M1)
-
-#mallin validointi
-op<-par(mfrow=c(2,2),mar=c(5,4,1,2))
-plot(M1,add.smooth = F,which = 1)
-E<-resid(M1)
-hist(E, xlab = "residuals",main = "")
-plot(rresNA$abu_corD,E,xlab = "accuracy(D)",ylab="residuals")
-par(op)
-```
-
-
-Pitäisikö testata muillakin metodeilla (A, B ja C), vaikuttaako leveysaste niihinkin?
