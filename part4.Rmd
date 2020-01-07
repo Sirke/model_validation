@@ -5,7 +5,7 @@ date: "12 joulukuuta 2019"
 output: html_document
 ---
 
-# Traits analyysi
+# 4. Traits analyysi
 
 ```{r, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -15,7 +15,7 @@ paketit<-c("nlme","readr","tidyr","dplyr","plyr","magrittr","purrr","ggplot2","a
 lapply(paketit,library,character.only=T)
 ```
 
-## Aineisto sisään ja taulukoiden kokoaminen
+## 4.1 Aineisto sisään ja taulukoiden kokoaminen
 
 ```{r }
 #yhdistetään ennustustarkkuustulokset ja lajiominaisuudet samaan taulukkoon
@@ -80,7 +80,7 @@ abline(lm(pool_abu_change~logmass,data = results))
 par(op)
 ```
 
-## Fylogenian huomioinen lajien ominaisuuksia tarkastellessa
+## 4.2 Fylogenia
 
 BirdTree.org palvelusta on haettu lintujen sukupuu (tai itseasiassa tiedosto sisältää 100 vaihtoehtoista sukupuuta, joista valitaan yksi).
 
@@ -105,13 +105,12 @@ rownames(results)=results$species
 3192 traits might evolve (Beaulieu et al., 2012)."
 
 
-
-## Traits-analyysit
+## 4.3 Analyysit
 
 Selvitetään, vaikuttavatko lajien ominaisuudet (muuttokäyttäytyminen 'Mig', elinympäristö 'Hab', paino 'logMass' tai prevalenssi 'Prev') ennustustarkkuuteen. Analyysissä pitäisi huomioida, että lajit voivat olla ominaisuuksiltaan samankaltaisia (ja siten omata myös yhtä suuret ennustustarkkuudet) läheisen sukulaisuussuhteen takia. 
 
 
-### Ei-poolatulle, 2x2 km aineistolle
+### 4.3.1 Ei-poolatulle, 2x2 km aineistolle
 
 
 #### pa-aineisto
