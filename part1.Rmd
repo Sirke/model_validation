@@ -8,8 +8,9 @@ output: html_document
 ```{r, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-# Ennustustarkkuuksien laskeminen
+# 1. Ennustustarkkuuksien laskeminen
 
+## 1.1 Ennustemallit
 Malli on nyt ajettu 120 lajilla, joiden prevalenssi on ollut vähintään 0.05. Tällä hetkellä saatavilla on ollut vasta thin=10 aineisto. Mallista on ajettu kahta versiota. Toisessa on käytetty aineistoa vain vuoteen 1999 asti ja toisessa vuoteen 2016 asti.
 
 Malleja, joiden tekemisessä oli käytetty aineistoa vain vuoteen 1999 asti, pyydettiin ennustamaan tulevaisuutta niin, että kaikki muut muuttujat paitsi vuosi muuttuivat. Vuosi fiksattiin paikoilleen vuoteen 1997.
@@ -43,17 +44,31 @@ Alla vielä koko koodi:
 
 Meneehän malli varmasti oikein? Method ja Effort ovat nyt mielestäni kumpiakin samassa muuttujassa sekaisin. Method (P ja L, point ja line) Effort (esim. 20 pistettä tai 7000 metriä).
 
+## 1.2 Neljä erilaista validointimetodia
 
-## Presence/absence aineisto 
+Vaihtoehdot A,B,C,D.  
 
-### Aineisto sisälle ja tarkastelu
+A ja B katsovat yhtä ajanhetkeä.  
+C ja D katsovat muutosta tietyn ajanjakson aikana.  
+
+A ja C interpoloivat.
+B ja D ekstrapoloivat.
+
+```{r echo=F, out.width='60%'}
+knitr::include_graphics('./ABCD_erikseen.png')
+```
+
+
+## 1.3 Presence/absence aineisto 
+
+### 1.3.1 Aineisto sisälle ja tarkastelu
 ```{r }
 getwd()
 localDir = "."
 PredictionDir = file.path(localDir, "data")
 ```
 ```{r include=FALSE}
-paketit<-c("readr","tidyr","dplyr","plyr","magrittr","purrr","data.table","plotrix","jtools","sp","GISTools","rgdal","sf","spatialEco","ggplot2","ggrepel")
+paketit<-c("readr","tidyr","dplyr","plyr","magrittr","purrr","data.table","plotrix","jtools","sp","GISTools","rgdal","sf","spatialEco","ggplot2","ggrepel","psych")
 lapply(paketit,library,character.only=T)
 ```
 
@@ -81,7 +96,7 @@ dim(Y)
 dim(studyDesign)
 ```
 
-###Periodien määrittely
+### 1.3.2 Periodien määrittely
 
 Päädyttiiin valitsemaan aikaisempi ajankohta periodi 1:lle. Näin ennusteet tehdään pidemmälle aikavälille ja ehkä muutoksetkin ovat silloin isompia ja helpommin ennustettavia. Alunperin ajankohta oli 2003-2006 koska silloin aineistoa oli enemmän ja laadukkaammin saatavilla.
 
@@ -110,31 +125,16 @@ for (i in 1:nr){
 ```
 
 
-### 4 erilaista validointimetodia
+### 1.3.3 Ennustustarkkuudet metodeilla A ja B
 
-Vaihtoehdot A,B,C,D.  
-
-A ja B katsovat yhtä ajanhetkeä.  
-C ja D katsovat muutosta tietyn ajanjakson aikana.  
-
-A ja C interpoloivat.
-B ja D ekstrapoloivat.
-
-```{r echo=F, out.width='60%'}
-knitr::include_graphics('./ABCD_erikseen.png')
-```
-
-
-### Lasketaan lajikohtaiset ennustustarkkuudet metodeilla A ja B
-
-Lasketaan ennustustarkkuus kun ennustetaan kunkin lajin esiintymistodennäköisyyttä yhtenä ajanhetkenä (periodi 2)  
-A: mallin kalibrointiin on käytetty aineistoa samalta ajalta  
-B: mallin kalibrointiin EI ole käytetty aineistoa samalta ajalta
+Lasketaan ennustustarkkuus kun ennustetaan kunkin lajin esiintymistodennäköisyyttä yhtenä ajanhetkenä (periodi 2).  
+A: Mallin kalibrointiin on käytetty aineistoa samalta ajalta.  
+B: Mallin kalibrointiin EI ole käytetty aineistoa samalta ajalta.
 
 
 ```{r}
 # COMPUTE MEASURES A AND B
-selroutes = routes[which(visits2>=2)]  #periodi 2, joten vesilintujen NA:t eiv?t vaikuta n?iss? laskuissa
+selroutes = routes[which(visits2>=2)]  #periodi 2, joten vesilintujen NA:t eivät vaikuta näissä laskuissa
 nsr = length(selroutes)
 
 Ap1=matrix(NA,nrow = nsr,ncol = ns)
@@ -159,11 +159,11 @@ plot(A,B,xlim=c(-1,1), ylim=c(-1,1)) + abline(0,1)+ abline(h=0)+ abline(v=0)
 Molemmat metodit ennustavat hyvin. A:lle ennusteet ovat vähän parempia kuin B:lle. 
 
 
-### Lasketaan lajikohtaiset ennustustarkkuudet metodeilla C ja D
+### 1.3.4 Ennustustarkkuudet metodeilla C ja D
 
-Lasketaan ennustustarkkuus kun ennustetaan kunkin lajin esiintymistodennäköisyyden muutosta periodien 1 ja 2 välillä  
-C: mallin kalibrointiin on käytetty aineistoa samalta ajalta   
-D: mallin kalibrointiin EI ole käytetty aineistoa samalta ajalta (periodin 2 osalta)
+Lasketaan ennustustarkkuus kun ennustetaan kunkin lajin esiintymistodennäköisyyden muutosta periodien 1 ja 2 välillä.  
+C: Mallin kalibrointiin on käytetty aineistoa samalta ajalta.   
+D: Mallin kalibrointiin EI ole käytetty aineistoa samalta ajalta (periodin 2 osalta).
 
 ```{r}
 # COMPUTE MEASURES C AND D
@@ -195,7 +195,6 @@ Molemmille metodeille ennusteet aika huonoja.
 **HUOM!** Presence/absence aineistossa mm. Suomen vesilinnut ovat NA:ta ennen vuotta 2006. Periodi 1:sen kaikki arvot vesilinnuille Suomessa ovat siis NA, eivätkä tule mukaan laskelmiin. Korrelaatiota laskiessa argumentti "use="na.or.complete"" varmistaa, että korrelaatio lasketaan muista kuin NA-arvoista.  
 
 
-
 Plottaan yhdelle lajille ennustetut (D) ja todelliset muutokset reiteittäin. Yksi piste on siis yksi reitti.
 
 ```{r}
@@ -219,8 +218,18 @@ ggplot(laji, aes(x=pred,y=obs))+ geom_point()+ xlim(-1,1)+ylim(-1,1)+ geom_ablin
 
 Yhtä lajia tarkastellessa huomaa miten pa-aineistolla ennusteet ovat lähellä nollaa mutta havainnot vaihtelevat "rajummin" -1 ja 1 välillä. Ennusteet ovat positiivisia mutta havainnot taitavat olla suuremmaksi osaksi nollaa tai negatiivisia. Viherpeipon ennustustarkkuus olikin pa-aineistolle -0.12. Tiklille tarkkuus oli parempi 0.37.
 
+Tarkistan vielä kuinka monesta havaintoparista kunkin lajin korrelaatio on laskettu. Pa-aineistolla joukosta puuttuvat vain muutamat vesilintujen NA-havainnot. Abu-aineistolla tilanne on eri.
 
-### Lajikohtaiset ennustustarkkuudet, PA
+```{r}
+P_D = rep(NA,ns)
+for (i in 1:ns){
+  P_D[i] = pairwiseCount(Ap1[,i],Ay[,i])
+}
+summary(P_D)
+sort(P_D)
+```
+
+### 1.3.5 Tulokset
 
 ```{r}
 #create a table
@@ -246,8 +255,7 @@ parhaat: Tikli 0.37, Peippo 0.33, Mustarastas 0.33, Järripeippo 0.32
 huonoimmat: Sepelrastas -0.34, Fasaani -0.33, Satakieli -0.22, Hemppo -0.22
 
 
-
-### Todelliset ja ennustetut muutokset tutkimusalueella
+### 1.3.6 Todelliset ja ennustetut muutokset tutkimusalueella
 
 Tarkastellaan absoluuttisia todellisia ja ennustettuja muutoksia esiintymistodennäköisyyksissä koko tutkimusalueella. Ennusteet on tehty joko tyyliin C tai D, eli koko aineistoa tai osittaista aineistoa hyödyntämällä. Paperiin voisi varmaan valita vain metodin D.
 
@@ -300,7 +308,7 @@ Huomaa kuvissa hieman eri skaala. Kun mallintamisessa käytetään vähemmän ai
 
 Näitä kuvia täytyy vielä säätää, jos niitä aiotaan käyttää julkaisussa jotenkin. 
 
-##Abundance-aineisto
+## 1.4 Abundance-aineisto
 
 Lasketaan kaikki samat asiat abundance-aineistolla.
 
@@ -320,7 +328,7 @@ dim(Y)
 dim(studyDesign)
 ```
 
-### Periodien määrittely
+### 1.4.1 Periodien määrittely
 
 ```{r }
 pm1p1=mpred1[period1,]
@@ -343,7 +351,7 @@ for (i in 1:nr){
 }
 ```
 
-### Lajikohtaiset A ja B
+### 1.4.2 Ennustustarkkuudet A ja B
 
 ```{r }
 # COMPUTE MEASURES A AND B
@@ -373,7 +381,7 @@ plot(A,B,xlim=c(-1,1), ylim=c(-1,1)) + abline(0,1)+ abline(h=0)+ abline(v=0)
 ```
 Molemmat metodit suht hyviä. A:lle ennusteet parempia.
 
-### Lajikohtaiset C ja D
+### 1.4.3 Ennustustarkkuudet C ja D
 
 ```{r }
 # COMPUTE MEASURES C AND D
@@ -405,7 +413,7 @@ Molemmat metodit arvioivat ennusteet suht huonoiksi.
 
 **HUOM!** Abundance aineistolla riittää, että lajia on kunkin periodin aikana havaittu edes kerran. PA-aineistolla havaintoja piti olla vähintään kaksi. 
 
-### Lajikohtaiset ennustustarkkuudet, ABU
+### 1.4.4 Tulokset
 
 ```{r }
 meres=c(mean(A,na.rm = TRUE),mean(B,na.rm = TRUE),mean(C,na.rm = TRUE),mean(D,na.rm = TRUE))
@@ -435,7 +443,7 @@ parhaat: Pohjansirkku 0.95!!, Lehtokurppa 0.40, Pyrstötiainen 0.40, Sääksi 0.
 huonoimmat: Tukkasotka -0.35, merihanhi -0.34, Punavarpunen -0.33, Sinirinta -0.30
 
 
-Plottaan malliksi taas viherpeipon.
+Plottaan malliksi viherpeipon ja pohjansirkun.
 
 ```{r}
 pred=Ap1[,21]
@@ -449,6 +457,9 @@ ggplot(laji, aes(x=pred,y=obs))+ geom_point()+ xlim(-2,2)+ylim(-2,2)+ geom_ablin
 #entäpä pohjansirkku?
 pred=Ap1[,40]
 obs=Ay[,40]
+b=as.data.frame(cbind(pred,obs))
+b
+pairwiseCount(pred,obs)
 laji=as.data.frame(cbind(pred,obs))
 #tarkistus
 cor(pred,obs, use="na.or.complete")
@@ -456,16 +467,25 @@ cor(pred,obs, use="na.or.complete")
 ggplot(laji, aes(x=pred,y=obs))+ geom_point()+ xlim(-2,2)+ylim(-2,2)+ geom_abline(intercept = 0, slope =1) + geom_hline(yintercept=0) + geom_vline(xintercept = 0) +ggtitle("Pohjansirkku")
 ```
 
-Abu-aineistolla viherpeipon muutoksen ennusteet ovat suurimmaksi osaksi hieman negatiivisia ja havainnot (joissa taas suurta vaihtelua) ovat myös suurimmaksi osaksi lähellä nollaa tai negatiivisia. Viherpeipon ennustustarkkuus onkin abu-aineistolla (0.016) hieman parempi kuin pa-aineistolla (-0.12).  
+Abu-aineistolla viherpeipon muutoksen ennusteet ovat suurimmaksi osaksi hieman negatiivisia ja havainnot (joissa taas suurta vaihtelua) ovat myös suurimmaksi osaksi lähellä nollaa tai negatiivisia. Viherpeipon ennustustarkkuus onkin abu-aineistolla (0.016) hieman parempi kuin pa-aineistolla (-0.12). 
 
-Pohjansirkun hyvä ennustustarkkuus (0.95) selittyy sillä, että siitä on havaintoja vain kolmelta reitiltä. Ntype-analyysissähän tarkasteltiin kuinka ennustustarkkuuteen vaikuttaa se, kuinka monta kertaa kukin reitti on laskettu. Tarkkuus näyttää myös vaihtelevan sen mukaan kuinka monelta reitiltä havainnot on kerätty. Sitähän me ei olla kontrolloitu laskuissa muuten kuin prevalenssilla (0.05). Prevalenssi on kuitenkin laskettu koko aineistosta. Muutosta laskiessa huomioidaan vain periodien 1 ja 2 reitit. pa-aineistolla laskuihin päätyvät vähintään kahteen kertaan lasketut reitit. Abu-aineistolla riittää yksikin havainto.
+Pohjansirkun ennustustarkkuus oli 0.95. 
 
-**Huom!** Muista, että arvot ovat yksilömäärien logaritmeja.
+```{r}
+P_D = rep(NA,ns)
+for (i in 1:ns){
+  P_D[i] = pairwiseCount(Ap1[,i],Ay[,i])
+}
+summary(P_D)
+sort(P_D)
+```
+
+Pohjansirkun hyvä ennustustarkkuus (0.95) selittyy sillä, että siitä on havaintoja vain kolmelta reitiltä. Ntype-analyysissähän tarkasteltiin, kuinka ennustustarkkuuteen vaikuttaa se, kuinka monta kertaa kukin reitti on laskettu. Tarkkuus näyttää myös vaihtelevan sen mukaan kuinka monelta reitiltä havainnot on kerätty. Sitähän me ei olla kontrolloitu laskuissa muuten kuin prevalenssilla (0.05). Prevalenssi on kuitenkin laskettu koko aineistosta. Muutosta laskiessa huomioidaan vain periodien 1 ja 2 reitit. pa-aineistolla laskuihin päätyvät vähintään kahteen kertaan lasketut reitit. Abu-aineistolla riittää yksikin havainto.
+
+**Huom!** Muista, että abu-arvot ovat yksilömäärien logaritmeja.
 
 
-
-
-### Todelliset ja ennustetut muutokset tutkimusalueella
+### 1.4.5 Todelliset ja ennustetut muutokset tutkimusalueella
 
 ```{r }
 #kannanmuutostrendien tarkastelu, lasketaan kaikilta linjoilta ennustetut ja todelliset kannanmuutokset
