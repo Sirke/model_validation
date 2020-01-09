@@ -194,6 +194,7 @@ Molemmille metodeille ennusteet aika huonoja.
 
 **HUOM!** Presence/absence aineistossa mm. Suomen vesilinnut ovat NA:ta ennen vuotta 2006. Periodi 1:sen kaikki arvot vesilinnuille Suomessa ovat siis NA, eivätkä tule mukaan laskelmiin. Korrelaatiota laskiessa argumentti "use="na.or.complete"" varmistaa, että korrelaatio lasketaan muista kuin NA-arvoista.  
 
+### 1.3.5 Muutama esimerkkilaji
 
 Plottaan yhdelle lajille ennustetut (D) ja todelliset muutokset reiteittäin. Yksi piste on siis yksi reitti.
 
@@ -229,7 +230,7 @@ summary(P_D)
 sort(P_D)
 ```
 
-### 1.3.5 Tulokset
+### 1.3.6 Tulokset
 
 ```{r}
 #create a table
@@ -255,7 +256,7 @@ parhaat: Tikli 0.37, Peippo 0.33, Mustarastas 0.33, Järripeippo 0.32
 huonoimmat: Sepelrastas -0.34, Fasaani -0.33, Satakieli -0.22, Hemppo -0.22
 
 
-### 1.3.6 Todelliset ja ennustetut muutokset tutkimusalueella
+### 1.3.7 Todelliset ja ennustetut muutokset tutkimusalueella
 
 Tarkastellaan absoluuttisia todellisia ja ennustettuja muutoksia esiintymistodennäköisyyksissä koko tutkimusalueella. Ennusteet on tehty joko tyyliin C tai D, eli koko aineistoa tai osittaista aineistoa hyödyntämällä. Paperiin voisi varmaan valita vain metodin D.
 
@@ -442,6 +443,7 @@ Poimintoja, D:
 parhaat: Pohjansirkku 0.95!!, Lehtokurppa 0.40, Pyrstötiainen 0.40, Sääksi 0.39
 huonoimmat: Tukkasotka -0.35, merihanhi -0.34, Punavarpunen -0.33, Sinirinta -0.30
 
+### 1.4.5 Muutama esimerkkilaji
 
 Plottaan malliksi viherpeipon ja pohjansirkun.
 
@@ -457,9 +459,6 @@ ggplot(laji, aes(x=pred,y=obs))+ geom_point()+ xlim(-2,2)+ylim(-2,2)+ geom_ablin
 #entäpä pohjansirkku?
 pred=Ap1[,40]
 obs=Ay[,40]
-b=as.data.frame(cbind(pred,obs))
-b
-pairwiseCount(pred,obs)
 laji=as.data.frame(cbind(pred,obs))
 #tarkistus
 cor(pred,obs, use="na.or.complete")
@@ -471,6 +470,8 @@ Abu-aineistolla viherpeipon muutoksen ennusteet ovat suurimmaksi osaksi hieman n
 
 Pohjansirkun ennustustarkkuus oli 0.95. 
 
+Lasken kuinka moneen havaintopariin korrelaation lasku perustuu. Liitän tämän tiedon osaksi tuloksia. Jatkossa voi suodattaa epätarkimmat lajit pois.
+
 ```{r}
 P_D = rep(NA,ns)
 for (i in 1:ns){
@@ -478,6 +479,11 @@ for (i in 1:ns){
 }
 summary(P_D)
 sort(P_D)
+
+#liitän uuden sarakkeen tuloksiin
+res=cbind(res,P_D)
+#save as csv for further analysis
+write.csv(res,"results.csv",row.names = F)
 ```
 
 Pohjansirkun hyvä ennustustarkkuus (0.95) selittyy sillä, että siitä on havaintoja vain kolmelta reitiltä. Ntype-analyysissähän tarkasteltiin, kuinka ennustustarkkuuteen vaikuttaa se, kuinka monta kertaa kukin reitti on laskettu. Tarkkuus näyttää myös vaihtelevan sen mukaan kuinka monelta reitiltä havainnot on kerätty. Sitähän me ei olla kontrolloitu laskuissa muuten kuin prevalenssilla (0.05). Prevalenssi on kuitenkin laskettu koko aineistosta. Muutosta laskiessa huomioidaan vain periodien 1 ja 2 reitit. pa-aineistolla laskuihin päätyvät vähintään kahteen kertaan lasketut reitit. Abu-aineistolla riittää yksikin havainto.
@@ -485,7 +491,7 @@ Pohjansirkun hyvä ennustustarkkuus (0.95) selittyy sillä, että siitä on hava
 **Huom!** Muista, että abu-arvot ovat yksilömäärien logaritmeja.
 
 
-### 1.4.5 Todelliset ja ennustetut muutokset tutkimusalueella
+### 1.4.6 Todelliset ja ennustetut muutokset tutkimusalueella
 
 ```{r }
 #kannanmuutostrendien tarkastelu, lasketaan kaikilta linjoilta ennustetut ja todelliset kannanmuutokset
@@ -494,7 +500,7 @@ Ap2<-as.data.frame(Ap2)
 Ay<-as.data.frame(Ay)
 
 #aineisto, jossa kullekin lajille laskettu kaikilta linjoilta ennustettu ja todellinen muutoksen keskiarvo (EI siis korrelaatio
-# ennusteiden ja oikeiden muutosten v?lill? kuten aiemmin on laskettu)
+# ennusteiden ja oikeiden muutosten välillä kuten aiemmin on laskettu)
 kat=colnames(Y)
 kat=as.data.frame(kat)
 kat$Ap1k=colMeans(Ap1,na.rm = T)

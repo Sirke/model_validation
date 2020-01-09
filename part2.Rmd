@@ -6,7 +6,10 @@ output: html_document
 ---
 # 2. Validointimetodien vertailu
 
-Verrataan neljällä eri metodilla laskettuja ennustustarkkuuksia. 
+Verrataan neljällä eri metodilla laskettuja ennustustarkkuuksia.  
+Onko validointimetodien välillä eroja? (vaikuttaako metodi ennustustarkkuuteen?) 
+Onko ennustaminen helpompaa pa vai abu-aineistolla? (vaikuttaako aineistotyyppi ennustustarkkuuteen?) 
+Kullakin lajilla ennustaminen voi olla ylipäätään helpompaa tai vaikeampaa, metodista tai aineistotyypistä riippumatta. (laji huomioitava random-muuttujana)
 
 ```{r , include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -14,14 +17,27 @@ packages<-c("readr","tidyr","dplyr","plyr","magrittr","purrr","data.table","plot
 lapply(packages,library,character.only=T)
 ```
 
+Luetaan edellisessä osiossa lasketut tulokset sisälle:
+
 ```{r }
 getwd()
 res<-read.csv("results.csv",header=T,sep=",")
+str(res)
 ```
+
+Testaan ensin rinnakkain, miten tulokset muuttuvat jos abu-aineistosta karsitaan pois muutamat havainnot, jotka perustuvat vain kolmeen tai neljään havaintoon. 
+
+```{r}
+res3=res
+res3$abu_D[res$P_D<5]=NA
+res3
+```
+
+
 
 ## 2.1 Keskiarvot ja keskivirheet
 
-Lasketaan ennustustarkkuuksien keskiarvot ja keskivirheet kullekin metodille.
+Lasketaan ennustustarkkuuksien keskiarvot ja keskivirheet kullekin metodi/aineistotyyppi-yhdistelmälle:
 
 ```{r }
 #Compute means and standard errors
@@ -35,9 +51,11 @@ boxplot(res[-1])
 Kuvaajissa olisi varmaan hyvä pitää pa ja abu erillään?
 
 
-## 2.2 Onko metodien välillä eroja?
+## 2.2 Analyysi
 
-Mallintamista varten luodaan uusi dummy-muuttuja, joka kertoo onko käytetty aineisto pa- vai abu-aineistoa. Muutan myös method-muuttujan koodausta.
+### 2.2.1 Aineiston muokkaus
+
+Mallintamista varten luodaan uusi dummy-muuttuja, joka kertoo onko käytetty aineisto pa- vai abu-aineistoa. Muutan myös method-muuttujan koodausta hieman.
 
 ```{r}
 #aineiston muokkaus:
@@ -60,20 +78,27 @@ Teen uuden kuvaajan tällä aineistolla.
 ```{r}
 ggplot(res2,aes(x=method, y=accuracy))+geom_boxplot()+facet_grid(.~pa)
 ```
+
 Varmaankin se pohjansirkku (0.95) on tuo abu_D outlier oikeassa yläkulmassa. Pitäisi varmaan poistaa? Voisi ainakin kokeilla tehdä sama analyysi ilman ko. havaintoa.
 
-Varsinainen malli on lineaarinen sekamuuttujamalli, jossa ennustustarkkuutta selittävät metodi ja aineistotyyppi sekä niiden välinen interaktio. Lisäksi malli huomioi lajin random-tekijänä.
 
-Testailua...
+### 2.2.2. Testaus
+
+Alkuperäinen idea oli käyttää lineaarista sekamuuttujamallia, jossa ennustustarkkuutta selittävät metodi ja aineistotyyppi sekä niiden välinen interaktio. Lisäksi malli huomioi lajin random-tekijänä.
+
+Aloitan kuitenkin harjoituksen vuoksi ensin ihan perus lineaarisella mallilla, ilman random-tekijää.
+
 ```{r}
 m0=lm(accuracy~method*pa,data=res2)
 summary(m0)
 drop1(m0,test="F")
 ```
 
-Perus lineaarinen malli näyttää, että interaktio on tärkeä.
+Tämä malli näyttää, että selittävien muuttujien interaktio on merkitsevä.
 
-```{r}
+Mallin validointi residuaalien kuvaajien avulla:
+
+```{r,out.width = '100%'}
 E1=rstandard(m0)
 F1=fitted(m0)
 par(mfrow=c(2,2), mar=c(5,5,2,2))
@@ -83,24 +108,55 @@ boxplot(E1~method,xlab="method",ylab="residuals",data=res2)
 abline(h=0,lty=2)
 boxplot(E1~pa,xlab="pa",ylab="residuals",data=res2)
 abline(h=0,lty=2)
+par(mfrow=c(1,1), mar=c(5,5,2,2))
 boxplot(E1~species,xlab="species",ylab="residuals",data=res2)
 abline(h=0,lty=2)
 ```
 
-Mutta mallin validointi paljastaa, että species sisältää vielä vaihtelua. Se pitäisi ottaa mukaan malliin. Tehdään siis sekamalli, jossa species mukana random-tekijänä (120 leveliä, 8 havaintoa per level (pa ja abu-aineistoilla 4 metodia)).
+Mallin validointi paljastaa, että 'species' sisältää vielä vaihtelua. Se pitäisi ottaa mukaan malliin. Tehdään siis sekamalli, jossa 'species' on mukana random-tekijänä (120 lajia, 8 havaintoa per laji (pa/abu -aineisto + A/B/C/D -metodi)).  
+
+Laji siis random-tekijäksi mukaan. Testataan "REML"-asetuksella, millainen random-rakenne on paras.
 
 ```{r}
 A1=gls(accuracy~method*pa,method="REML",data=res2)
 A2=lme(accuracy~method*pa,data=res2,random=~1|species,method="REML")
 
-AIC(A1,A2)
 anova(A1,A2)
+```
+
+Sekamalli näyttäisi olevan parempi. 
+
+Muitakin random-rakenteita voisi testata. Mutta ovatko ne mielekkäitä? 
+
+```{r}
+
+#muita vaihtoehtoja random-rakenteen testaamiseksi:
+#A3=lme(accuracy~method*pa,data=res2,random=~1+method|species,method="REML")
+#A4=lme(accuracy~method*pa,data=res2,random=~1+pa|species,method="REML")
+#A5=lme(accuracy~method*pa,data=res2,random=~1+method*pa|species,method="REML")
+#päätimme jätttää testaamatta todettuamme, etteivät nämä ole kiinnostavia sisänsä
+
+A4=lme(accuracy~method*pa,data=res2,random=~1+pa|species,method="REML")
+anova(A2,A4)
+```
+
+A4 olisi itseasiassa ollut vielä parempi mutta onko se mielekäs? Pysytään silti A2 mallissa.
+
+```{r}
 summary(A2)
+anova(A2)
+```
 
-A2=lme(accuracy~method*pa,data=res2,random=~1|species,method="REML")
+Mallissa A2 metodi ja aineistotyyppi sekä niiden interaktio näyttävät olevan merkitseviä.
 
+Tehdään seuraavaksi mallin validointi residuaalien ja kuvaajien avulla:
+
+```{r,out.width="100%"}
 E1=resid(A2, type="normalized")
 F1=fitted(A2)
+
+E1=resid(A4, type="normalized")
+F1=fitted(A4)
 
 par(mfrow=c(2,2), mar=c(5,5,2,2))
 plot(x=F1,y=E1,xlab="fitted",ylab="residuals")
@@ -109,9 +165,37 @@ boxplot(E1~method,xlab="method",ylab="residuals",data=res2)
 abline(h=0,lty=2)
 boxplot(E1~pa,xlab="pa",ylab="residuals",data=res2)
 abline(h=0,lty=2)
+par(mfrow=c(1,1), mar=c(5,5,2,2))
 boxplot(E1~species,xlab="species",ylab="residuals",data=res2)
 abline(h=0,lty=2)
+```
 
+Residuaalit näyttää ok:lta. Lajin kohdalla ne hieman seilaavat mutta onko tämä kuinka paha/hyvä?  
+
+Teen huvikseen mallin validoinnin myös mallille A4:
+
+```{r}
+#sama validointi jos olisikin valittu A4:
+E1=resid(A4, type="normalized")
+F1=fitted(A4)
+
+par(mfrow=c(2,2), mar=c(5,5,2,2))
+plot(x=F1,y=E1,xlab="fitted",ylab="residuals")
+abline(h=0,lty=2)
+boxplot(E1~method,xlab="method",ylab="residuals",data=res2)
+abline(h=0,lty=2)
+boxplot(E1~pa,xlab="pa",ylab="residuals",data=res2)
+abline(h=0,lty=2)
+par(mfrow=c(1,1), mar=c(5,5,2,2))
+boxplot(E1~species,xlab="species",ylab="residuals",data=res2)
+abline(h=0,lty=2)
+```
+
+Ilmeisesti aika samanlaiset residuaalit. Pysytään siis edelleen mallissa A2.
+
+Keskitytään sitten fixed-osaan. Fixed-osan mallin sovituksessa käytetään "ML"-asetuksia.Tehdään neljä mallia, jotka sisältävät eri kombinaatiot muuttujista method ja pa.  Vertaillaan näitä keskenään.
+
+```{r}
 A2full=lme(accuracy~method*pa,data=res2,random=~1|species,method="ML")
 A2.a=lme(accuracy~method+pa,data=res2,random=~1|species,method="ML")
 A2.b=lme(accuracy~method,data=res2,random=~1|species,method="ML")
@@ -119,20 +203,40 @@ A2.c=lme(accuracy~pa,data=res2,random=~1|species,method="ML")
 
 anova(A2full,A2.a)
 AIC(A2full,A2.a,A2.b,A2.c)
-
-A2=lme(accuracy~method*pa,data=res2,random=~1|species,method="REML")
-
-
 ```
 
-Eli ennustustarkkuuteen vaikuttavat sekä metodi että aineisto. Huonoimmat tulokset saa abu-aineistolla ja metodilla D. 
+Jo ensimmäinen vertailu antaa tulokseksi, että interaktio on merkitsevä, joten molemmat muuttujat on hyvä pitää mallissa. AIC-vertailu antaa saman tuloksen.  
+
+Lopullinen malli on siis A2full, joka ajetaan vielä kerran "REML"-asetuksilla.
+
+```{r}
+A2full=lme(accuracy~method*pa,data=res2,random=~1|species,method="REML")
+summary(A2full)
+
+plot(A2full)
+qqnorm(A2full)
+qqnorm(A2full,~ranef(.),col=1)
+intervals(A2full)
+```
+
+Eli ennustustarkkuuteen vaikuttavat metodin ja aineiston yhdistelmä. Huonoimmat tulokset saa abu-aineistolla ja metodilla D.   
 
 
-## Kuvaaja
+## 2.3 Kuvaaja
+
+Boxplotti voisi näyttää tältä:
+```{r}
+boxplot(accuracy~pa*method,data=res2)
+
+ggplot(res2, aes(x = method, y = accuracy, interaction = pa, colour = pa)) + geom_boxplot() 
+```
+
+
+Jos haluaa tarkemmin näyttää yksittäiset lajit ja hajonnan niin sitten tää alkuperäinen kuva:
 
 Tätä pitäisi vielä miettiä, mitä plotataan ja mitä vasten? Alun perin verrattiin metodi D:tä pa/abu_past-arvoihin eli vähän sama kuin vertailu metodi A:han. siis, voitaisiinko jo hyvin yksinkertaisella validointimenetelmällä saada samoja tuloksia kuin monimutkaisemmalla metodilla?
 
-```{r, fig.width=14, fig.height=12}
+```{r, out.width="100%"}
 # Piirretään kuvaaja, Fig1
 
 #määritetään kuvalle raamit ja nimi

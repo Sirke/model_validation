@@ -5,7 +5,7 @@ date: "12 joulukuuta 2019"
 output: html_document
 ---
 
-# Poolaus
+# 3. Poolaus
 
 ```{r, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -13,10 +13,10 @@ knitr::opts_chunk$set(echo = TRUE)
 paketit<-c("readr","tidyr","dplyr","plyr","magrittr","purrr","data.table","plotrix","jtools","sp","GISTools","rgdal","sf","spatialEco","ggplot2")
 lapply(paketit,library,character.only=T)
 ```
-## Presence/absence -aineisto
+## 3.1 Presence/absence -aineisto
 
 
-### Aineisto sisälle ja periodien keskiarvojen lasku
+### 3.1.1 Aineisto sisälle ja periodien keskiarvojen lasku
 Luetaan havainnot ja ennusteet sisään ja lasketaan kullekin lajille periodien 1 ja 2 ennustettujen ja todellisten esiintymistodennäköisyyksien reittikohtaiset keskiarvot.
 
 ```{r }
@@ -90,7 +90,7 @@ for (i in 1:nsr){
 Kolme reittiä taitaa olla Suomessa, joten niiden kohdalla vesilintujen havainnot ovat NA:ta.
 
 
-### Koordinaattien lisääminen 
+### 3.1.2. Koordinaattien lisääminen 
 
 Seuraavaksi liitetään kuhunkin reittiin koordinaatit.
 
@@ -151,7 +151,7 @@ write.csv(Ap2,"pa_pred_per2.csv",row.names = F)
 ```
 
 
-### Poolaus
+### 3.1.3 Poolaus
 
 Kootaan reitit 50 km x 50 km (tai 100x100 km) ruutuihin, eli lasketaan todelliset ja ennustetut esiintymistodennäköisyydet kaikkien yhteen ruutuun sijoittuvien reittien periodien keskiarvojen keskiarvoina.  
 
@@ -220,7 +220,7 @@ data%>%
   write.csv(.,file = "pool_pa_pred_per2.csv",row.names=F)
 ```
 
-### Uudet poolatut ennustustarkkuudet, PA
+### 3.1.4 Poolatut ennustustarkkuudet
 
 Lopulta lasketaan uudestaan ennustustarkkuudet poolatuilla arvoilla. Toistaiseksi vain metodilla D.
 
@@ -281,11 +281,11 @@ paKor %>%
   write.csv('pa_pool50_results.csv',row.names=F)
 ```
 
-## Abundance -aineisto
+## 3.2 Abundance -aineisto
 
 Tehdään sama proseduuri myös abu-aineistolle.
 
-### Aineisto sisälle ja periodien keskiarvojen lasku
+### 3.2.1 Aineisto sisälle ja periodien keskiarvojen lasku
 
 ```{r}
 modeltype = 2 #2 on abu-aineistolle
@@ -346,7 +346,7 @@ for(j in 1:ns){
   }}
 ```
 
-### Koordinaattien lisääminen
+### 3.2.2 Koordinaattien lisääminen
 
 ```{r}
 #matriisit on muutettava dataframeiksi
@@ -385,7 +385,7 @@ write.csv(Ap1,"abu_pred_per1.csv",row.names = F)
 write.csv(Ap2,"abu_pred_per2.csv",row.names = F)
 ```
 
-### Poolaus
+### 3.2.3 Poolaus
 
 ```{r}
 #luetaan sisään reitit koordinaatteineen
@@ -435,7 +435,7 @@ data%>%
   write.csv(.,file = "pool_abu_pred_per2.csv",row.names=F,na="")
 ```
 
-### Uudet poolatut ennustustarkkuudet, ABU
+### 3.2.4 Poolatut ennustustarkkuudet
 
 
 Aineiston siivous:
@@ -496,7 +496,9 @@ abuKor %>%
 ```
 
 
-## Poolattujen ennustustarkkuuksien vertailu
+## 3.3 Poolattujen ennustustarkkuuksien vertailu
+
+### 3.3.1 Analyysi
 
 Selvitetään, paransiko poolaus ennustustarkkuuksia.
 
@@ -581,7 +583,7 @@ t.test(res2$pool_pa_change,res2$pool_abu_change, paired=TRUE)
 
 Aineistojen välillä ei löydy merkitseviä eroja kun tarkastellaan poolattuja ennustustarkkuuksia. 
 
-### Kuvaaja
+### 3.3.2 Kuvaaja
 
 ```{r, fig.width=14, fig.height=12}
 #piirretään sama kuvaaja, jossa nyt mukana myös poolatut arvot
