@@ -70,6 +70,7 @@ res_abu$pa=as.factor("abu")
 
 res2=rbind(res_pa,res_abu)
 str(res2)
+summary(res2)
 ```
 
 Teen uuden kuvaajan tällä aineistolla.
@@ -88,16 +89,15 @@ Alkuperäinen idea oli käyttää lineaarista sekamuuttujamallia, jossa ennustus
 Aloitan kuitenkin harjoituksen vuoksi ensin ihan perus lineaarisella mallilla, ilman random-tekijää.
 
 ```{r}
-m0=lm(accuracy~method*pa,data=res2)
+m0=lm(accuracy~method*pa,data=res2,na.action = "na.exclude")
 summary(m0)
 drop1(m0,test="F")
 ```
 
-Tämä malli näyttää, että selittävien muuttujien interaktio on merkitsevä.
+Tämä malli näyttää, että selittävien muuttujien interaktio on merkitsevä. Huomaa, että laitoin malliin argumentin na.action="na.exclude" koska muuten seuraavassa kohdassa fitted arvojen laskeminen ei onnistu neljän puuttuvan abu_C ja abu_D arvon takia.
 
 
 Mallin validointi residuaalien kuvaajien avulla:
-
 
 ```{r,out.width = '100%'}
 E1=rstandard(m0)
@@ -116,14 +116,12 @@ abline(h=0,lty=2)
 
 Mallin validointi paljastaa, että 'species' sisältää vielä vaihtelua. Se pitäisi ottaa mukaan malliin. Tehdään siis sekamalli, jossa 'species' on mukana random-tekijänä (120 lajia, 8 havaintoa per laji (pa/abu -aineisto + A/B/C/D -metodi)).  
 
-Laji siis random-tekijäksi mukaan. Testataan "REML"-asetuksella, millainen random-rakenne on paras.
+Laji siis random-tekijäksi mukaan. Testataan "REML"-asetuksella, kumpi on parempi.
 
 ```{r}
-A1=gls(accuracy~method*pa,method="REML",data=res2)
-A2=lme(accuracy~method*pa,data=res2,random=~1|species,method="REML")
-#A3=lme(accuracy~method*pa,data=res2,random=~1+method|species,method="REML")
-A4=lme(accuracy~method*pa,data=res2,random=~1+pa|species,method="REML")
+A1=gls(accuracy~method*pa,method="REML",data=res2,na.action="na.exclude")
 
+A2=lme(accuracy~method*pa,data=res2,random=~1|species,method="REML",na.action="na.exclude")
 
 anova(A1,A2)
 ```
@@ -135,11 +133,10 @@ Muitakin random-rakenteita voisi testata. Mutta ovatko ne mielekkäitä?
 ```{r}
 #muita vaihtoehtoja random-rakenteen testaamiseksi:
 #A3=lme(accuracy~method*pa,data=res2,random=~1+method|species,method="REML")
-#A4=lme(accuracy~method*pa,data=res2,random=~1+pa|species,method="REML")
+A4=lme(accuracy~method*pa,data=res2,random=~1+pa|species,method="REML",na.action="na.exclude")
 #A5=lme(accuracy~method*pa,data=res2,random=~1+method*pa|species,method="REML")
 #päätimme jätttää testaamatta todettuamme, etteivät nämä ole kiinnostavia sisänsä
 
-A4=lme(accuracy~method*pa,data=res2,random=~1+pa|species,method="REML")
 anova(A2,A4)
 ```
 
@@ -157,22 +154,6 @@ Tehdään seuraavaksi mallin validointi residuaalien ja kuvaajien avulla:
 ```{r,out.width="100%"}
 E1=resid(A2, type="normalized")
 F1=fitted(A2)
-
-anova(A1,A2,A4)
-summary(A4)
-```
-
-Malli A4 eli (random intercept ja slope) sekamalli on paras. Malli A3 ei suostunut toimimaan, muuten sekin olisi mukana vertailussa.  
-
-Tehdään seuraavaksi mallin validointi residuaalien ja kuvaajien avulla:
-
-```{r}
-E1=resid(A4, type="normalized")
-F1=fitted(A4)
-
-
-E1=resid(A4, type="normalized")
-F1=fitted(A4)
 
 par(mfrow=c(2,2), mar=c(5,5,2,2))
 plot(x=F1,y=E1,xlab="fitted",ylab="residuals")
@@ -210,13 +191,13 @@ abline(h=0,lty=2)
 
 Ilmeisesti aika samanlaiset residuaalit. Pysytään siis edelleen mallissa A2.
 
-Keskitytään sitten fixed-osaan. Fixed-osan mallin sovituksessa käytetään "ML"-asetuksia.Tehdään neljä mallia, jotka sisältävät eri kombinaatiot muuttujista method ja pa.  Vertaillaan näitä keskenään.
+Keskitytään sitten fixed-osaan. Fixed-osan mallin sovituksessa käytetään "ML"-asetuksia.Tehdään neljä mallia, jotka sisältävät eri kombinaatiot muuttujista method ja pa. Vertaillaan näitä keskenään.
 
 ```{r}
-A2full=lme(accuracy~method*pa,data=res2,random=~1|species,method="ML")
-A2.a=lme(accuracy~method+pa,data=res2,random=~1|species,method="ML")
-A2.b=lme(accuracy~method,data=res2,random=~1|species,method="ML")
-A2.c=lme(accuracy~pa,data=res2,random=~1|species,method="ML")
+A2full=lme(accuracy~method*pa,data=res2,random=~1|species,method="ML",na.action="na.exclude")
+A2.a=lme(accuracy~method+pa,data=res2,random=~1|species,method="ML",na.action="na.exclude")
+A2.b=lme(accuracy~method,data=res2,random=~1|species,method="ML",na.action="na.exclude")
+A2.c=lme(accuracy~pa,data=res2,random=~1|species,method="ML",na.action="na.exclude")
 
 anova(A2full,A2.a)
 AIC(A2full,A2.a,A2.b,A2.c)
@@ -227,40 +208,13 @@ Jo ensimmäinen vertailu antaa tulokseksi, että interaktio on merkitsevä, jote
 Lopullinen malli on siis A2full, joka ajetaan vielä kerran "REML"-asetuksilla.
 
 ```{r}
-A2full=lme(accuracy~method*pa,data=res2,random=~1|species,method="REML")
+A2full=lme(accuracy~method*pa,data=res2,random=~1|species,method="REML",na.action="na.exclude")
 summary(A2full)
 
 plot(A2full)
 qqnorm(A2full)
 qqnorm(A2full,~ranef(.),col=1)
 intervals(A2full)
-```
-
-Residuaalit näyttää ok:lta. Myös lajin osalta.  
-
-Keskitytään sitten fixed-osaan. Fixed-osan mallin sovituksessa käytetään "ML"-asetuksia.Tehdään neljä mallia, jotka sisältävät eri kombinaatiot muuttujista method ja pa.  Vertaillaan näitä keskenään.
-
-```{r}
-A4full=lme(accuracy~method*pa,data=res2,random=~1+pa|species,method="ML")
-A4.a=lme(accuracy~method+pa,data=res2,random=~1+pa|species,method="ML")
-A4.b=lme(accuracy~method,data=res2,random=~1+pa|species,method="ML")
-A4.c=lme(accuracy~pa,data=res2,random=~1+pa|species,method="ML")
-
-anova(A4full,A4.a)
-AIC(A4full,A4.a,A4.b,A4.c)
-```
-
-Jo ensimmäinen vertailu antaa tulokseksi, että interaktio on merkitsevä, joten molemmat muuttujat on hyvä pitää mallissa. AIC-vertailu antaa saman tuloksen.  
-
-Lopullinen malli on siis A4full, joka ajetaan vielä kerran "REML"-asetuksilla.
-
-```{r}
-A4full=lme(accuracy~method*pa,data=res2,random=~1+pa|species,method="REML")
-summary(A4full)
-plot(A4full)
-qqnorm(A4full)
-qqnorm(A4full,~ranef(.),col=1)
-intervals(A4full)
 ```
 
 Eli ennustustarkkuuteen vaikuttavat metodin ja aineiston yhdistelmä. Huonoimmat tulokset saa abu-aineistolla ja metodilla D.   
@@ -276,13 +230,8 @@ ggplot(res2, aes(x = method, y = accuracy, interaction = pa, colour = pa)) + geo
 ```
 
 
-Jos haluaa tarkemmin näyttää yksittäiset lajit ja hajonnan niin sitten tää alkuperäinen kuva:
+Alkuperäinen idea kuvaajasta oli tämä:
 
-Mitenköhän tämän tuloksen voisi esittää kuvana?
-
-
-
-Tätä pitäisi vielä miettiä, mitä plotataan ja mitä vasten? Alun perin verrattiin metodi D:tä pa/abu_past-arvoihin eli vähän sama kuin vertailu metodi A:han. siis, voitaisiinko jo hyvin yksinkertaisella validointimenetelmällä saada samoja tuloksia kuin monimutkaisemmalla metodilla?
 
 ```{r, out.width="100%"}
 # Piirretään kuvaaja, Fig1
@@ -347,8 +296,7 @@ text(-0.5,0.8,"d) Abundance, 2 km",cex=0.8)
 #dev.off()
 ```
 
-
-Millainen kuvaaja olisi hyvä?
+Tätä pitäisi vielä miettiä, mitä plotataan ja mitä vasten? Alun perin verrattiin metodi D:tä pa/abu_past-arvoihin eli vähän sama kuin vertailu metodi A:han. siis, voitaisiinko jo hyvin yksinkertaisella validointimenetelmällä saada samoja tuloksia kuin monimutkaisemmalla metodilla?
 
 
 

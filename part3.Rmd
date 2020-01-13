@@ -548,38 +548,20 @@ anova(lm(res4$accuracy~res4$species+res4$method))
 
 Pa-aineistolla poolaus näyttää parantaneen tilastollisesti merkitsevästi metodi D:n ennustustarkkuutta. Sekä metodien että lajien väliset erot ovat merkitseviä. Huomaa, että 'laji' on vahvempi selittävä muuttuja.
 
-```{r}
-#abu
-res4=subset(res3,method=="pool_abu_change"|method=="abu_D")
-#testi (two-way anova)
-anova(lm(res4$accuracy~res4$species+res4$method))
-```
+
 
 Abu-aineistolla poolaus näyttää myös parantaneen ennustustarkkuutta, tosin ei yhtä vahvasti kuin pa-aineistolla. Nyt laji ei ole merkitsevä tekijä eli erot johtuvat vain metodista(?).
 
 
 Mietin, olenko tehnyt analyysit oikein. Teenkö oikein, jos tulkitsen lajin "samana yksikkönä" eli repeated measurement:nä? Vai olisiko laji pitänyt jättää huomioimatta?
 
-```{r}
-#vai pitäisikö tehdä one-way anova?
-t.test(res2$pool_pa_change,res2$pa_D, paired = T)
-t.test(res2$pool_abu_change,res2$abu_D, paired = T)
-```
 
 Tuloksethan ovat samat method-muuuttujalle mutta pitäisikö lajien välisestä vaihtelusta tai sen vähyydestä vetää jotain johtopäätöksiä?
 
 
 Edelleen mietin, onko järkevää vertailla pa- ja abu-aineistoja, mutta testaanpa nyt kumminkin..
 
-```{r}
-#testataan onko merkitsevää eroa
-#poolattujen change pa ja abu välillä
-res4=subset(res3,method=="pool_abu_change"|method=="pool_pa_change")
-anova(lm(res4$accuracy~res4$species+res4$method))
 
-#tai t-testi ilman lajia selittävänä tekijänä
-t.test(res2$pool_pa_change,res2$pool_abu_change, paired=TRUE)
-```
 
 Aineistojen välillä ei löydy merkitseviä eroja kun tarkastellaan poolattuja ennustustarkkuuksia. 
 
