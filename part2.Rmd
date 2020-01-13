@@ -129,7 +129,6 @@ Sekamalli näyttäisi olevan parempi.
 Muitakin random-rakenteita voisi testata. Mutta ovatko ne mielekkäitä? 
 
 ```{r}
-
 #muita vaihtoehtoja random-rakenteen testaamiseksi:
 #A3=lme(accuracy~method*pa,data=res2,random=~1+method|species,method="REML")
 #A4=lme(accuracy~method*pa,data=res2,random=~1+pa|species,method="REML")
