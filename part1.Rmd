@@ -156,7 +156,7 @@ for (i in 1:ns){
 plot(A,B,xlim=c(-1,1), ylim=c(-1,1)) + abline(0,1)+ abline(h=0)+ abline(v=0)
 ```
 
-Molemmat metodit ennustavat hyvin. A:lle ennusteet ovat vähän parempia kuin B:lle. 
+Molemmat metodit ennustavat hyvin. A:lle ennusteet (eli interpoloidessa) ovat vähän parempia kuin B:lle. 
 
 
 ### 1.3.4 Ennustustarkkuudet metodeilla C ja D
@@ -194,9 +194,10 @@ Molemmille metodeille ennusteet aika huonoja.
 
 **HUOM!** Presence/absence aineistossa mm. Suomen vesilinnut ovat NA:ta ennen vuotta 2006. Periodi 1:sen kaikki arvot vesilinnuille Suomessa ovat siis NA, eivätkä tule mukaan laskelmiin. Korrelaatiota laskiessa argumentti "use="na.or.complete"" varmistaa, että korrelaatio lasketaan muista kuin NA-arvoista.  
 
+
 ### 1.3.5 Muutama esimerkkilaji
 
-Plottaan yhdelle lajille ennustetut (D) ja todelliset muutokset reiteittäin. Yksi piste on siis yksi reitti.
+Plottaan parille lajille ennustetut (D) ja todelliset muutokset reiteittäin. Yksi piste on siis yksi reitti.
 
 ```{r}
 pred=Ap1[,21]
@@ -229,6 +230,9 @@ for (i in 1:ns){
 summary(P_D)
 sort(P_D)
 ```
+
+Korrelaatiot on laskettu useiden reittiparien avulla pa-aineistossa. Hyvä niin.
+
 
 ### 1.3.6 Tulokset
 
@@ -268,7 +272,7 @@ Ap2<-as.data.frame(Ap2)
 Ay<-as.data.frame(Ay)
 
 #aineisto, jossa kullekin lajille laskettu kaikilta linjoilta ennustettu ja todellinen muutoksen keskiarvo (EI siis korrelaatio
-# ennusteiden ja oikeiden muutosten välillä kuten aiemmin on laskettu)
+# ennusteiden ja oikeiden muutosten välillä kuten aiemmin on laskettu vaan vähän niinkuin olisi poolattu koko aineisto yhteen lukemaan)
 kat=colnames(Y)
 kat=as.data.frame(kat)
 kat$Ap1k=colMeans(Ap1,na.rm = T)
@@ -285,7 +289,7 @@ ggplot(kat, aes(x=Ap2k, y=Ayk))+ geom_point()+
   xlab("Mean predicted change, C")+
   ylab("Mean observed change")+ 
   geom_abline(intercept = 0, slope = 1, color="red",linetype="dashed", size=1.5)+
-  geom_text(aes(label=kat),hjust=0, vjust=0) + geom_smooth(method=lm,se=F)                                                                                        
+  geom_text(aes(label=kat),hjust=0, vjust=0) + geom_smooth(method=lm,se=F)            
 ```
 
 Kuvassa yksi piste on yksi laji. X-akselilla on lajin ennustetun esiintymistod.näk. muutos. Y-akselilla todellinen muutos. Nämä on laskettu tutkimusalueen jokaisen reitin (missä lajia on havaittu) keskiarvona. Punainen katkoviiva merkkaa täydellista vastaavuutta. Mitä lähempänä viivaa havainto on, sitä paremmin ennuste on mennyt nappiin. Sininen viiva on aineiston regressiokäyrä.
@@ -412,7 +416,7 @@ plot(C,D,xlim=c(-1,1), ylim=c(-1,1)) + abline(0,1)+ abline(h=0)+ abline(v=0)
 ```
 Molemmat metodit arvioivat ennusteet suht huonoiksi.
 
-**HUOM!** Abundance aineistolla riittää, että lajia on kunkin periodin aikana havaittu edes kerran. PA-aineistolla havaintoja piti olla vähintään kaksi. 
+**HUOM!** Abundance aineistolla riittää, että lajia on kunkin periodin aikana havaittu edes kerran. PA-aineistolla havaintoja piti olla vähintään kaksi. Kummallakin aineistolla reitillä pitää olla käyty vähintään kaksi kertaa. 
 
 ### 1.4.4 Tulokset
 
@@ -466,11 +470,9 @@ cor(pred,obs, use="na.or.complete")
 ggplot(laji, aes(x=pred,y=obs))+ geom_point()+ xlim(-2,2)+ylim(-2,2)+ geom_abline(intercept = 0, slope =1) + geom_hline(yintercept=0) + geom_vline(xintercept = 0) +ggtitle("Pohjansirkku")
 ```
 
-Abu-aineistolla viherpeipon muutoksen ennusteet ovat suurimmaksi osaksi hieman negatiivisia ja havainnot (joissa taas suurta vaihtelua) ovat myös suurimmaksi osaksi lähellä nollaa tai negatiivisia. Viherpeipon ennustustarkkuus onkin abu-aineistolla (0.016) hieman parempi kuin pa-aineistolla (-0.12). 
+**Viherpeippo:** Abu-aineistolla viherpeipon muutoksen ennusteet ovat suurimmaksi osaksi hieman negatiivisia ja havainnot (joissa taas suurta vaihtelua) ovat myös suurimmaksi osaksi lähellä nollaa tai negatiivisia. Viherpeipon ennustustarkkuus onkin abu-aineistolla (0.016) hieman parempi kuin pa-aineistolla (-0.12). 
 
-Pohjansirkun ennustustarkkuus oli 0.95. 
-
-Lasken kuinka moneen havaintopariin korrelaation lasku perustuu. Liitän tämän tiedon osaksi tuloksia. Jatkossa voi suodattaa epätarkimmat lajit pois.
+**Pohjansirkku:** Pohjansirkun ennustustarkkuus oli 0.95. Lasken kuinka moneen havaintopariin korrelaation lasku perustuu. Liitän tämän tiedon osaksi tuloksia. Jatkossa voi suodattaa epätarkimmat lajit halutessaan pois.
 
 ```{r}
 P_D = rep(NA,ns)
@@ -486,7 +488,7 @@ res=cbind(res,P_D)
 write.csv(res,"results.csv",row.names = F)
 ```
 
-Pohjansirkun hyvä ennustustarkkuus (0.95) selittyy sillä, että siitä on havaintoja vain kolmelta reitiltä. Ntype-analyysissähän tarkasteltiin, kuinka ennustustarkkuuteen vaikuttaa se, kuinka monta kertaa kukin reitti on laskettu. Tarkkuus näyttää myös vaihtelevan sen mukaan kuinka monelta reitiltä havainnot on kerätty. Sitähän me ei olla kontrolloitu laskuissa muuten kuin prevalenssilla (0.05). Prevalenssi on kuitenkin laskettu koko aineistosta. Muutosta laskiessa huomioidaan vain periodien 1 ja 2 reitit. pa-aineistolla laskuihin päätyvät vähintään kahteen kertaan lasketut reitit. Abu-aineistolla riittää yksikin havainto.
+Pohjansirkun hyvä ennustustarkkuus (0.95) selittyy sillä, että siitä on havaintoja vain kolmelta reitiltä (3/264), muut ovat NA:ta. Ntype-analyysissähän tarkasteltiin, kuinka ennustustarkkuuteen vaikuttaa se, kuinka monta kertaa kukin reitti on laskettu. Tarkkuus näyttää myös vaihtelevan sen mukaan kuinka monelta reitiltä havainnot on kerätty. Sitähän me ei olla kontrolloitu laskuissa muuten kuin prevalenssilla (0.05). Prevalenssi on kuitenkin laskettu koko aineistosta. Muutosta laskiessa huomioidaan vain periodien 1 ja 2 reitit. Pa-aineistolla laskuihin päätyvät samat vähintään kahteen kertaan lasketut reitit mutta jokaiselta laskennalta tulee lajille merkintä (siis joko 1 tai nolla). Abu-aineistolla riittää yksikin havainto.
 
 **Huom!** Muista, että abu-arvot ovat yksilömäärien logaritmeja.
 
@@ -535,3 +537,5 @@ write.csv(kat,"mean_observed_predicted_changes_abu.csv",row.names = F)
 ```
 
 Kuvien skaalat eroavat taas hieman. Skaalan säätäminen tehtävä niin, että labeleistä pystyisi lukemaan edes jotain. 
+
+Hmm.. Jos näitä kuvia päädytään käyttämään, pitäisikö pohjansirkku tai peltopyy ottaa pois epätarkkoina? Ehkä ei?

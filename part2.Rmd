@@ -25,15 +25,14 @@ res<-read.csv("results.csv",header=T,sep=",")
 str(res)
 ```
 
-Testaan ensin rinnakkain, miten tulokset muuttuvat jos abu-aineistosta karsitaan pois muutamat havainnot, jotka perustuvat vain kolmeen tai neljään havaintoon. 
+Testaan rinnakkain, miten tulokset muuttuvat jos abu-aineistosta karsitaan pois muutamat havainnot, jotka perustuvat vain kolmeen tai neljään havaintoon. 
 
 ```{r}
-res3=res
-res3$abu_D[res$P_D<5]=NA
-res3
+res$abu_D[res$P_D<10]=NA
+res$abu_C[res$P_D<10]=NA
 ```
 
-
+Jos minimihavaintorajana pidetään kymmentä, vain pohjansirkku ja peltopyy putoavat pois.
 
 ## 2.1 Keskiarvot ja keskivirheet
 
@@ -41,11 +40,11 @@ Lasketaan ennustustarkkuuksien keskiarvot ja keskivirheet kullekin metodi/aineis
 
 ```{r }
 #Compute means and standard errors
-res %>% dplyr::select(2:9)%>%colMeans()
+res %>% dplyr::select(2:9)%>%colMeans(,na.rm = T)
 res %>% dplyr::select(2:9)%>%std.error()
 
 #kuvaaja
-boxplot(res[-1])
+boxplot(res[c(-1,-10)])+abline(h=0)
 ```
 
 Kuvaajissa olisi varmaan hyvä pitää pa ja abu erillään?
@@ -79,7 +78,7 @@ Teen uuden kuvaajan tällä aineistolla.
 ggplot(res2,aes(x=method, y=accuracy))+geom_boxplot()+facet_grid(.~pa)
 ```
 
-Varmaankin se pohjansirkku (0.95) on tuo abu_D outlier oikeassa yläkulmassa. Pitäisi varmaan poistaa? Voisi ainakin kokeilla tehdä sama analyysi ilman ko. havaintoa.
+
 
 
 ### 2.2.2. Testaus
