@@ -72,6 +72,9 @@ res_abu$pa=as.factor("abu")
 res2=rbind(res_pa,res_abu)
 str(res2)
 summary(res2)
+
+#tallennetaan taulukko, muista, että mukana NA:ta!!
+write.csv(res2,"results_with_NA.csv",row.names = F)
 ```
 
 Teen uuden kuvaajan tällä aineistolla.

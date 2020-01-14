@@ -33,15 +33,4 @@ output:
 ```
   
 ***
-***
-  
-```{r child = "part4.Rmd"}
-```
-  
-***
-***
-  
-```{r child = "part5.Rmd"}
-```
-  
-***
+

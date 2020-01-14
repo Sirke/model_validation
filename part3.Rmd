@@ -10,7 +10,7 @@ output: html_document
 ```{r, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-paketit<-c("readr","tidyr","plyr","dplyr","magrittr","purrr","data.table","plotrix","jtools","sp","GISTools","rgdal","sf","spatialEco","ggplot2")
+paketit<-c("readr","tidyr","plyr","dplyr","magrittr","purrr","data.table","plotrix","jtools","sp","GISTools","rgdal","sf","spatialEco","ggplot2","lme4","nlme")
 lapply(paketit,library,character.only=T)
 ```
 ## 3.1 Presence/absence -aineisto
@@ -493,13 +493,14 @@ abuKor %>%
 Kuinka moneen havaintopariin poolatut ennustustarkkuudet perustuvat? vieläkö mukana on lajeja, joista vain muutama havainto?
 
 ```{r}
-abuKor %>%
+observations=abuKor %>%
   group_by(Yspecies) %>%
+  dplyr::summarise(Ngrid= length(which(!is.na(difPred))))
 
-
+observations
 ```
 
-
+Vaikea päätellä, mitkä korrelaatioista on luotettavasti laskettu. Pohjansirkun poolattu korrelaatio perustuu edelleen vain kolmeen havaintopariin. Sen sijaan peltopyyn korrelaatio onkin nyt laskettu seitsemästä havaintoparista. Huomion arvoista on myös se, että esimerkiksi sinirinnan havaintoparit ovat poolatussa aineistossa vain kahdeksan kun taas alkuperäinen korrelaatio on laskettu 34:stä havaintoparista. Poolaaminen voi siis auttaa joidenkin niiden lajien kohdalla, joille on vaikea löytää reittejä, joilla olisi käyty sekä periodi 1:llä että 2:lla. Mutta jos tarkastellaan vain sitä, kuinka harvasta gridiruudusta poolattu korrelaatio on laskettu, jää huomioimatta, että yhden ruudun "takana" voi olla useampia reittejä. Jos rajaksi asettaa saman 10 voi aineistosta pudota lajeja, joista oli useita havaintoja.
 
 
 
@@ -511,7 +512,7 @@ Selvitetään, paransiko poolaus ennustustarkkuuksia.
 
 ```{r}
 #kaikki data sisään
-res<-read.csv("results.csv")
+res<-read.csv("results_with_NA.csv")
 pool_pa<-read.csv("pa_pool50_results.csv")
 pool_abu<-read.csv("abu_pool50_results.csv")
 
@@ -519,62 +520,105 @@ pool_abu<-read.csv("abu_pool50_results.csv")
 #pool_pa<-read.csv("pa_pool100_results.csv")
 #pool_abu<-read.csv("abu_pool100_results.csv")
 
-#yhdistely yhdeksi taulukoksi
-pool_res<-inner_join(pool_pa,pool_abu,by="Yspecies")
-res2<-inner_join(res,pool_res,by=c("species"="Yspecies"))
+#muokataan taulukoita
+pool_pa$method=as.factor("pool_D")
+pool_pa$pa=as.factor("pa")
 
-#tallennetaan omaksi taulukokseen jatkoa varten
-write.csv(res2,"results_and_pooled.csv",row.names = F)
+pool_abu$method=as.factor("pool_D")
+pool_abu$pa=as.factor("abu")
 
-##lasketaan kaikille arvoille keskiarvot ja se:t
-res2 %>% dplyr::select(2:11)%>%colMeans()
-res2 %>% dplyr::select(2:11)%>%std.error()
+pool_pa=pool_pa %>% 
+  rename(
+    species = Yspecies,
+    accuracy = pool_pa_change)
 
-#muokataan aineistoa
-res3=res2[c(1,2,3,4,5,10,6,7,8,9,11)]
-res3=gather(res3,"method","accuracy",2:11)
-res3$method=as.factor(res3$method)
+pool_abu=pool_abu %>% 
+  rename(
+    species = Yspecies,
+    accuracy = pool_abu_change
+    )
+#yhdistetään kaikki tulokset samaan taulukkoon
+res2=rbind(res,pool_abu,pool_pa)
+str(res2)
+summary(res2)
 
-#plottailua
-p=ggplot(res3,aes(x=method,y=accuracy))+geom_boxplot()
-p + scale_x_discrete(limits=c("pa_A", "pa_B","pa_C","pa_D","pool_pa_change"))
-p+ scale_x_discrete(limits=c("abu_A", "abu_B","abu_C","abu_D","pool_abu_change"))
+#tallennetaan
+write.csv(res2,"results_and_pooled.csv",row.names=F)
 ```
 
-Näyttää siltä, että poolaus on parantanut ennustustarkkuuksia vain hitusen.
+Merkkaisin pohjansirkun ja peltopyyn poolatun abu-arvon NA:ksi koska ne edelleen perustuvat vain kolmeen ja seitsemään havaintoon. Tilastollisessa testauksessa ne eivät pääse mukaan laskuihin koska sarja ei ole täydellinen, eikö? Riippuen tietysti siitä, miten testaan ja mitä.
+
+```{r}
+res2$accuracy[res2$species == "Emberiza_rustica" & res2$method == "pool_D" & res2$pa == "abu"] <- NA
+res2$accuracy[res2$species == "Bonasa_bonasia" & res2$method == "pool_D" & res2$pa == "abu"] <- NA
+```
+
+
+
+
+```{r}
+#plottailua
+boxplot(accuracy~pa*method,data=res2)
+ggplot(res2, aes(x = method, y = accuracy, interaction = pa, colour = pa)) + geom_boxplot() 
+
+#vai pitäisikö verrata ja kuvata vain D vs. pool_D?
+res3=subset(res2,method=="D"|method=="pool_D")
+ggplot(res3, aes(x = method, y = accuracy, interaction = pa, colour = pa)) + geom_boxplot()
+```
+
+Näyttää siltä, että poolaus on parantanut ennustustarkkuuksia vain hitusen. Tarkastellaan keskiarvoja ja keskivirheitä:
+
+```{r}
+res3%>%
+  group_by(method,pa) %>%
+  summarise(means=mean(accuracy,na.rm=T),std.errors=std.error(accuracy,na.rm=T))
+```
 
 Testataan:
 
 ```{r}
-#valitaan metodi D ja poolatut D arvot
-#pa
-res4=subset(res3,method=="pool_pa_change"|method=="pa_D")
-#testi (two-way anova)
-anova(lm(res4$accuracy~res4$species+res4$method))
+#fixed osan vertailua
+A1=lme(accuracy~method*pa,data=res3,random=~1|species,method="ML",na.action="na.exclude")
+A2=lme(accuracy~method+pa,data=res3,random=~1|species,method="ML",na.action="na.exclude")
+A3=lme(accuracy~method,data=res3,random=~1|species,method="ML",na.action="na.exclude")
+A4=lme(accuracy~pa,data=res3,random=~1|species,method="ML",na.action="na.exclude")
+
+anova(A1,A2)
+AIC(A1,A2,A3,A4)
+
+summary(A1)
+anova(A1)
+
+#lopullinen malli
+A1_final=lme(accuracy~method*pa,data=res3,random=~1|species,method="REML",na.action="na.exclude")
+summary(A1_final)
+
+#validointi
+plot(A1_final)
+
+E1=resid(A1_final, type="normalized")
+F1=fitted(A1_final)
+
+par(mfrow=c(2,2), mar=c(5,5,2,2))
+plot(x=F1,y=E1,xlab="fitted",ylab="residuals")
+abline(h=0,lty=2)
+boxplot(E1~method,xlab="method",ylab="residuals",data=res3)
+abline(h=0,lty=2)
+boxplot(E1~pa,xlab="pa",ylab="residuals",data=res3)
+abline(h=0,lty=2)
+par(mfrow=c(1,1), mar=c(5,5,2,2))
+boxplot(E1~species,xlab="species",ylab="residuals",data=res3)
+abline(h=0,lty=2)
 ```
 
-Pa-aineistolla poolaus näyttää parantaneen tilastollisesti merkitsevästi metodi D:n ennustustarkkuutta. Sekä metodien että lajien väliset erot ovat merkitseviä. Huomaa, että 'laji' on vahvempi selittävä muuttuja.
+Eli tässäkin olisi tuloksena, että 
 
-
-
-Abu-aineistolla poolaus näyttää myös parantaneen ennustustarkkuutta, tosin ei yhtä vahvasti kuin pa-aineistolla. Nyt laji ei ole merkitsevä tekijä eli erot johtuvat vain metodista(?).
-
-
-Mietin, olenko tehnyt analyysit oikein. Teenkö oikein, jos tulkitsen lajin "samana yksikkönä" eli repeated measurement:nä? Vai olisiko laji pitänyt jättää huomioimatta?
-
-
-Tuloksethan ovat samat method-muuuttujalle mutta pitäisikö lajien välisestä vaihtelusta tai sen vähyydestä vetää jotain johtopäätöksiä?
-
-
-Edelleen mietin, onko järkevää vertailla pa- ja abu-aineistoja, mutta testaanpa nyt kumminkin..
-
-
-
-Aineistojen välillä ei löydy merkitseviä eroja kun tarkastellaan poolattuja ennustustarkkuuksia. 
 
 ### 3.3.2 Kuvaaja
 
-```{r, fig.width=14, fig.height=12}
+Vanha koodi on nyt toistaiseksi vielä tässä mutta alan kääntymään boxplottien puoleen.. Koodi ei toimi ilman muokkausta koska aineisto on nyt eri muodossa.
+
+```{r,eval=FALSE, fig.width=14, fig.height=12}
 #piirretään sama kuvaaja, jossa nyt mukana myös poolatut arvot
 
 #määritetään kuvalle raamit ja nimi
@@ -657,5 +701,4 @@ text(-0.5,0.8,"f) Abundance, 50km", cex=0.8)
 ```
 
 
-Tässäkin täytyy varmaan vielä miettiä, mitä halutaan esittää kuvaajissa. Aikaisemmin verrattiin uutta validointimenetelmää D (ja uusia poolattuja arvoja) vanhaan menetelmään, joka edusti ennustustarkkuutta kun mallin validoinnissa käytettiin samoja havaintoja kuin mallin kalibroinnissa (_past oli melkein vastaava kuin metodi A). 
 
