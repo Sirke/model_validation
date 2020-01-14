@@ -13,7 +13,7 @@ Kullakin lajilla ennustaminen voi olla ylipäätään helpompaa tai vaikeampaa, 
 
 ```{r , include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-packages<-c("readr","tidyr","dplyr","plyr","magrittr","purrr","data.table","plotrix","jtools","ggplot2","lme4","nlme")
+packages<-c("readr","tidyr","plyr","dplyr","magrittr","purrr","data.table","plotrix","jtools","ggplot2","lme4","nlme")
 lapply(packages,library,character.only=T)
 ```
 
@@ -25,7 +25,7 @@ res<-read.csv("results.csv",header=T,sep=",")
 str(res)
 ```
 
-Testaan rinnakkain, miten tulokset muuttuvat jos abu-aineistosta karsitaan pois muutamat havainnot, jotka perustuvat vain kolmeen tai neljään havaintoon. 
+Testaan, miten tulokset muuttuvat jos abu-aineistosta karsitaan pois muutamat havainnot, jotka perustuvat vain kolmeen tai neljään havaintoon. 
 
 ```{r}
 res$abu_D[res$P_D<10]=NA
@@ -40,11 +40,12 @@ Lasketaan ennustustarkkuuksien keskiarvot ja keskivirheet kullekin metodi/aineis
 
 ```{r }
 #Compute means and standard errors
-res %>% dplyr::select(2:9)%>%colMeans(,na.rm = T)
+res %>% dplyr::select(2:9)%>%colMeans(.,na.rm = T)
 res %>% dplyr::select(2:9)%>%std.error()
 
 #kuvaaja
-boxplot(res[c(-1,-10)])+abline(h=0)
+boxplot(res[c(-1,-10)])
+abline(h=0)
 ```
 
 Kuvaajissa olisi varmaan hyvä pitää pa ja abu erillään?

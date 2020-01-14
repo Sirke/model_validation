@@ -68,7 +68,7 @@ localDir = "."
 PredictionDir = file.path(localDir, "data")
 ```
 ```{r include=FALSE}
-paketit<-c("readr","tidyr","dplyr","plyr","magrittr","purrr","data.table","plotrix","jtools","sp","GISTools","rgdal","sf","spatialEco","ggplot2","ggrepel","psych")
+paketit<-c("readr","tidyr","plyr","dplyr","magrittr","purrr","data.table","plotrix","jtools","sp","GISTools","rgdal","sf","spatialEco","ggplot2","ggrepel","psych")
 lapply(paketit,library,character.only=T)
 ```
 

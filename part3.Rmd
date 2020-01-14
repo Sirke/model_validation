@@ -10,7 +10,7 @@ output: html_document
 ```{r, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-paketit<-c("readr","tidyr","dplyr","plyr","magrittr","purrr","data.table","plotrix","jtools","sp","GISTools","rgdal","sf","spatialEco","ggplot2")
+paketit<-c("readr","tidyr","plyr","dplyr","magrittr","purrr","data.table","plotrix","jtools","sp","GISTools","rgdal","sf","spatialEco","ggplot2")
 lapply(paketit,library,character.only=T)
 ```
 ## 3.1 Presence/absence -aineisto
@@ -104,7 +104,7 @@ xy<-xy%>%
   mutate(x = x * 1000) %>%
   mutate(y = y * 1000) 
 
-#jotta koordinaatit saa liitetty? oikealle linjalle, tehdään taulukko, jossa reiteillä on molemmat koodaukset (alkuperäiset ja 1-2591)
+#jotta koordinaatit saa liitettyä oikealle linjalle, tehdään taulukko, jossa reiteillä on molemmat koodaukset (alkuperäiset ja 1-2591)
 Route<-unique(routeyear$Route)
 routeid<-c(1:2591)
 d<-data.frame(Route,routeid)
@@ -165,7 +165,6 @@ plot(Ay1)
 proj4string(Ay1) <-CRS("+init=EPSG:3035")
 
 coordinates(Ay2)<-c("x","y")
-plot(Ay2)
 proj4string(Ay2) <-CRS("+init=EPSG:3035")
 
 coordinates(Ap1)<-c("x","y")
@@ -394,15 +393,12 @@ plot(Ay1)
 proj4string(Ay1) <-CRS("+init=EPSG:3035")
 
 coordinates(Ay2)<-c("x","y")
-plot(Ay2)
 proj4string(Ay2) <-CRS("+init=EPSG:3035")
 
 coordinates(Ap1)<-c("x","y")
-plot(Ap1)
 proj4string(Ap1) <-CRS("+init=EPSG:3035")
 
 coordinates(Ap2)<-c("x","y")
-plot(Ap2)
 proj4string(Ap2) <-CRS("+init=EPSG:3035")
 
 #join data based on polygons
@@ -449,7 +445,6 @@ papred1<-read.csv("pool_abu_pred_per1.csv",header=T,sep=",")
 papred2<-read.csv("pool_abu_pred_per2.csv",header=T,sep=",")
 
 #heivataan turhat sarakkeet
-names(paY1)
 drops <- c("routeid","left","top","right","bottom","coords.x1","coords.x2")
 paY1<-paY1[ , !(names(paY1) %in% drops)]
 paY2<-paY2[ , !(names(paY2) %in% drops)]
@@ -494,6 +489,18 @@ abuKor %>%
   dplyr::summarise(pool_abu_change= cor(difPred, difY, use= "na.or.complete"))%T>%
   write.csv('abu_pool50_results.csv',row.names=F)
 ```
+
+Kuinka moneen havaintopariin poolatut ennustustarkkuudet perustuvat? vieläkö mukana on lajeja, joista vain muutama havainto?
+
+```{r}
+abuKor %>%
+  group_by(Yspecies) %>%
+
+
+```
+
+
+
 
 
 ## 3.3 Poolattujen ennustustarkkuuksien vertailu
