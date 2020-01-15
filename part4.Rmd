@@ -7,6 +7,9 @@ output: html_document
 
 # 4. Traits analyysi
 
+Selvitetään ovatko tietyt lajiominaisuudet kytköksissä ennustustarkkuuteen.  
+Analysoin pa ja abu-aineistot erillään. Edellisissä analyyseissahan aineistot on analysoitu yhdessä (metodin ja aineistotyypin interaktio). Meneekö tämä siis oikein?
+
 ```{r, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
@@ -17,28 +20,28 @@ lapply(paketit,library,character.only=T)
 
 ## 4.1 Aineisto sisään ja taulukoiden kokoaminen
 
+Valitsen tarkasteluun vain poolatut ennustustarkkuudet. Järjestelen aineiston eri tavalla (vanhaan koodiin sopivaksi).
+
 ```{r }
-#yhdistetään ennustustarkkuustulokset ja lajiominaisuudet samaan taulukkoon
+#aineiston valinta, leväyttäminen ja uudelleen nimeäminen
 res<-read.csv("results_and_pooled.csv")
-
 res2=subset(res,method=="pool_D")
-
 res3=spread(res2,pa,accuracy)
 res3$method=NULL
+res4=res3 %>% dplyr::rename(pool_pa_change = pa, pool_abu_change = abu)
 
-res3=res3 %>% 
-  rename(
-    pool_pa_change = pa,
-    pool_abu_change = abu)
-
-
+#lisätään lajiominaisuudet taulukkoon
 traits<-read.csv("traits_table.csv",sep = ";")
-results<-inner_join(res3,traits,by="species")
+results<-inner_join(res4,traits,by="species")
+str(results)
 
 #tallenna tarvittaessa omaksi taulukokseen
 #write.csv(results,"accuracies_traits.csv",row.names = F)
 ```
-Tarkastellaan aineistoa kuvaajista:
+
+## 4.2 Aineiston tarkastelu
+
+Tarkastellaan aineistoa kuvaajista. Muutetaan paino logaritmiksi.
 
 Poolattu 50 x 50 km aineisto, pa ja abu:
 
@@ -68,7 +71,9 @@ abline(lm(pool_abu_change~logmass,data = results))
 par(op)
 ```
 
-## 4.2 Fylogenia
+Prevalenssilla ainakin näyttäisi olevan jonkinlainen suhde ennustustarkkuuteen.
+
+## 4.3 Fylogenia
 
 BirdTree.org palvelusta on haettu lintujen sukupuu (tai itseasiassa tiedosto sisältää 100 vaihtoehtoista sukupuuta, joista valitaan yksi).
 
@@ -84,21 +89,30 @@ lintupuu<-vcv.phylo(linnut2)
 #matriisin voi värittää havainnollistamaan lintulajien sukulaisuutta
 heatmap(lintupuu,Rowv = NA,Colv = NA)
 
+#abu-aineistoa varten pari lajia pois
+linnut3=drop.tip(linnut2, "Emberiza_rustica", trim.internal = TRUE, subtree = FALSE,
+         root.edge = 0, rooted = is.rooted(linnut2), collapse.singles = TRUE,
+         interactive = FALSE)
+linnut4=drop.tip(linnut3, "Bonasa_bonasia", trim.internal = TRUE, subtree = FALSE,
+         root.edge = 0, rooted = is.rooted(linnut2), collapse.singles = TRUE,
+         interactive = FALSE)
+bm.birds2=corBrownian(1,phy=linnut4)
+
 #aineiston rivien nimet muutetaan lattareiksi jolloin keskustelee fylogeniapuun kanssa
 rownames(results)=results$species
 ```
 
-"the so called Brownian motion (also called random walk or diffusion)
+"the so called **Brownian motion** (also called random walk or diffusion)
 3191 model of trait evolution, which is the simplest model among the many alternative models of how
 3192 traits might evolve (Beaulieu et al., 2012)."
 
 
-## 4.3 Analyysit
+## 4.4 Analyysit
 
 Selvitetään, vaikuttavatko lajien ominaisuudet (muuttokäyttäytyminen 'Mig', elinympäristö 'Hab', paino 'logMass' tai prevalenssi 'Prev') ennustustarkkuuteen. Analyysissä pitäisi huomioida, että lajit voivat olla ominaisuuksiltaan samankaltaisia (ja siten omata myös yhtä suuret ennustustarkkuudet) läheisen sukulaisuussuhteen takia. 
 
 
-### Pa-aineisto
+### 4.4.1 Pa-aineisto
 
 Fylogenia huomioiden:
 
@@ -126,11 +140,10 @@ output1<-model.sel(malli0,malli1,malli2,malli3,malli4,malli5,malli6,malli7,malli
 
 # AICc Table
 output1
-#malli #10 on paras mutta seuraava malli on 0.27 AICc yksikön päässä.
 ```
 
-Mallit 3 ja 0 lähekkäin.   
-Mallit toimivat vaikka aineistossa on mukana NA:ta.
+Mallit 3, 0, 8 ja 4 ovat neljän AICc yksikön päässä toisistaan.    
+Valitaan ne jatkoon ja tehdään model averaging.
 
 ```{r }
 #tehdään model averaging
@@ -146,32 +159,33 @@ Mikään ei näytä selittävän ennustustarkkuutta.
 summary(malli0)
 ```
 
-Kumpi/kampi?
+Eli pa-aineistolla mikään lajiominaisuus ei selitä ennustustarkkuutta.
 
-### Abu-aineistolle
 
-Tämä koodi on muokattava niin, että NA:t eivät häiritse
+### 4.4.2 Abu-aineistolle
+
+Abu-aineistossa on muutama NA-havainto, joka monimutkaistaa koodaamista. Gls-mallit toimivat kyllä NA-havaintojenkin kanssa (na.action="na.omit", huom: "na.exclude" ei toimi tässä) mutta fylogenia puu sisältää kaksi lajia liikaa (pohjansirkku ja peltopyy). Fylogenia puuta on siis muokattava. Edit: Tein tämän jo koodin alussa. Näissä malleissa käytetään siis fylogeniana 'bm.birs2'-fylogeniaa, jossa vain 118 lajia.
 
 Fylogenia huomioiden:
 
 ```{r }
 #luodaan eri mallivaihtoehtoja
-malli0 <- gls(pool_abu_change ~ 1, data = results,correlation=bm.birds,method="ML" ,na.action="na.exclude")
-malli1 <- gls(pool_abu_change ~ Mig, data = results,correlation=bm.birds,method="ML",na.action="na.exclude")
-malli2 <- gls(pool_abu_change ~ Hab, data = results,correlation=bm.birds,method="ML",na.action="na.exclude")
-malli3 <- gls(pool_abu_change ~ log(Mass), data = results,correlation=bm.birds,method="ML",na.action="na.exclude")
-malli4 <- gls(pool_abu_change ~ Prev, data = results,correlation=bm.birds,method="ML")
-malli5 <- gls(pool_abu_change ~ Mig + Hab, data = results,correlation=bm.birds,method="ML")
-malli6 <- gls(pool_abu_change ~ Hab + log(Mass), data = results,correlation=bm.birds,method="ML")
-malli7 <- gls(pool_abu_change ~ Mig + log(Mass), data = results,correlation=bm.birds,method="ML")
-malli8 <- gls(pool_abu_change ~ log(Mass)+Prev, data = results,correlation=bm.birds,method="ML")
-malli9 <- gls(pool_abu_change ~ Mig +Prev, data = results,correlation=bm.birds,method="ML")
-malli10 <- gls(pool_abu_change ~ Hab+Prev, data = results,correlation=bm.birds,method="ML")
-malli11 <- gls(pool_abu_change ~ Mig + Hab + log(Mass), data = results,correlation=bm.birds,method="ML")
-malli12 <- gls(pool_abu_change ~ Mig + Hab + Prev, data = results,correlation=bm.birds,method="ML")
-malli13 <- gls(pool_abu_change ~ Mig + Prev + log(Mass), data = results,correlation=bm.birds,method="ML")
-malli14 <- gls(pool_abu_change ~ Prev + Hab + log(Mass), data = results,correlation=bm.birds,method="ML")
-malli15 <- gls(pool_abu_change ~ Mig + Hab + log(Mass)+Prev, data = results,correlation=bm.birds,method="ML")
+malli0 <- gls(pool_abu_change ~ 1, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli1 <- gls(pool_abu_change ~ Mig, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli2 <- gls(pool_abu_change ~ Hab, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli3 <- gls(pool_abu_change ~ log(Mass), data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli4 <- gls(pool_abu_change ~ Prev, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli5 <- gls(pool_abu_change ~ Mig + Hab, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli6 <- gls(pool_abu_change ~ Hab + log(Mass), data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli7 <- gls(pool_abu_change ~ Mig + log(Mass), data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli8 <- gls(pool_abu_change ~ log(Mass)+Prev, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli9 <- gls(pool_abu_change ~ Mig +Prev, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli10 <- gls(pool_abu_change ~ Hab+Prev, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli11 <- gls(pool_abu_change ~ Mig + Hab + log(Mass), data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli12 <- gls(pool_abu_change ~ Mig + Hab + Prev, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli13 <- gls(pool_abu_change ~ Mig + Prev + log(Mass), data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli14 <- gls(pool_abu_change ~ Prev + Hab + log(Mass), data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli15 <- gls(pool_abu_change ~ Mig + Hab + log(Mass)+Prev, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
 
 #mallin valintaa MuMin paketin avulla
 output1<-model.sel(malli0,malli1,malli2,malli3,malli4,malli5,malli6,malli7,malli8,malli9,malli10,malli11,malli12,malli13,malli14,malli15) 
@@ -180,40 +194,36 @@ output1<-model.sel(malli0,malli1,malli2,malli3,malli4,malli5,malli6,malli7,malli
 output1
 ```
 
-Mallit 14, 15 ja 13 lähekkäin.
+Mallit 8, 14, 13 ovat neljän yksikön marginaalissa.
 
 ```{r }
 #tehdään model averaging
-summary(model.avg(output1, revised.var = TRUE))
+output2<-model.sel(malli8,malli13,malli14)
+summary(model.avg(output2, revised.var = TRUE))
 ```
 
-Paino ja prevalenssi merkitseviä. Eli malli8?
+Paino ja prevalenssi merkitseviä. Eli yksinkertaisin malli8. 
 
 ```{r }
 # Parameter estimate Table
-summary(malli14)
-summary(malli15)
-summary(malli13)
 summary(malli8)
 ```
 
-Mikä näistä nyt siis on paras vaihtoehto?
-
-
-### Mallien validointia kuvaajista, koodi
-
-Esimerkkinä viimeisimmän aineiston malli14.
+Mallin validointi:
 
 ```{r }
+#kuvaajat eivät toimi jos aineistoissa on eri määrä havaintoja
+results2=subset(results,species!="Emberiza_rustica" & species!="Bonasa_bonasia")
+
 #seuraavaksi mallin validointia kuvaajista
 op<-par(mfrow=c(2,3),mar=c(5,4,1,2))
-plot(malli14,add.smooth = F,which = 1)
-E<-resid(malli14)
+plot(malli8,add.smooth = F,which =1)
+E<-resid(malli8)
 hist(E, xlab = "residuals",main = "")
-plot(results$Prev,E,xlab = "prevalence",ylab="residuals")
-plot(results$Hab,E,xlab = "habitat",ylab="residuals")
-plot(results$Mig,E,xlab = "migration",ylab="residuals")
-plot(results$logmass,E,xlab = "logMass",ylab="residuals")
+plot(results2$Prev,E,xlab = "prevalence",ylab="residuals")
+plot(results2$Hab,E,xlab = "habitat",ylab="residuals")
+plot(results2$Mig,E,xlab = "migration",ylab="residuals")
+plot(results2$logmass,E,xlab = "logMass",ylab="residuals")
 par(op)
 ```
 

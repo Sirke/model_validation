@@ -527,23 +527,13 @@ pool_pa$pa=as.factor("pa")
 pool_abu$method=as.factor("pool_D")
 pool_abu$pa=as.factor("abu")
 
-pool_pa=pool_pa %>% 
-  rename(
-    species = Yspecies,
-    accuracy = pool_pa_change)
+pool_pa=pool_pa %>% dplyr::rename(species = Yspecies, accuracy = pool_pa_change)
+pool_abu=pool_abu %>% dplyr::rename(species = Yspecies,accuracy = pool_abu_change)
 
-pool_abu=pool_abu %>% 
-  rename(
-    species = Yspecies,
-    accuracy = pool_abu_change
-    )
 #yhdistetään kaikki tulokset samaan taulukkoon
 res2=rbind(res,pool_abu,pool_pa)
 str(res2)
 summary(res2)
-
-#tallennetaan
-write.csv(res2,"results_and_pooled.csv",row.names=F)
 ```
 
 Merkkaisin pohjansirkun ja peltopyyn poolatun abu-arvon NA:ksi koska ne edelleen perustuvat vain kolmeen ja seitsemään havaintoon. Tilastollisessa testauksessa ne eivät pääse mukaan laskuihin koska sarja ei ole täydellinen, eikö? Riippuen tietysti siitä, miten testaan ja mitä.
@@ -551,6 +541,9 @@ Merkkaisin pohjansirkun ja peltopyyn poolatun abu-arvon NA:ksi koska ne edelleen
 ```{r}
 res2$accuracy[res2$species == "Emberiza_rustica" & res2$method == "pool_D" & res2$pa == "abu"] <- NA
 res2$accuracy[res2$species == "Bonasa_bonasia" & res2$method == "pool_D" & res2$pa == "abu"] <- NA
+
+#tallennetaan
+write.csv(res2,"results_and_pooled.csv",row.names=F)
 ```
 
 
