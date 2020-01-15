@@ -506,7 +506,7 @@ Vaikea päätellä, mitkä korrelaatioista on luotettavasti laskettu. Pohjansirk
 
 ## 3.3 Poolattujen ennustustarkkuuksien vertailu
 
-### 3.3.1 Analyysi
+### 3.3.1 Aineiston yhdistely
 
 Selvitetään, paransiko poolaus ennustustarkkuuksia.
 
@@ -547,19 +547,23 @@ write.csv(res2,"results_and_pooled.csv",row.names=F)
 ```
 
 
+### 3.3.2 Aineiston tarkastelu
 
+Tarkastellaan poolattuja ennustustarkkuuksia muihin metodeihin verrattuna:
 
 ```{r}
 #plottailua
-boxplot(accuracy~pa*method,data=res2)
 ggplot(res2, aes(x = method, y = accuracy, interaction = pa, colour = pa)) + geom_boxplot() 
+```
 
-#vai pitäisikö verrata ja kuvata vain D vs. pool_D?
+Valitsen aineistosta vain metodi D:n, poolaamattomat ja poolatut ennustustarkkuudet, ja tarkastelen vain niitä vierekkäin.
+
+```{r}
 res3=subset(res2,method=="D"|method=="pool_D")
 ggplot(res3, aes(x = method, y = accuracy, interaction = pa, colour = pa)) + geom_boxplot()
 ```
 
-Näyttää siltä, että poolaus on parantanut ennustustarkkuuksia vain hitusen. Tarkastellaan keskiarvoja ja keskivirheitä:
+Näyttää siltä, että poolaus on parantanut ennustustarkkuuksia vain hitusen. Tarkastellaan keskiarvoja ja keskivirheitä:  
 
 ```{r}
 res3%>%
@@ -567,7 +571,11 @@ res3%>%
   summarise(means=mean(accuracy,na.rm=T),std.errors=std.error(accuracy,na.rm=T))
 ```
 
-Testataan:
+Nyt aineistossa siis enää vain metodi D:n arvot.
+
+### 3.3.3 Analyysi
+
+Testataan vaikuttaako poolaus ja aineistotyyppi ennustustarkkuuksiin:
 
 ```{r}
 #fixed osan vertailua
@@ -604,12 +612,14 @@ boxplot(E1~species,xlab="species",ylab="residuals",data=res3)
 abline(h=0,lty=2)
 ```
 
-Eli tässäkin olisi tuloksena, että 
+Eli tässäkin on tuloksena, että poolauksen ja aineistotyypin yhdistelmä vaikuttavat ennustustarkkuuteen(?).
 
 
-### 3.3.2 Kuvaaja
+### 3.3.5 Kuva
 
-Vanha koodi on nyt toistaiseksi vielä tässä mutta alan kääntymään boxplottien puoleen.. Koodi ei toimi ilman muokkausta koska aineisto on nyt eri muodossa.
+Vanha koodi on nyt toistaiseksi vielä tässä mutta alan kääntymään boxplottien puoleen.. Koodi ei toimi ilman muokkausta koska aineisto on nyt eri muodossa.  
+
+Ehkä jokin ylläolevista kuvaajista olisi hyvä.
 
 ```{r,eval=FALSE, fig.width=14, fig.height=12}
 #piirretään sama kuvaaja, jossa nyt mukana myös poolatut arvot

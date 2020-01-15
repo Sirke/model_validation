@@ -212,7 +212,7 @@ summary(malli8)
 Mallin validointi:
 
 ```{r }
-#kuvaajat eivät toimi jos aineistoissa on eri määrä havaintoja
+#plottaus ei toimi jos aineistoissa on eri määrä havaintoja
 results2=subset(results,species!="Emberiza_rustica" & species!="Bonasa_bonasia")
 
 #seuraavaksi mallin validointia kuvaajista
@@ -227,7 +227,7 @@ plot(results2$logmass,E,xlab = "logMass",ylab="residuals")
 par(op)
 ```
 
-Residuaalit eivät ole tasaisesti jakautuneita. Ei hyvä.
+Residuaalit eivät ole tasaisesti jakautuneita. Ei hyvä. Jatka tästä..
 
 
 

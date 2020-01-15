@@ -19,30 +19,38 @@ Malli: XFormula = ~ JunJul + DJF + AprMay +Year + Urb + Br + Co + Op + Ma + We +
 
 Alla vielä koko koodi:
 
-```{r}
+```{r,eval=FALSE}
 #Malli:  
 
-#XFormula = ~ JunJul + DJF + AprMay+
-#  Year+Urb + Br + Co + Op + Ma + We + Effort*Method
-#for (thin in c(1)){
-#  samples = 1000
-#  nChains = 4
-#  for (modeltype in 1:2){
-#    for (model in 1:2){
-#      set.seed(1)
-#      sel = if(model==1){sel1} else {sel2}
-#      m = Hmsc(Y=if(modeltype==1){1*(Y[sel,]>0)} else {Yabu[sel,]},
-#               XData = XData[sel,],  XFormula=XFormula,
-#               distr=if(modeltype==1){"probit"} else {"normal"},
-#               studyDesign=studyDesign[sel,])
-#      
-#      ptm = proc.time()
-#      m = sampleMcmc(m, samples = samples, thin=thin,
-#                     transient = ceiling(0.5*samples*thin),
-#                     nChains = nChains, nParallel = nChains)
+XFormula = ~ JunJul + DJF + AprMay+
+  Year+Urb + Br + Co + Op + Ma + We + Effort*Method
+for (thin in c(1)){
+  samples = 1000
+  nChains = 4
+  for (modeltype in 1:2){
+    for (model in 1:2){
+      set.seed(1)
+      sel = if(model==1){sel1} else {sel2}
+      m = Hmsc(Y=if(modeltype==1){1*(Y[sel,]>0)} else {Yabu[sel,]},
+               XData = XData[sel,],  XFormula=XFormula,
+               distr=if(modeltype==1){"probit"} else {"normal"},
+               studyDesign=studyDesign[sel,])
+      
+      ptm = proc.time()
+      m = sampleMcmc(m, samples = samples, thin=thin,
+                     transient = ceiling(0.5*samples*thin),
+                     nChains = nChains, nParallel = nChains)
 ```
 
-Meneehän malli varmasti oikein? Method ja Effort ovat nyt mielestäni kumpiakin samassa muuttujassa sekaisin. Method (P ja L, point ja line) Effort (esim. 20 pistettä tai 7000 metriä).
+**Huom!** Method ja Effort ovat nyt kumpiakin samassa muuttujassa sekaisin. Eli Method voi olla P tai L (point tai line) ja Effort voi olla esim. 20 (pistettä) tai 7000 (metriä). Jossain vaiheessa aineistossa oli muistaakseni dummy-muuttuja Method, joka oli linjalle 1 ja pisteille 0. Effort oli jaettu kahteen muuttujaan Effort-line (metreissä) ja Effort-point (pisteiden lkm), joista toinen jäi siis tyhjäksi riippuen oliko kyseessä pistelaskenta tai linjalaskenta.
+
+Muistutuksena, mitä lähtöaineisto sisältää:
+```{r}
+observations=read.csv("observations.csv",header = T,sep = ";")
+summary(observations[,1:16])
+```
+
+
 
 ## 1.2 Neljä erilaista validointimetodia
 
@@ -54,7 +62,7 @@ C ja D katsovat muutosta tietyn ajanjakson aikana.
 A ja C interpoloivat.
 B ja D ekstrapoloivat.
 
-```{r echo=F, out.width='60%'}
+```{r echo=F, out.width='100%'}
 knitr::include_graphics('./ABCD_erikseen.png')
 ```
 
@@ -89,11 +97,7 @@ load(filename) #mpred1, mpred2, Y, studyDesign
 routes=levels(studyDesign$Route)
 nr=length(routes)
 years=levels(studyDesign$Year)
-dim(mpred1)
 ns=dim(mpred1)[2]
-dim(mpred2)
-dim(Y)
-dim(studyDesign)
 ```
 
 ### 1.3.2 Periodien määrittely
@@ -227,7 +231,6 @@ P_D = rep(NA,ns)
 for (i in 1:ns){
   P_D[i] = pairwiseCount(Ap1[,i],Ay[,i])
 }
-summary(P_D)
 sort(P_D)
 ```
 
@@ -236,6 +239,7 @@ Korrelaatiot on laskettu useiden reittiparien avulla pa-aineistossa. Hyvä niin.
 
 ### 1.3.6 Tulokset
 
+Pa-aineiston kunkin metodin ennustustarkkuuksien keskiarvot:
 ```{r}
 #create a table
 meres=c(mean(A,na.rm = TRUE),mean(B,na.rm = TRUE),mean(C,na.rm = TRUE),mean(D,na.rm = TRUE))
@@ -289,7 +293,7 @@ ggplot(kat, aes(x=Ap2k, y=Ayk))+ geom_point()+
   xlab("Mean predicted change, C")+
   ylab("Mean observed change")+ 
   geom_abline(intercept = 0, slope = 1, color="red",linetype="dashed", size=1.5)+
-  geom_text(aes(label=kat),hjust=0, vjust=0) + geom_smooth(method=lm,se=F)            
+  geom_text(aes(label=kat),hjust=0, vjust=0) + geom_smooth()            
 ```
 
 Kuvassa yksi piste on yksi laji. X-akselilla on lajin ennustetun esiintymistod.näk. muutos. Y-akselilla todellinen muutos. Nämä on laskettu tutkimusalueen jokaisen reitin (missä lajia on havaittu) keskiarvona. Punainen katkoviiva merkkaa täydellista vastaavuutta. Mitä lähempänä viivaa havainto on, sitä paremmin ennuste on mennyt nappiin. Sininen viiva on aineiston regressiokäyrä.
@@ -304,7 +308,7 @@ ggplot(kat, aes(x=Ap1k, y=Ayk))+
   xlab("Mean predicted change, D")+
   ylab("Mean observed change")+ 
   geom_abline(intercept = 0, slope = 1, color="red",linetype="dashed", size=1.5)+
-  geom_text(aes(label=kat),hjust=0, vjust=0)+  geom_smooth(method=lm,se=F) 
+  geom_text(aes(label=kat),hjust=0, vjust=0)+  geom_smooth() 
 
 #tallennetaan tarvittaessa
 write.csv(kat,"mean_observed_predicted_changes_pa.csv",row.names = F)
@@ -326,11 +330,7 @@ load(filename) #mpred1, mpred2, Y, studyDesign
 routes=levels(studyDesign$Route)
 nr=length(routes)
 years=levels(studyDesign$Year)
-dim(mpred1)
 ns=dim(mpred1)[2]
-dim(mpred2)
-dim(Y)
-dim(studyDesign)
 ```
 
 ### 1.4.1 Periodien määrittely
@@ -420,6 +420,8 @@ Molemmat metodit arvioivat ennusteet suht huonoiksi.
 
 ### 1.4.4 Tulokset
 
+Keskiarvot:
+
 ```{r }
 meres=c(mean(A,na.rm = TRUE),mean(B,na.rm = TRUE),mean(C,na.rm = TRUE),mean(D,na.rm = TRUE))
 names(meres)=c("A","B","C","D")
@@ -442,6 +444,7 @@ res=inner_join(pa_results,abu_results,by="species")
 write.csv(res,"results.csv",row.names = F)
 abu_results
 ```
+
 Poimintoja, D:  
 
 parhaat: Pohjansirkku 0.95!!, Lehtokurppa 0.40, Pyrstötiainen 0.40, Sääksi 0.39
@@ -449,7 +452,7 @@ huonoimmat: Tukkasotka -0.35, merihanhi -0.34, Punavarpunen -0.33, Sinirinta -0.
 
 ### 1.4.5 Muutama esimerkkilaji
 
-Plottaan malliksi viherpeipon ja pohjansirkun.
+Plottaan malliksi viherpeipon ja pohjansirkun:
 
 ```{r}
 pred=Ap1[,21]
@@ -479,7 +482,6 @@ P_D = rep(NA,ns)
 for (i in 1:ns){
   P_D[i] = pairwiseCount(Ap1[,i],Ay[,i])
 }
-summary(P_D)
 sort(P_D)
 
 #liitän uuden sarakkeen tuloksiin
@@ -519,7 +521,7 @@ ggplot(kat, aes(x=Ap2k, y=Ayk))+ geom_point()+
   xlab("Mean predicted change, C")+
   ylab("Mean observed change")+ 
   geom_abline(intercept = 0, slope = 1, color="red",linetype="dashed", size=1.5)+
-  geom_text(aes(label=kat),hjust=0, vjust=0) +  geom_smooth(method=lm,se=F)                                                                                                                      
+  geom_text(aes(label=kat),hjust=0, vjust=0) +  geom_smooth()                                                                                                                      
 ```
 
 Tyyli D.
@@ -531,11 +533,11 @@ ggplot(kat, aes(x=Ap1k, y=Ayk))+
   xlab("Mean predicted change, D")+
   ylab("Mean observed change")+ 
   geom_abline(intercept = 0, slope = 1, color="red",linetype="dashed", size=1.5)+
-  geom_text(aes(label=kat),hjust=0, vjust=0)+  geom_smooth(method=lm,se=F) +xlim(-0.3,0.3)+ylim(-1,1)
+  geom_text(aes(label=kat),hjust=0, vjust=0)+  geom_smooth() +xlim(-0.3,0.3)+ylim(-1,1)
 
 write.csv(kat,"mean_observed_predicted_changes_abu.csv",row.names = F)
 ```
 
 Kuvien skaalat eroavat taas hieman. Skaalan säätäminen tehtävä niin, että labeleistä pystyisi lukemaan edes jotain. 
 
-Hmm.. Jos näitä kuvia päädytään käyttämään, pitäisikö pohjansirkku tai peltopyy ottaa pois epätarkkoina? Ehkä ei?
+Hmm.. Jos näitä kuvia päädytään käyttämään, pitäisikö pohjansirkku tai peltopyy ottaa pois epätarkkoina? Ehkä ei? Koska havaintoja kyllä riittää mutta ne eivät vain satu samoille reiteille tai samoihin poolaus-ruutuihin.
