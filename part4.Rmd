@@ -165,7 +165,7 @@ Eli pa-aineistolla mikään lajiominaisuus ei selitä ennustustarkkuutta.
 
 ### 4.4.2 Abu-aineistolle
 
-Abu-aineistossa on muutama NA-havainto, joka monimutkaistaa koodaamista. Gls-mallit toimivat kyllä NA-havaintojenkin kanssa (na.action="na.omit", huom: "na.exclude" ei toimi tässä) mutta fylogenia puu sisältää kaksi lajia liikaa (pohjansirkku ja peltopyy). Fylogenia puuta on siis muokattava. Edit: Tein tämän jo koodin alussa. Näissä malleissa käytetään siis fylogeniana 'bm.birs2'-fylogeniaa, jossa vain 118 lajia.
+Abu-aineistossa on muutama NA-havainto, joka monimutkaistaa koodaamista. Gls-mallit toimivat kyllä NA-havaintojenkin kanssa (na.action="na.omit", huom: "na.exclude" ei toimi tässä) mutta fylogenia puu sisältää kaksi lajia liikaa (pohjansirkku ja pyy). Fylogenia puuta on siis muokattava. Edit: Tein tämän jo koodin alussa. Näissä malleissa käytetään siis fylogeniana 'bm.birs2'-fylogeniaa, jossa vain 118 lajia.
 
 Fylogenia huomioiden:
 

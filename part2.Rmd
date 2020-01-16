@@ -25,14 +25,14 @@ res<-read.csv("results.csv",header=T,sep=",")
 str(res)
 ```
 
-Testaan, miten tulokset muuttuvat jos abu-aineistosta karsitaan pois muutamat havainnot, jotka perustuvat vain kolmeen tai neljään havaintoon. 
+Testaan, miten tulokset muuttuvat jos abu-aineistosta karsitaan pois muutamat havainnot, jotka perustuvat vain alle kymmeneen havaintoon. Tätä rajaa voidaan testailla.
 
 ```{r}
 res$abu_D[res$P_D<10]=NA
 res$abu_C[res$P_D<10]=NA
 ```
 
-Jos minimihavaintorajana pidetään kymmentä, vain pohjansirkku ja peltopyy putoavat pois.
+Jos minimihavaintorajana pidetään kymmentä, pohjansirkku ja pyy putoavat pois.
 
 ## 2.1 Keskiarvot ja keskivirheet
 

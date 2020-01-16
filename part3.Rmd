@@ -492,8 +492,7 @@ observations=abuKor %>%
 observations
 ```
 
-Vaikea päätellä, mitkä korrelaatioista on luotettavasti laskettu. Pohjansirkun poolattu korrelaatio perustuu edelleen vain kolmeen havaintopariin. Sen sijaan peltopyyn korrelaatio onkin nyt laskettu seitsemästä havaintoparista. Huomion arvoista on myös se, että esimerkiksi sinirinnan havaintoparit ovat poolatussa aineistossa vain kahdeksan kun taas alkuperäinen korrelaatio on laskettu 34:stä havaintoparista. Poolaaminen voi siis auttaa joidenkin niiden lajien kohdalla, joille on vaikea löytää reittejä, joilla olisi käyty sekä periodi 1:llä että 2:lla. Mutta jos tarkastellaan vain sitä, kuinka harvasta gridiruudusta poolattu korrelaatio on laskettu, jää huomioimatta, että yhden ruudun "takana" voi olla useampia reittejä. Jos rajaksi asettaa saman 10 voi aineistosta pudota lajeja, joista oli useita havaintoja.
-
+Vaikea päätellä, mitkä korrelaatioista on luotettavasti laskettu. Pohjansirkun poolattu korrelaatio perustuu edelleen vain kolmeen havaintopariin. Sen sijaan pyyn korrelaatio onkin nyt laskettu seitsemästä havaintoparista. Huomion arvoista on myös se, että esimerkiksi sinirinnan havaintoparit ovat poolatussa aineistossa vain kahdeksan kun taas alkuperäinen korrelaatio on laskettu 34:stä havaintoparista. Poolaaminen voi siis auttaa joidenkin niiden lajien kohdalla, joille on vaikea löytää reittejä, joilla olisi käyty sekä periodi 1:llä että 2:lla. Mutta jos tarkastellaan vain sitä, kuinka harvasta gridiruudusta poolattu korrelaatio on laskettu, jää huomioimatta, että yhden ruudun "takana" voi olla useampia reittejä. Jos rajaksi asettaa saman 10 voi aineistosta pudota lajeja, joista oli useita havaintoja.
 
 
 ## 3.3 Poolattujen ennustustarkkuuksien vertailu
@@ -528,7 +527,7 @@ str(res2)
 summary(res2)
 ```
 
-Merkkaisin pohjansirkun ja peltopyyn poolatun abu-arvon NA:ksi koska ne edelleen perustuvat vain kolmeen ja seitsemään havaintoon. 
+Merkkaisin pohjansirkun ja pyyn poolatun abu-arvon NA:ksi koska ne edelleen perustuvat vain kolmeen ja seitsemään havaintoon. 
 
 ```{r}
 res2$accuracy[res2$species == "Emberiza_rustica" & res2$method == "pool_D" & res2$pa == "abu"] <- NA

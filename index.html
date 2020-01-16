@@ -1259,10 +1259,10 @@ str(res)</code></pre>
 ##  $ abu_C  : num  0.146 0.264 -0.188 -0.131 0.426 ...
 ##  $ abu_D  : num  0.1643 0.1151 -0.0427 -0.1412 0.403 ...
 ##  $ P_D    : int  25 23 37 60 12 83 19 91 29 86 ...</code></pre>
-<p>Testaan, miten tulokset muuttuvat jos abu-aineistosta karsitaan pois muutamat havainnot, jotka perustuvat vain kolmeen tai neljään havaintoon.</p>
+<p>Testaan, miten tulokset muuttuvat jos abu-aineistosta karsitaan pois muutamat havainnot, jotka perustuvat vain alle kymmeneen havaintoon. Tätä rajaa voidaan testailla.</p>
 <pre class="r"><code>res$abu_D[res$P_D&lt;10]=NA
 res$abu_C[res$P_D&lt;10]=NA</code></pre>
-<p>Jos minimihavaintorajana pidetään kymmentä, vain pohjansirkku ja peltopyy putoavat pois.</p>
+<p>Jos minimihavaintorajana pidetään kymmentä, pohjansirkku ja pyy putoavat pois.</p>
 <div id="keskiarvot-ja-keskivirheet" class="section level2">
 <h2>2.1 Keskiarvot ja keskivirheet</h2>
 <p>Lasketaan ennustustarkkuuksien keskiarvot ja keskivirheet kullekin metodi/aineistotyyppi-yhdistelmälle:</p>
@@ -2171,7 +2171,7 @@ observations</code></pre>
 ##  9 Anser_anser                   21
 ## 10 Anthus_pratensis              45
 ## # ... with 110 more rows</code></pre>
-<p>Vaikea päätellä, mitkä korrelaatioista on luotettavasti laskettu. Pohjansirkun poolattu korrelaatio perustuu edelleen vain kolmeen havaintopariin. Sen sijaan peltopyyn korrelaatio onkin nyt laskettu seitsemästä havaintoparista. Huomion arvoista on myös se, että esimerkiksi sinirinnan havaintoparit ovat poolatussa aineistossa vain kahdeksan kun taas alkuperäinen korrelaatio on laskettu 34:stä havaintoparista. Poolaaminen voi siis auttaa joidenkin niiden lajien kohdalla, joille on vaikea löytää reittejä, joilla olisi käyty sekä periodi 1:llä että 2:lla. Mutta jos tarkastellaan vain sitä, kuinka harvasta gridiruudusta poolattu korrelaatio on laskettu, jää huomioimatta, että yhden ruudun “takana” voi olla useampia reittejä. Jos rajaksi asettaa saman 10 voi aineistosta pudota lajeja, joista oli useita havaintoja.</p>
+<p>Vaikea päätellä, mitkä korrelaatioista on luotettavasti laskettu. Pohjansirkun poolattu korrelaatio perustuu edelleen vain kolmeen havaintopariin. Sen sijaan pyyn korrelaatio onkin nyt laskettu seitsemästä havaintoparista. Huomion arvoista on myös se, että esimerkiksi sinirinnan havaintoparit ovat poolatussa aineistossa vain kahdeksan kun taas alkuperäinen korrelaatio on laskettu 34:stä havaintoparista. Poolaaminen voi siis auttaa joidenkin niiden lajien kohdalla, joille on vaikea löytää reittejä, joilla olisi käyty sekä periodi 1:llä että 2:lla. Mutta jos tarkastellaan vain sitä, kuinka harvasta gridiruudusta poolattu korrelaatio on laskettu, jää huomioimatta, että yhden ruudun “takana” voi olla useampia reittejä. Jos rajaksi asettaa saman 10 voi aineistosta pudota lajeja, joista oli useita havaintoja.</p>
 </div>
 </div>
 <div id="poolattujen-ennustustarkkuuksien-vertailu" class="section level2">
@@ -2223,7 +2223,7 @@ str(res2)</code></pre>
 ##           
 ##           
 ## </code></pre>
-<p>Merkkaisin pohjansirkun ja peltopyyn poolatun abu-arvon NA:ksi koska ne edelleen perustuvat vain kolmeen ja seitsemään havaintoon.</p>
+<p>Merkkaisin pohjansirkun ja pyyn poolatun abu-arvon NA:ksi koska ne edelleen perustuvat vain kolmeen ja seitsemään havaintoon.</p>
 <pre class="r"><code>res2$accuracy[res2$species == &quot;Emberiza_rustica&quot; &amp; res2$method == &quot;pool_D&quot; &amp; res2$pa == &quot;abu&quot;] &lt;- NA
 res2$accuracy[res2$species == &quot;Bonasa_bonasia&quot; &amp; res2$method == &quot;pool_D&quot; &amp; res2$pa == &quot;abu&quot;] &lt;- NA
 
@@ -2653,7 +2653,7 @@ summary(malli0)</code></pre>
 </div>
 <div id="abu-aineistolle" class="section level3">
 <h3>4.4.2 Abu-aineistolle</h3>
-<p>Abu-aineistossa on muutama NA-havainto, joka monimutkaistaa koodaamista. Gls-mallit toimivat kyllä NA-havaintojenkin kanssa (na.action=“na.omit”, huom: “na.exclude” ei toimi tässä) mutta fylogenia puu sisältää kaksi lajia liikaa (pohjansirkku ja peltopyy). Fylogenia puuta on siis muokattava. Edit: Tein tämän jo koodin alussa. Näissä malleissa käytetään siis fylogeniana ‘bm.birs2’-fylogeniaa, jossa vain 118 lajia.</p>
+<p>Abu-aineistossa on muutama NA-havainto, joka monimutkaistaa koodaamista. Gls-mallit toimivat kyllä NA-havaintojenkin kanssa (na.action=“na.omit”, huom: “na.exclude” ei toimi tässä) mutta fylogenia puu sisältää kaksi lajia liikaa (pohjansirkku ja pyy). Fylogenia puuta on siis muokattava. Edit: Tein tämän jo koodin alussa. Näissä malleissa käytetään siis fylogeniana ‘bm.birs2’-fylogeniaa, jossa vain 118 lajia.</p>
 <p>Fylogenia huomioiden:</p>
 <pre class="r"><code>#luodaan eri mallivaihtoehtoja
 malli0 &lt;- gls(pool_abu_change ~ 1, data = results,correlation=bm.birds2,method=&quot;ML&quot;,na.action=&quot;na.omit&quot;)
