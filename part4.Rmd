@@ -8,7 +8,7 @@ output: html_document
 # 4. Traits analyysi
 
 Selvitetään ovatko tietyt lajiominaisuudet kytköksissä ennustustarkkuuteen.  
-Analysoin pa ja abu-aineistot erillään. Edellisissä analyyseissahan aineistot on analysoitu yhdessä (metodin ja aineistotyypin interaktio). Meneekö tämä siis oikein?
+Analysoin pa ja abu-aineistot erillään. Edellisissä analyyseissahan aineistot on analysoitu yhdessä (metodin ja aineistotyypin (pa/abu) interaktio). Meneekö tämä siis oikein?
 
 ```{r, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -109,8 +109,9 @@ rownames(results)=results$species
 
 ## 4.4 Analyysit
 
-Selvitetään, vaikuttavatko lajien ominaisuudet (muuttokäyttäytyminen 'Mig', elinympäristö 'Hab', paino 'logMass' tai prevalenssi 'Prev') ennustustarkkuuteen. Analyysissä pitäisi huomioida, että lajit voivat olla ominaisuuksiltaan samankaltaisia (ja siten omata myös yhtä suuret ennustustarkkuudet) läheisen sukulaisuussuhteen takia. 
+Selvitetään, vaikuttavatko lajien ominaisuudet (muuttokäyttäytyminen 'Mig', elinympäristö 'Hab', paino 'logMass' tai prevalenssi 'Prev') ennustustarkkuuteen. Analyysissä pitäisi huomioida fylogenia eli, että lajit voivat olla ominaisuuksiltaan samankaltaisia (ja siten omata myös samanlaiset ennustustarkkuudet) läheisen sukulaisuussuhteen takia. 
 
+Mietin, pitäisikö tämän analyysin olla samanlainen kuin edellistenkin? Eli, että pa ja abu-aineisto analysoitaisiin yhdessä ja laji olisi mukana random-muuttujana.
 
 ### 4.4.1 Pa-aineisto
 

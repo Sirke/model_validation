@@ -39,11 +39,7 @@ load(filename) #mpred1, mpred2, Y, studyDesign
 routes=levels(studyDesign$Route)
 nr=length(routes)
 years=levels(studyDesign$Year)
-dim(mpred1)
 ns=dim(mpred1)[2]
-dim(mpred2)
-dim(Y)
-dim(studyDesign)
 
 #määritellään periodit 
 period1=(studyDesign$Year=="Year_1996" | studyDesign$Year=="Year_1997" | studyDesign$Year=="Year_1998" | studyDesign$Year=="Year_1999")
@@ -180,6 +176,7 @@ Gridit olen tehnyt jo aiemmin QGis:llä.
 gridi<- readOGR(dsn="./gridit", layer="grid50km")
 #gridi<- readOGR(dsn="./gridit", layer="grid100km")
 proj4string(gridi)
+plot(gridi)
 ```
 
 Itse poolaus tapahtuu niin, että liitetään kuhunkin reittiin tieto, millä gridin ruudulla (id-numero) se on, jonka jälkeen ryhmitellään kaikki reitit gridiruuduittain ja lasketaan niille keskiarvot. Tallennan taas kaikki tiedot niin, että ne on helppo lukea ja tarkistaa GIS:llä.
@@ -299,11 +296,7 @@ load(filename) #mpred1, mpred2, Y, studyDesign
 routes=levels(studyDesign$Route)
 nr=length(routes)
 years=levels(studyDesign$Year)
-dim(mpred1)
 ns=dim(mpred1)[2]
-dim(mpred2)
-dim(Y)
-dim(studyDesign)
 
 period1=(studyDesign$Year=="Year_1996" | studyDesign$Year=="Year_1997" | studyDesign$Year=="Year_1998" | studyDesign$Year=="Year_1999")
 period2=(studyDesign$Year=="Year_2013" | studyDesign$Year=="Year_2014" | studyDesign$Year=="Year_2015" | studyDesign$Year=="Year_2016")
@@ -389,7 +382,6 @@ write.csv(Ap2,"abu_pred_per2.csv",row.names = F)
 ```{r}
 #luetaan sisään reitit koordinaatteineen
 coordinates(Ay1)<-c("x","y")
-plot(Ay1)
 proj4string(Ay1) <-CRS("+init=EPSG:3035")
 
 coordinates(Ay2)<-c("x","y")
@@ -536,7 +528,7 @@ str(res2)
 summary(res2)
 ```
 
-Merkkaisin pohjansirkun ja peltopyyn poolatun abu-arvon NA:ksi koska ne edelleen perustuvat vain kolmeen ja seitsemään havaintoon. Tilastollisessa testauksessa ne eivät pääse mukaan laskuihin koska sarja ei ole täydellinen, eikö? Riippuen tietysti siitä, miten testaan ja mitä.
+Merkkaisin pohjansirkun ja peltopyyn poolatun abu-arvon NA:ksi koska ne edelleen perustuvat vain kolmeen ja seitsemään havaintoon. 
 
 ```{r}
 res2$accuracy[res2$species == "Emberiza_rustica" & res2$method == "pool_D" & res2$pa == "abu"] <- NA
@@ -575,7 +567,7 @@ Nyt aineistossa siis enää vain metodi D:n arvot.
 
 ### 3.3.3 Analyysi
 
-Testataan vaikuttaako poolaus ja aineistotyyppi ennustustarkkuuksiin:
+Testataan vaikuttaako poolaus ja aineistotyyppi ennustustarkkuuksiin. Käytän samaa sekamallia kuin aikaisemminkin. Laji on random-muuttuja. Aineistona on kuitenkin vain poolaamattomat ja poolatut metodi D:llä lasketut ennustustarkkuudet (ei A,B,C). Onko tämä oikein?
 
 ```{r}
 #fixed osan vertailua
