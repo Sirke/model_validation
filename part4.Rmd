@@ -35,6 +35,9 @@ traits<-read.csv("traits_table.csv",sep = ";")
 results<-inner_join(res4,traits,by="species")
 str(results)
 
+#uusi muuttuja, massan logaritmi
+results$logmass<-log(results$Mass)
+
 #tallenna tarvittaessa omaksi taulukokseen
 #write.csv(results,"accuracies_traits.csv",row.names = F)
 ```
@@ -46,10 +49,6 @@ Tarkastellaan aineistoa kuvaajista. Muutetaan paino logaritmiksi.
 Poolattu 50 x 50 km aineisto, pa ja abu:
 
 ```{r }
-#kuvaajien piirtely ei (ainakaan multa) onnistu jos log(Mass) ei ole valmiiksi laskettu omaan
-#sarakkeeseensa
-results$logmass<-log(results$Mass)
-
 #poolattu pa aineisto
 op<-par(mfrow=c(2,2),mar=c(5,4,1,2))
 boxplot(pool_pa_change~Hab,data=results,ylab="pool_pa_D",xlab="Habitat")
@@ -154,7 +153,6 @@ summary(model.avg(output2, revised.var = TRUE))
 
 Mikään ei näytä selittävän ennustustarkkuutta.
 
-
 ```{r }
 # Parameter estimate Table, katsotaan tarkemmin parasta mallia
 summary(malli0)
@@ -163,9 +161,44 @@ summary(malli0)
 Eli pa-aineistolla mikään lajiominaisuus ei selitä ennustustarkkuutta.
 
 
+Vai pitäisikö method olla "REML"? Kokeilen koko analyysin uudestaan.
+
+Tässä [esimerkissä](https://lukejharmon.github.io/ilhabela/instruction/2015/07/03/PGLS/) ja Aksun esimerkkikoodissa metodi on "ML" mutta Otson luentoesimerkissä metodi on "REML". Yritän selvittää mistä on kyse ja kumpi metodi sopii tähän.
+
+Otson koodissa fylogenia rakennetaan "corPagel" asetuksilla. Tällä ei kai kuitenkaan ole suurta eroa corBrownian-asetukseen.
+
+```{r }
+#luodaan eri mallivaihtoehtoja
+malli0 <- gls(pool_pa_change ~ 1, data = results,correlation=bm.birds,method="REML" )
+malli1 <- gls(pool_pa_change ~ Mig, data = results,correlation=bm.birds,method="REML")
+malli2 <- gls(pool_pa_change ~ Hab, data = results,correlation=bm.birds,method="REML")
+malli3 <- gls(pool_pa_change ~ log(Mass), data = results,correlation=bm.birds,method="REML")
+malli4 <- gls(pool_pa_change ~ Prev, data = results,correlation=bm.birds,method="REML")
+malli5 <- gls(pool_pa_change ~ Mig + Hab, data = results,correlation=bm.birds,method="REML")
+malli6 <- gls(pool_pa_change ~ Hab + log(Mass), data = results,correlation=bm.birds,method="REML")
+malli7 <- gls(pool_pa_change ~ Mig + log(Mass), data = results,correlation=bm.birds,method="REML")
+malli8 <- gls(pool_pa_change ~ log(Mass)+Prev, data = results,correlation=bm.birds,method="REML")
+malli9 <- gls(pool_pa_change ~ Mig +Prev, data = results,correlation=bm.birds,method="REML")
+malli10 <- gls(pool_pa_change ~ Hab+Prev, data = results,correlation=bm.birds,method="REML")
+malli11 <- gls(pool_pa_change ~ Mig + Hab + log(Mass), data = results,correlation=bm.birds,method="REML")
+malli12 <- gls(pool_pa_change ~ Mig + Hab + Prev, data = results,correlation=bm.birds,method="REML")
+malli13 <- gls(pool_pa_change ~ Mig + Prev + log(Mass), data = results,correlation=bm.birds,method="REML")
+malli14 <- gls(pool_pa_change ~ Prev + Hab + log(Mass), data = results,correlation=bm.birds,method="REML")
+malli15 <- gls(pool_pa_change ~ Mig + Hab + log(Mass)+Prev, data = results,correlation=bm.birds,method="REML")
+
+#mallin valintaa MuMin paketin avulla
+output1<-model.sel(malli0,malli1,malli2,malli3,malli4,malli5,malli6,malli7,malli8,malli9,malli10,malli11,malli12,malli13,malli14,malli15) 
+
+# AICc Table
+output1
+```
+
+REML ei aiheuta muutosta tuloksiin. Nollamalli on nyt entistä selvemmällä erolla parhain malli.
+
+
 ### 4.4.2 Abu-aineistolle
 
-Abu-aineistossa on muutama NA-havainto, joka monimutkaistaa koodaamista. Gls-mallit toimivat kyllä NA-havaintojenkin kanssa (na.action="na.omit", huom: "na.exclude" ei toimi tässä) mutta fylogenia puu sisältää kaksi lajia liikaa (pohjansirkku ja pyy). Fylogenia puuta on siis muokattava. Edit: Tein tämän jo koodin alussa. Näissä malleissa käytetään siis fylogeniana 'bm.birs2'-fylogeniaa, jossa vain 118 lajia.
+Abu-aineistossa on muutama NA-havainto, joka monimutkaistaa koodaamista. Gls-mallit toimivat kyllä NA-havaintojenkin kanssa (na.action="na.omit", huom: "na.exclude" ei toimi tässä) mutta fylogenia puu sisältää kaksi lajia liikaa (pohjansirkku ja pyy). Fylogenia puuta on siis muokattava. Edit: Tein tämän jo koodin alussa. Näissä malleissa käytetään siis fylogeniana 'bm.birds2'-fylogeniaa, jossa vain 118 lajia.
 
 Fylogenia huomioiden:
 
@@ -174,19 +207,19 @@ Fylogenia huomioiden:
 malli0 <- gls(pool_abu_change ~ 1, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
 malli1 <- gls(pool_abu_change ~ Mig, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
 malli2 <- gls(pool_abu_change ~ Hab, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
-malli3 <- gls(pool_abu_change ~ log(Mass), data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli3 <- gls(pool_abu_change ~ logmass, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
 malli4 <- gls(pool_abu_change ~ Prev, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
 malli5 <- gls(pool_abu_change ~ Mig + Hab, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
-malli6 <- gls(pool_abu_change ~ Hab + log(Mass), data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
-malli7 <- gls(pool_abu_change ~ Mig + log(Mass), data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
-malli8 <- gls(pool_abu_change ~ log(Mass)+Prev, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli6 <- gls(pool_abu_change ~ Hab + logmass, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli7 <- gls(pool_abu_change ~ Mig + logmass, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli8 <- gls(pool_abu_change ~ logmass+Prev, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
 malli9 <- gls(pool_abu_change ~ Mig +Prev, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
 malli10 <- gls(pool_abu_change ~ Hab+Prev, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
-malli11 <- gls(pool_abu_change ~ Mig + Hab + log(Mass), data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli11 <- gls(pool_abu_change ~ Mig + Hab + logmass, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
 malli12 <- gls(pool_abu_change ~ Mig + Hab + Prev, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
-malli13 <- gls(pool_abu_change ~ Mig + Prev + log(Mass), data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
-malli14 <- gls(pool_abu_change ~ Prev + Hab + log(Mass), data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
-malli15 <- gls(pool_abu_change ~ Mig + Hab + log(Mass)+Prev, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli13 <- gls(pool_abu_change ~ Mig + Prev + logmass, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli14 <- gls(pool_abu_change ~ Prev + Hab + logmass, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli15 <- gls(pool_abu_change ~ Mig + Hab + logmass+Prev, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
 
 #mallin valintaa MuMin paketin avulla
 output1<-model.sel(malli0,malli1,malli2,malli3,malli4,malli5,malli6,malli7,malli8,malli9,malli10,malli11,malli12,malli13,malli14,malli15) 
@@ -231,6 +264,150 @@ par(op)
 Residuaalit eivät ole tasaisesti jakautuneita. Ei hyvä. Jatka tästä..
 
 
+Kokeilen tämänkin uudestaan "REML" asetuksella:
+```{r }
+#luodaan eri mallivaihtoehtoja
+malli0 <- gls(pool_abu_change ~ 1, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+malli1 <- gls(pool_abu_change ~ Mig, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+malli2 <- gls(pool_abu_change ~ Hab, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+malli3 <- gls(pool_abu_change ~ logmass, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+malli4 <- gls(pool_abu_change ~ Prev, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+malli5 <- gls(pool_abu_change ~ Mig + Hab, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+malli6 <- gls(pool_abu_change ~ Hab + logmass, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+malli7 <- gls(pool_abu_change ~ Mig + logmass, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+malli8 <- gls(pool_abu_change ~ logmass+Prev, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+malli9 <- gls(pool_abu_change ~ Mig +Prev, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+malli10 <- gls(pool_abu_change ~ Hab+Prev, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+malli11 <- gls(pool_abu_change ~ Mig + Hab + logmass, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+malli12 <- gls(pool_abu_change ~ Mig + Hab + Prev, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+malli13 <- gls(pool_abu_change ~ Mig + Prev + logmass, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+malli14 <- gls(pool_abu_change ~ Prev + Hab + logmass, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+malli15 <- gls(pool_abu_change ~ Mig + Hab + logmass+Prev, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+
+#mallin valintaa MuMin paketin avulla
+output1<-model.sel(malli0,malli1,malli2,malli3,malli4,malli5,malli6,malli7,malli8,malli9,malli10,malli11,malli12,malli13,malli14,malli15) 
+
+# AICc Table
+output1
+
+summary(malli4)
+```
+
+Nyt kärkeen menevät vain malli 4 ja 8. Näistä 4 on yksinkertaisempi ja vain prevalenssi on merkitsevä.
+
+Mallin validointi:
+
+```{r }
+#seuraavaksi mallin validointia kuvaajista
+op<-par(mfrow=c(2,3),mar=c(5,4,1,2))
+plot(malli4,add.smooth = F,which =1)
+E<-resid(malli4)
+hist(E, xlab = "residuals",main = "")
+plot(results2$Prev,E,xlab = "prevalence",ylab="residuals")
+plot(results2$Hab,E,xlab = "habitat",ylab="residuals")
+plot(results2$Mig,E,xlab = "migration",ylab="residuals")
+plot(results2$logmass,E,xlab = "logMass",ylab="residuals")
+par(op)
+```
+
+Residuaalit entistä enemmän vinksallaan. Harvinaisilla lajeilla vaihtelu ennustustarkkuudessa on suurta. Pitäisikö mallissa huomioida tämä erilainen varianssi jotenkin?
 
 
+Kokeilen lisätä prevalenssille varianssia:
+```{r}
+m.lm <- gls(pool_abu_change ~ Mig + Hab + log(Mass)+Prev, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
 
+vf1<-varExp(form=~Prev)
+m.gls3 <- gls(pool_abu_change ~ Mig + Hab + log(Mass)+Prev, weights=vf1, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+
+anova(m.lm,m.gls3)
+```
+
+Kokeilen lisätä massalle varianssia:
+```{r}
+vf2<-varExp(form=~logmass)
+m.gls1 <- gls(pool_abu_change ~ Mig + Hab + log(Mass)+Prev, weights=vf2, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+
+anova(m.lm,m.gls1)
+```
+
+Ei paranna.
+
+Vielä voisi lisätä varianssia habitaatille tai muuttokäyttäytymiselle. Mutta niiden kohdalla validointi-kuvaajat eivät näytä niin pahoilta, niin jätän ne niin kuin ne on.
+
+Mallin valintaa kun prevalenssille suodaan vaihtelua:  
+En tiedä pitäisikö asetus olla "ML" vai "REML".
+```{r }
+#luodaan eri mallivaihtoehtoja
+malli0 <- gls(pool_abu_change ~ 1, weights=vf1, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+malli1 <- gls(pool_abu_change ~ Mig, weights=vf1, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+malli2 <- gls(pool_abu_change ~ Hab, weights=vf1, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+malli3 <- gls(pool_abu_change ~ logmass, weights=vf1, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+malli4 <- gls(pool_abu_change ~ Prev, weights=vf1, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+malli5 <- gls(pool_abu_change ~ Mig + Hab, weights=vf1, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+malli6 <- gls(pool_abu_change ~ Hab + logmass, weights=vf1, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+malli7 <- gls(pool_abu_change ~ Mig + logmass, weights=vf1, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+malli8 <- gls(pool_abu_change ~ logmass+Prev, weights=vf1, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+malli9 <- gls(pool_abu_change ~ Mig +Prev, weights=vf1, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+malli10 <- gls(pool_abu_change ~ Hab+Prev, weights=vf1, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+malli11 <- gls(pool_abu_change ~ Mig + Hab + logmass, weights=vf1, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+malli12 <- gls(pool_abu_change ~ Mig + Hab + Prev, weights=vf1, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+malli13 <- gls(pool_abu_change ~ Mig + Prev + logmass, weights=vf1, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+malli14 <- gls(pool_abu_change ~ Prev + Hab + logmass, weights=vf1, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+malli15 <- gls(pool_abu_change ~ Mig + Hab + logmass+Prev, weights=vf1, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+
+#mallin valintaa MuMin paketin avulla
+output1<-model.sel(malli0,malli1,malli2,malli3,malli4,malli5,malli6,malli7,malli8,malli9,malli10,malli11,malli12,malli13,malli14,malli15) 
+
+# AICc Table
+output1
+
+summary(malli1)
+```
+
+```{r}
+#seuraavaksi mallin validointia kuvaajista
+op<-par(mfrow=c(2,3),mar=c(5,4,1,2))
+plot(malli1,add.smooth = F,which =1)
+E<-resid(malli1,type="normalized")    #huom! tässä oltava normalized residuaalit
+hist(E, xlab = "residuals",main = "")
+plot(results2$Prev,E,xlab = "prevalence",ylab="residuals")
+plot(results2$Hab,E,xlab = "habitat",ylab="residuals")
+plot(results2$Mig,E,xlab = "migration",ylab="residuals")
+plot(results2$logmass,E,xlab = "logMass",ylab="residuals")
+par(op)
+```
+
+Olisko nämä hieman paremman näköiset residuaalien jakaumat?
+
+
+```{r }
+#luodaan eri mallivaihtoehtoja
+malli0 <- gls(pool_abu_change ~ 1, weights=vf1, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli1 <- gls(pool_abu_change ~ Mig, weights=vf1, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli2 <- gls(pool_abu_change ~ Hab, weights=vf1, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli3 <- gls(pool_abu_change ~ logmass, weights=vf1, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli4 <- gls(pool_abu_change ~ Prev, weights=vf1, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli5 <- gls(pool_abu_change ~ Mig + Hab, weights=vf1, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli6 <- gls(pool_abu_change ~ Hab + logmass, weights=vf1, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli7 <- gls(pool_abu_change ~ Mig + logmass, weights=vf1, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli8 <- gls(pool_abu_change ~ logmass+Prev, weights=vf1, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli9 <- gls(pool_abu_change ~ Mig +Prev, weights=vf1, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli10 <- gls(pool_abu_change ~ Hab+Prev, weights=vf1, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli11 <- gls(pool_abu_change ~ Mig + Hab + logmass, weights=vf1, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli12 <- gls(pool_abu_change ~ Mig + Hab + Prev, weights=vf1, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli13 <- gls(pool_abu_change ~ Mig + Prev + logmass, weights=vf1, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli14 <- gls(pool_abu_change ~ Prev + Hab + logmass, weights=vf1, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli15 <- gls(pool_abu_change ~ Mig + Hab + logmass+Prev, weights=vf1, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+
+#mallin valintaa MuMin paketin avulla
+output1<-model.sel(malli0,malli1,malli2,malli3,malli4,malli5,malli6,malli7,malli8,malli9,malli10,malli11,malli12,malli13,malli14,malli15) 
+
+# AICc Table
+output1
+
+summary(malli1)
+```
+
+
+Edelleen Mig on ainoa merkitsevä tekijä. Hmm..
