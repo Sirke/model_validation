@@ -156,10 +156,10 @@ summary(model.avg(output2, revised.var = TRUE))
 Mikään ei näytä selittävän ennustustarkkuutta.
 
 ```{r }
-# Parameter estimate Table, katsotaan tarkemmin parasta mallia
-summary(malli0)
-
+# sovitetaan malli uudestaan REML asetuksilla
 malli0 <- gls(pool_pa_change ~ 1, data = results,correlation=bm.birds,method="REML")
+
+summary(malli0)
 
 op<-par(mfrow=c(2,3),mar=c(5,4,1,2))
 plot(malli0,add.smooth = F,which =1)
@@ -258,7 +258,9 @@ summary(model.avg(output2, revised.var = TRUE))
 Paino ja prevalenssi merkitseviä. Eli yksinkertaisin malli8. 
 
 ```{r }
-# Parameter estimate Table
+#sovitetaan malli uudestaan REML asetuksilla
+malli8 <- gls(pool_abu_change ~ logmass+Prev, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+
 summary(malli8)
 ```
 
@@ -332,14 +334,16 @@ par(op)
 Residuaalit ehkä entistä enemmän vinksallaan. Harvinaisemmilla lajeilla vaihtelu ennustustarkkuudessa on suurta. Pitäisikö mallissa huomioida tämä erilainen vaihtelu jotenkin?
 
 
+
 #### Testailua erilaisilla varianssirakenteilla
 
-Kokeilen erilaisia varianssirakennevaihtoehtoja:  
+Kokeilen abu-aineiston analyysissa erilaisia varianssirakennevaihtoehtoja:  
 Tässä asetus pitää olla REML.
 ```{r}
-f1=formula(pool_abu_change ~ Mig + Hab + logmass + Prev) #tässä pitäisi olla mukana kaikki mahdolliset interaktiotkin mutta malli ei silloin toimi
+Fo=formula(pool_abu_change ~ Mig + Hab + logmass + Prev) #tässä pitäisi olla mukana kaikki mahdolliset interaktiotkin mutta malli ei silloin toimi
 
-m.gls1 <- gls(f1, data = results, correlation=bm.birds2, method="REML", na.action="na.omit")
+#aloitetaan perus lineaarisella mallilla
+m.gls1 <- gls(Fo, data = results, correlation=bm.birds2, method="REML", na.action="na.omit")
 summary(m.gls1)
 
 op<-par(mfrow=c(2,3),mar=c(5,4,1,2))
@@ -352,25 +356,26 @@ plot(results2$Mig,E,xlab = "migration",ylab="residuals")
 plot(results2$logmass,E,xlab = "logMass",ylab="residuals")
 par(op)
 
+#tehdään malleja, joissa on erilaisia varianssirakenteita
 vf2<-varExp(form=~Prev)
-m.gls2 <- gls(f1, weights=vf2, data = results, correlation=bm.birds2, method="REML", na.action="na.omit")
+m.gls2 <- gls(Fo, weights=vf2, data = results, correlation=bm.birds2, method="REML", na.action="na.omit")
 
 vf3<-varExp(form=~logmass)
-m.gls3 <- gls(f1, weights=vf3, data = results, correlation=bm.birds2, method="REML", na.action="na.omit")
+m.gls3 <- gls(Fo, weights=vf3, data = results, correlation=bm.birds2, method="REML", na.action="na.omit")
 
 vf4<-varIdent(form=~1|Hab)
-m.gls4 <- gls(f1, weights=vf4, data = results, correlation=bm.birds2, method="REML", na.action="na.omit")
+m.gls4 <- gls(Fo, weights=vf4, data = results, correlation=bm.birds2, method="REML", na.action="na.omit")
 
 vf5<-varIdent(form=~1|Mig)
-m.gls5 <- gls(f1, weights=vf5, data = results, correlation=bm.birds2, method="REML", na.action="na.omit")
+m.gls5 <- gls(Fo, weights=vf5, data = results, correlation=bm.birds2, method="REML", na.action="na.omit")
 
 vf6<-varIdent(form=~1|Mig*Hab)
-m.gls6 <- gls(f1, weights=vf6, data = results, correlation=bm.birds2, method="REML", na.action="na.omit")
+m.gls6 <- gls(Fo, weights=vf6, data = results, correlation=bm.birds2, method="REML", na.action="na.omit")
 
 vf7<-varComb(varIdent(form=~1|Mig),varExp(form=~Prev))
-m.gls7 <- gls(f1, weights=vf7, data = results, correlation=bm.birds2, method="REML", na.action="na.omit")
+m.gls7 <- gls(Fo, weights=vf7, data = results, correlation=bm.birds2, method="REML", na.action="na.omit")
 
-
+#verrataan kaikkia malleja
 AIC(m.gls1,m.gls2,m.gls3,m.gls4,m.gls5,m.gls6,m.gls7)
 ```
 
@@ -389,7 +394,7 @@ plot(results2$Mig,E,xlab = "migration",ylab="residuals")
 plot(results2$logmass,E,xlab = "logMass",ylab="residuals")
 par(op)
 ```
-Nämä residuaalit näyttävät ihan ok:lta(?)
+Nämä residuaalit näyttävät paremmilta(?)
 
 Sitten valitaan paras fixed osa:  
 Tässä asetus pitää olla ML. 
@@ -442,4 +447,4 @@ plot(results2$logmass,E,xlab = "logMass",ylab="residuals")
 par(op)
 ```
 
-Nämä residuaalit näyttävät mielestäni paremmilta kuin alkuperäiset. 
+Nämä residuaalit näyttävät mielestäni paremmilta kuin alkuperäiset mutta en tiedä onko varianssien sörkkiminen kuinka järkevää.
