@@ -14,7 +14,7 @@ Analysoin pa ja abu-aineistot erillään. Edellisissä analyyseissahan aineistot
 knitr::opts_chunk$set(echo = TRUE)
 
 getwd()
-paketit<-c("nlme","readr","tidyr","dplyr","plyr","magrittr","purrr","ggplot2","ape","geiger","MuMIn","psych","Hmisc")
+paketit<-c("nlme","readr","tidyr","dplyr","plyr","magrittr","purrr","ggplot2","ape","geiger","MuMIn","psych","Hmisc","nlme")
 lapply(paketit,library,character.only=T)
 ```
 
@@ -272,7 +272,7 @@ results2=subset(results,species!="Emberiza_rustica" & species!="Bonasa_bonasia")
 
 #seuraavaksi mallin validointia kuvaajista
 op<-par(mfrow=c(2,3),mar=c(5,4,1,2))
-plot(malli8,add.smooth = F,which =1)
+plot(malli8)
 E<-resid(malli8)
 hist(E, xlab = "residuals",main = "")
 plot(results2$Prev,E,xlab = "prevalence",ylab="residuals")
@@ -282,7 +282,9 @@ plot(results2$logmass,E,xlab = "logMass",ylab="residuals")
 par(op)
 ```
 
-Residuaalit eivät ole tasaisesti jakautuneita, etenkään prevalenssilla. Ei hyvä. 
+Prevalenssin residuaalit eivät ole tasaisesti jakautuneita. Pienillä arvoilla ennustustarkkuuksissa on enemmän vaihtelua. Voiko tämä johtua siitä, että tutkituista lajeista suurin osa nyt vaan sattuu olemaan harvinaisempia? Ja koska harvinaisempia lajeja on aineistossa enemmän niin sen myötä myös erilaisia (isoja ja pieniä) ennustustarkkuuksiakin on enemmän? Mutta tuleeko tässä rikkoneeksi lineaarisen mallin oletusta yhtenäisestä varianssista? 
+
+Residuaalien ja sovitettujen arvojen tulkinnasta lisää [täällä](https://online.stat.psu.edu/stat462/node/120/).
 
 
 Kokeilen mallin valintaa uudestaan "REML" asetuksella:
