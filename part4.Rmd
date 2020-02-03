@@ -38,6 +38,12 @@ str(results)
 #uusi muuttuja, massan logaritmi
 results$logmass<-log(results$Mass)
 
+#uusi muuttuja, standardoitu prevalenssi
+results$PrevS=log(results$Prev)
+
+hist(results$PrevS)
+hist(results$Prev)
+
 #tallenna tarvittaessa omaksi taulukokseen
 #write.csv(results,"accuracies_traits.csv",row.names = F)
 ```
@@ -52,8 +58,8 @@ Poolattu 50 x 50 km aineisto, pa ja abu:
 #poolattu pa aineisto
 op<-par(mfrow=c(2,2),mar=c(5,4,1,2))
 boxplot(pool_pa_change~Hab,data=results,ylab="pool_pa_D",xlab="Habitat")
-plot(pool_pa_change~Prev, data = results,ylab="pool_pa_D",xlab="Prevalence")
-abline(lm(pool_pa_change~Prev,data = results))
+plot(pool_pa_change~PrevS, data = results,ylab="pool_pa_D",xlab="Prevalence")
+abline(lm(pool_pa_change~PrevS,data = results))
 boxplot(pool_pa_change~Mig,data=results,ylab="pool_pa_D",xlab="Migration")
 plot(pool_pa_change~logmass, data = results,ylab="pool_pa_D",xlab="log(Mass)")
 abline(lm(pool_pa_change~logmass,data = results))
@@ -62,12 +68,14 @@ par(op)
 #poolattu abu aineisto
 op<-par(mfrow=c(2,2),mar=c(5,4,1,2))
 boxplot(pool_abu_change~Hab,data=results,ylab="pool_abu_D",xlab="Habitat")
-plot(pool_abu_change~Prev, data = results,ylab="pool_abu_D",xlab="Prevalence")
-abline(lm(pool_abu_change~Prev,data = results))
+plot(pool_abu_change~PrevS, data = results,ylab="pool_abu_D",xlab="Prevalence")
+abline(lm(pool_abu_change~PrevS,data = results))
 boxplot(pool_abu_change~Mig,data=results,ylab="pool_abu_D",xlab="Migration")
 plot(pool_abu_change~logmass, data = results,ylab="pool_abu_D",xlab="log(Mass)")
 abline(lm(pool_abu_change~logmass,data = results))
 par(op)
+
+
 ```
 
 Prevalenssilla näyttäisi olevan jonkinlainen suhde ennustustarkkuuteen.
@@ -122,18 +130,18 @@ malli0 <- gls(pool_pa_change ~ 1, data = results,correlation=bm.birds,method="ML
 malli1 <- gls(pool_pa_change ~ Mig, data = results,correlation=bm.birds,method="ML")
 malli2 <- gls(pool_pa_change ~ Hab, data = results,correlation=bm.birds,method="ML")
 malli3 <- gls(pool_pa_change ~ log(Mass), data = results,correlation=bm.birds,method="ML")
-malli4 <- gls(pool_pa_change ~ Prev, data = results,correlation=bm.birds,method="ML")
+malli4 <- gls(pool_pa_change ~ PrevS, data = results,correlation=bm.birds,method="ML")
 malli5 <- gls(pool_pa_change ~ Mig + Hab, data = results,correlation=bm.birds,method="ML")
 malli6 <- gls(pool_pa_change ~ Hab + log(Mass), data = results,correlation=bm.birds,method="ML")
 malli7 <- gls(pool_pa_change ~ Mig + log(Mass), data = results,correlation=bm.birds,method="ML")
-malli8 <- gls(pool_pa_change ~ log(Mass)+Prev, data = results,correlation=bm.birds,method="ML")
-malli9 <- gls(pool_pa_change ~ Mig +Prev, data = results,correlation=bm.birds,method="ML")
-malli10 <- gls(pool_pa_change ~ Hab+Prev, data = results,correlation=bm.birds,method="ML")
+malli8 <- gls(pool_pa_change ~ log(Mass)+PrevS, data = results,correlation=bm.birds,method="ML")
+malli9 <- gls(pool_pa_change ~ Mig +PrevS, data = results,correlation=bm.birds,method="ML")
+malli10 <- gls(pool_pa_change ~ Hab+PrevS, data = results,correlation=bm.birds,method="ML")
 malli11 <- gls(pool_pa_change ~ Mig + Hab + log(Mass), data = results,correlation=bm.birds,method="ML")
-malli12 <- gls(pool_pa_change ~ Mig + Hab + Prev, data = results,correlation=bm.birds,method="ML")
-malli13 <- gls(pool_pa_change ~ Mig + Prev + log(Mass), data = results,correlation=bm.birds,method="ML")
-malli14 <- gls(pool_pa_change ~ Prev + Hab + log(Mass), data = results,correlation=bm.birds,method="ML")
-malli15 <- gls(pool_pa_change ~ Mig + Hab + log(Mass)+Prev, data = results,correlation=bm.birds,method="ML")
+malli12 <- gls(pool_pa_change ~ Mig + Hab + PrevS, data = results,correlation=bm.birds,method="ML")
+malli13 <- gls(pool_pa_change ~ Mig + PrevS + log(Mass), data = results,correlation=bm.birds,method="ML")
+malli14 <- gls(pool_pa_change ~ PrevS + Hab + log(Mass), data = results,correlation=bm.birds,method="ML")
+malli15 <- gls(pool_pa_change ~ Mig + Hab + log(Mass)+PrevS, data = results,correlation=bm.birds,method="ML")
 
 #mallin valintaa MuMin paketin avulla
 output1<-model.sel(malli0,malli1,malli2,malli3,malli4,malli5,malli6,malli7,malli8,malli9,malli10,malli11,malli12,malli13,malli14,malli15) 
@@ -165,14 +173,15 @@ op<-par(mfrow=c(2,3),mar=c(5,4,1,2))
 plot(malli0,add.smooth = F,which =1)
 E<-resid(malli0)
 hist(E, xlab = "residuals",main = "")
-plot(results$Prev,E,xlab = "prevalence",ylab="residuals")
+plot(results$PrevS,E,xlab = "prevalence",ylab="residuals")
 plot(results$Hab,E,xlab = "habitat",ylab="residuals")
 plot(results$Mig,E,xlab = "migration",ylab="residuals")
 plot(results$logmass,E,xlab = "logMass",ylab="residuals")
 par(op)
 ```
 
-En tiedä, onko mitään järkeä tuijotella nollamallin residuaaleja mutta siinä ne nyt ovat. Ei kai noissa mitään hälyyttäviä kuvioita ole.
+En tiedä, onko mitään järkeä tuijotella nollamallin residuaaleja mutta siinä ne nyt ovat. Ei kai noissa mitään hälyyttäviä kuvioita ole. Yleisesti residuaalit ovat enemmän positiivisen puolella.  
+
 Eli pa-aineistolla mikään lajiominaisuus ei selitä ennustustarkkuutta.
 
 **Huom!** Otson koodissa fylogenia rakennetaan "corPagel" asetuksilla. Tällä ei kai kuitenkaan ole suurta eroa corBrownian-asetukseen.
@@ -192,18 +201,18 @@ malli0 <- gls(pool_abu_change ~ 1, data = results,correlation=bm.birds2,method="
 malli1 <- gls(pool_abu_change ~ Mig, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
 malli2 <- gls(pool_abu_change ~ Hab, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
 malli3 <- gls(pool_abu_change ~ logmass, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
-malli4 <- gls(pool_abu_change ~ Prev, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli4 <- gls(pool_abu_change ~ PrevS, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
 malli5 <- gls(pool_abu_change ~ Mig + Hab, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
 malli6 <- gls(pool_abu_change ~ Hab + logmass, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
 malli7 <- gls(pool_abu_change ~ Mig + logmass, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
-malli8 <- gls(pool_abu_change ~ logmass+Prev, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
-malli9 <- gls(pool_abu_change ~ Mig +Prev, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
-malli10 <- gls(pool_abu_change ~ Hab+Prev, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli8 <- gls(pool_abu_change ~ logmass+PrevS, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli9 <- gls(pool_abu_change ~ Mig +PrevS, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli10 <- gls(pool_abu_change ~ Hab+PrevS, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
 malli11 <- gls(pool_abu_change ~ Mig + Hab + logmass, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
-malli12 <- gls(pool_abu_change ~ Mig + Hab + Prev, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
-malli13 <- gls(pool_abu_change ~ Mig + Prev + logmass, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
-malli14 <- gls(pool_abu_change ~ Prev + Hab + logmass, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
-malli15 <- gls(pool_abu_change ~ Mig + Hab + logmass+Prev, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli12 <- gls(pool_abu_change ~ Mig + Hab + PrevS, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli13 <- gls(pool_abu_change ~ Mig + PrevS + logmass, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli14 <- gls(pool_abu_change ~ PrevS + Hab + logmass, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli15 <- gls(pool_abu_change ~ Mig + Hab + logmass+PrevS, data = results,correlation=bm.birds2,method="ML",na.action="na.omit")
 
 #mallin valintaa MuMin paketin avulla
 output1<-model.sel(malli0,malli1,malli2,malli3,malli4,malli5,malli6,malli7,malli8,malli9,malli10,malli11,malli12,malli13,malli14,malli15) 
@@ -242,7 +251,7 @@ op<-par(mfrow=c(2,3),mar=c(5,4,1,2))
 plot(malli8)
 E<-resid(malli8)
 hist(E, xlab = "residuals",main = "")
-plot(results2$Prev,E,xlab = "prevalence",ylab="residuals")
+plot(results2$PrevS,E,xlab = "prevalence",ylab="residuals")
 plot(results2$Hab,E,xlab = "habitat",ylab="residuals")
 plot(results2$Mig,E,xlab = "migration",ylab="residuals")
 plot(results2$logmass,E,xlab = "logMass",ylab="residuals")
