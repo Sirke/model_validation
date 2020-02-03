@@ -38,11 +38,8 @@ str(results)
 #uusi muuttuja, massan logaritmi
 results$logmass<-log(results$Mass)
 
-#uusi muuttuja, standardoitu prevalenssi
+#uusi muuttuja, muunnettu prevalenssi
 results$PrevS=log(results$Prev)
-
-hist(results$PrevS)
-hist(results$Prev)
 
 #tallenna tarvittaessa omaksi taulukokseen
 #write.csv(results,"accuracies_traits.csv",row.names = F)
@@ -75,7 +72,9 @@ plot(pool_abu_change~logmass, data = results,ylab="pool_abu_D",xlab="log(Mass)")
 abline(lm(pool_abu_change~logmass,data = results))
 par(op)
 
+ggplot(results,aes(x=Prev,y=pool_abu_change))+geom_point(aes(colour = factor(Hab)))
 
+ggplot(results,aes(x=logmass,y=pool_abu_change))+geom_point(aes(colour = factor(Mig)))
 ```
 
 Prevalenssilla näyttäisi olevan jonkinlainen suhde ennustustarkkuuteen.
@@ -256,6 +255,9 @@ plot(results2$Hab,E,xlab = "habitat",ylab="residuals")
 plot(results2$Mig,E,xlab = "migration",ylab="residuals")
 plot(results2$logmass,E,xlab = "logMass",ylab="residuals")
 par(op)
+
+qqnorm(E)
+qqline(E)
 ```
 
 Prevalenssin residuaalit eivät ole tasaisesti jakautuneita. Pienillä arvoilla ennustustarkkuuksissa on enemmän vaihtelua. Voiko tämä johtua siitä, että tutkituista lajeista suurin osa nyt vaan sattuu olemaan harvinaisempia? Ja koska harvinaisempia lajeja on aineistossa enemmän niin sen myötä myös erilaisia (isoja ja pieniä) ennustustarkkuuksiakin on enemmän? Mutta tuleeko tässä rikkoneeksi lineaarisen mallin oletusta yhtenäisestä varianssista? 
