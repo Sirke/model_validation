@@ -70,7 +70,7 @@ knitr::include_graphics('./ABCD_erikseen.png')
 ## 1.3 Presence/absence aineisto 
 
 ### 1.3.1 Aineisto sisälle ja tarkastelu
-```{r }
+```{r include=FALSE}
 getwd()
 localDir = "."
 PredictionDir = file.path(localDir, "data")
@@ -157,6 +157,7 @@ for (i in 1:ns){
   B[i] = cor(Ap1[,i],Ay[,i])
 }
 
+nsr
 plot(A,B,xlim=c(-1,1), ylim=c(-1,1)) + abline(0,1)+ abline(h=0)+ abline(v=0)
 ```
 
@@ -190,7 +191,7 @@ for (i in 1:ns){
   C[i] = cor(Ap2[,i],Ay[,i], use="na.or.complete")  #NA:t eivät estä korrelaation laskemista koko lajille
   D[i] = cor(Ap1[,i],Ay[,i], use="na.or.complete")
 }
-
+nsr
 plot(C,D,xlim=c(-1,1), ylim=c(-1,1)) + abline(0,1)+ abline(h=0)+ abline(v=0)
 ```
 Molemmille metodeille ennusteet aika huonoja.
@@ -381,7 +382,7 @@ for (i in 1:ns){
   A[i] = cor(Ap2[,i],Ay[,i],use="na.or.complete")   #lisäsin tähän määreen
   B[i] = cor(Ap1[,i],Ay[,i],use="na.or.complete")
 }
-
+nsr
 plot(A,B,xlim=c(-1,1), ylim=c(-1,1)) + abline(0,1)+ abline(h=0)+ abline(v=0)
 ```
 Molemmat metodit suht hyviä. A:lle ennusteet parempia.
