@@ -13,7 +13,7 @@ Kullakin lajilla ennustaminen voi olla ylipäätään helpompaa tai vaikeampaa, 
 
 ```{r , include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-packages<-c("readr","tidyr","plyr","dplyr","magrittr","purrr","data.table","plotrix","jtools","ggplot2","lme4","nlme")
+packages<-c("readr","tidyr","plyr","dplyr","magrittr","purrr","data.table","plotrix","jtools","ggplot2","lme4","nlme","ggpubr","rstatix")
 lapply(packages,library,character.only=T)
 ```
 
@@ -125,7 +125,7 @@ Laji siis random-tekijäksi mukaan. Testataan "REML"-asetuksella, kumpi on parem
 ```{r}
 A1=gls(accuracy~method*pa,method="REML",data=res2,na.action="na.exclude")
 
-A2=lme(accuracy~method*pa,data=res2,random=~1|species,method="REML",na.action="na.exclude")
+A2=lme(accuracy~method*pa,random=~1|species,data=res2,method="REML",na.action="na.exclude")
 
 anova(A1,A2)
 ```
@@ -303,6 +303,89 @@ text(-0.5,0.8,"d) Abundance, 2 km",cex=0.8)
 Tätä pitäisi vielä miettiä, mitä plotataan ja mitä vasten? Alun perin verrattiin metodi D:tä pa/abu_past-arvoihin eli vähän sama kuin vertailu metodi A:han. siis, voitaisiinko jo hyvin yksinkertaisella validointimenetelmällä saada samoja tuloksia kuin monimutkaisemmalla metodilla?
 
 
+Plottaus esitelmään:
 
+```{r}
+res3=subset(res2,method=="B"|method=="D", select=c(accuracy,pa, species,method))
+stat <- summarySE(res3, measurevar="accuracy", groupvars=c("method","pa"),na.rm = T)
+stat
+
+pd <- position_dodge(0.1) # move them .05 to the left and right
+
+# Standard error of the mean
+ggplot(stat, aes(x=method, y=accuracy, colour=pa)) + 
+    geom_errorbar(aes(ymin=accuracy-se, ymax=accuracy+se), width=.1, position=pd)+
+    geom_point(position=pd)
+
+stat$method=revalue(stat$method, c("B"="traditional", "D"="novel"))
+
+
+# Use 95% confidence interval instead of SEM
+ggplot(stat, aes(x=method, y=accuracy, colour=pa)) + 
+    geom_errorbar(aes(ymin=accuracy-ci, ymax=accuracy+ci), width=.1, position=pd) +
+    geom_line(position=pd) +
+    geom_point(position=pd)
+
+# Black error bars - notice the mapping of 'group=supp' -- without it, the error
+# bars won't be dodged!
+ggplot(stat, aes(x=method, y=accuracy, colour=pa, group=pa)) + 
+    geom_errorbar(aes(ymin=accuracy-ci, ymax=accuracy+ci), colour="black", width=.2, position=pd) +
+    geom_point(position=pd, size=6)+
+    ylab("Model transferability") +
+    scale_colour_hue(name="Data type",    # Legend label, use darker colors
+                     breaks=c("pa", "abu"),
+                     labels=c("Presence/absence", "Abundance"),
+                     l=40) +                    # Use darker colors, lightness=40
+    theme_bw() +
+    theme(legend.justification=c(1,1),
+          legend.position=c(0.95,0.95),
+          legend.box.background=element_rect())  +             # Position legend in bottom right
+    theme(text = element_text(size = 20))
+
+
+#plottailua
+ggplot(res3, aes(x = method, y = accuracy, interaction = pa, colour = pa)) + geom_boxplot() 
+```
+
+
+Vaihtoehtoinen analyysi:
+
+```{r}
+#stats
+res2 %>%
+  group_by(method,pa)%>%
+  get_summary_stats(accuracy, type = "mean_sd")
+
+#visualization
+bxp <- ggboxplot(
+  res2, x = "method", y = "accuracy",
+  color = "pa", palette = "jco"
+  )
+bxp
+
+#outliers
+res2 %>%
+  group_by(method,pa) %>%
+  identify_outliers(accuracy)
+
+#normality
+res2 %>%
+  group_by(method,pa) %>%
+  shapiro_test(accuracy)
+
+#qqplot
+ggqqplot(res2, "accuracy", ggtheme = theme_bw()) +
+  facet_grid(method ~ pa, labeller = "label_both")
+
+#the test
+res.aov <- anova_test(
+  data = res2, dv = accuracy, wid = species,
+  within = c(pa, method)
+  )
+get_anova_table(res.aov)
+
+#jatkuu
+
+```
 
 
