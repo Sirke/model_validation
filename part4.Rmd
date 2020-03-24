@@ -38,8 +38,12 @@ str(results)
 #uusi muuttuja, massan logaritmi
 results$logmass<-log(results$Mass)
 
-#uusi muuttuja, muunnettu prevalenssi
+#uusi muuttuja, log-muunnettu prevalenssi
 results$PrevS=log(results$Prev)
+
+#logit-muunnos (kokeilin, antaa ihan samanlaiset residuaalit)
+#logitTransform <- function(p) { log(p/(1-p)) }
+#results$PrevS=logitTransform(results$Prev)
 
 #tallenna tarvittaessa omaksi taulukokseen
 #write.csv(results,"accuracies_traits.csv",row.names = F)
@@ -55,8 +59,8 @@ Poolattu 50 x 50 km aineisto, pa ja abu:
 #poolattu pa aineisto
 op<-par(mfrow=c(2,2),mar=c(5,4,1,2))
 boxplot(pool_pa_change~Hab,data=results,ylab="pool_pa_D",xlab="Habitat")
-plot(pool_pa_change~Prev, data = results,ylab="pool_pa_D",xlab="Prevalence")
-abline(lm(pool_pa_change~Prev,data = results))
+plot(pool_pa_change~PrevS, data = results,ylab="pool_pa_D",xlab="logit(Prevalence)")
+abline(lm(pool_pa_change~PrevS,data = results))
 boxplot(pool_pa_change~Mig,data=results,ylab="pool_pa_D",xlab="Migration")
 plot(pool_pa_change~logmass, data = results,ylab="pool_pa_D",xlab="log(Mass)")
 abline(lm(pool_pa_change~logmass,data = results))
@@ -65,7 +69,7 @@ par(op)
 #poolattu abu aineisto
 op<-par(mfrow=c(2,2),mar=c(5,4,1,2))
 boxplot(pool_abu_change~Hab,data=results,ylab="pool_abu_D",xlab="Habitat")
-plot(pool_abu_change~Prev, data = results,ylab="pool_abu_D",xlab="Prevalence")
+plot(pool_abu_change~PrevS, data = results,ylab="pool_abu_D",xlab="logit(Prevalence)")
 abline(lm(pool_abu_change~Prev,data = results))
 boxplot(pool_abu_change~Mig,data=results,ylab="pool_abu_D",xlab="Migration")
 plot(pool_abu_change~logmass, data = results,ylab="pool_abu_D",xlab="log(Mass)")
@@ -190,7 +194,6 @@ Eli pa-aineistolla mikään lajiominaisuus ei selitä ennustustarkkuutta.
 
 **Huom!** Mallien sovittaminen REML-asetuksilla ei aiheuta muutosta tuloksiin. Nollamalli oli entistä selvemmällä erolla parhain malli. Päädyttiin siihen, että mallin valinta tulisi tehdä kuitenkin ML-asetuksella.
 
-
 ### 4.4.2 Abu-aineistolle
 
 Abu-aineistossa on muutama NA-havainto, joka monimutkaistaa koodaamista. Gls-mallit toimivat kyllä NA-havaintojenkin kanssa (na.action="na.omit", huom: "na.exclude" ei toimi tässä) mutta fylogenia puu sisältää kaksi lajia liikaa (pohjansirkku ja pyy). Fylogenia puuta on siis muokattava. Edit: Tein tämän jo koodin alussa. Näissä malleissa käytetään siis fylogeniana 'bm.birds2'-fylogeniaa, jossa vain 118 lajia.
@@ -302,10 +305,20 @@ Sama tulos.
 ```{r }
 #tehdään model averaging
 output2<-model.sel(malli0,malli3,malli8,malli4)
+output2
+
 summary(model.avg(output2, revised.var = TRUE))
+
+#sama hieman eri koodilla
+#summary(model.avg(output1, subset=delta<4))
+
+#luottamusvälit
+confint(model.avg(output1, subset=delta<4))
 ```
  
 Sama tulos. Mikään tekijä ei selitä ennustustarkkuutta.
+
+Selvensin itselleni mitä tuo argumentti *revised.var* oikein tekee. Se laskee standard errorit jollain päivitetyllä kaavalla. "Unconditional standard errors are square root of the variance estimator, calculated either according to the original equation in Burnham and Anderson (2002, equation 4.7), or a newer, revised formula from Burnham and Anderson (2004, equation 4) (if revised.var = TRUE, this is the default)."
 
 ```{r }
 # sovitetaan malli uudestaan REML asetuksilla
@@ -363,7 +376,17 @@ Sama tulos.
 #tehdään model averaging
 output2<-model.sel(malli8,malli13,malli14)
 summary(model.avg(output2, revised.var = TRUE))
+
+#luottamusvälit
+confint(model.avg(output1, subset=delta<4))
 ```
+
+```{r }
+#sovitetaan malli uudestaan REML asetuksilla
+malli8 <- gls(pool_abu_change ~ logmass+PrevS, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+summary(malli8)
+```
+
 
 ```{r }
 #plottaus ei toimi jos aineistoissa on eri määrä havaintoja

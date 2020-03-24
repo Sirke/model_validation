@@ -28,11 +28,25 @@ str(res)
 Testaan, miten tulokset muuttuvat jos abu-aineistosta karsitaan pois muutamat havainnot, jotka perustuvat vain alle kymmeneen havaintoon. Tätä rajaa voidaan testailla.
 
 ```{r}
+sort(res$P_D)
+
 res$abu_D[res$P_D<10]=NA
 res$abu_C[res$P_D<10]=NA
 ```
 
-Jos minimihavaintorajana pidetään kymmentä, pohjansirkku ja pyy putoavat pois.
+Jos minimihavaintorajana pidetään kymmentä, pohjansirkku ja pyy putoavat pois (muuttuvat NA:ksi). Tarkistan NA-havaintojen määrät.
+
+```{r}
+sum(is.na(res$pa_A))
+sum(is.na(res$pa_B))
+sum(is.na(res$pa_C))
+sum(is.na(res$pa_D))
+sum(is.na(res$abu_A))
+sum(is.na(res$abu_B))
+sum(is.na(res$abu_C))
+sum(is.na(res$abu_D))
+```
+
 
 ## 2.1 Keskiarvot ja keskivirheet
 
@@ -43,19 +57,22 @@ Lasketaan ennustustarkkuuksien keskiarvot ja keskivirheet kullekin metodi/aineis
 res %>% dplyr::select(2:9)%>%colMeans(.,na.rm = T)
 res %>% dplyr::select(2:9)%>%std.error()
 
-#kuvaaja
+#standard deviations
+apply(res, 2, sd,na.rm=T)
+
+#aineiston jakauma, boxplot
 boxplot(res[c(-1,-10)])
 abline(h=0)
 ```
 
-Kuvaajissa olisi varmaan hyvä pitää pa ja abu erillään?
+Pitäisikö kuvaajissa pitää pa ja abu erillään?
 
 
 ## 2.2 Analyysi
 
 ### 2.2.1 Aineiston muokkaus
 
-Mallintamista varten luodaan uusi dummy-muuttuja, joka kertoo onko käytetty aineisto pa- vai abu-aineistoa. Muutan myös method-muuttujan koodausta hieman.
+Mallintamista varten luodaan uusi muuttuja, joka kertoo onko käytetty aineisto pa- vai abu-aineistoa. Muutan myös method-muuttujan koodausta hieman.
 
 ```{r}
 #aineiston muokkaus:
@@ -82,8 +99,6 @@ Teen uuden kuvaajan tällä aineistolla.
 ```{r}
 ggplot(res2,aes(x=method, y=accuracy))+geom_boxplot()+facet_grid(.~pa)
 ```
-
-
 
 
 ### 2.2.2. Testaus
@@ -123,32 +138,42 @@ Mallin validointi paljastaa, että 'species' sisältää vielä vaihtelua. Se pi
 Laji siis random-tekijäksi mukaan. Testataan "REML"-asetuksella, kumpi on parempi.
 
 ```{r}
-A1=gls(accuracy~method*pa,method="REML",data=res2,na.action="na.exclude")
+A1=gls(accuracy ~ method*pa, method="REML", data=res2,na.action="na.exclude")
+A2=lme(accuracy ~ method*pa, random=~1|species, data=res2,method="REML",na.action="na.exclude")
 
-A2=lme(accuracy~method*pa,random=~1|species,data=res2,method="REML",na.action="na.exclude")
+#tai eri funktiolla (lme4)
+A2b=lmer(accuracy ~ method*pa + (1|species), data=res2,REML = T,na.action="na.exclude")
 
 anova(A1,A2)
+AIC(A1,A2b)
 ```
 
-Sekamalli näyttäisi olevan parempi. 
+Sekamalli näyttäisi olevan parempi. Tosin varoitusviesti sanoo, että mallit perustuvat eri havaintomääriin. Varoitus liittyy varmaan siihen, että Kaksi lajia on abundance-aineistossa ilman C ja D arvoja.
 
 Muitakin random-rakenteita voisi testata. Mutta ovatko ne mielekkäitä? 
 
+Tämä [artikkeli](https://www.sciencedirect.com/science/article/pii/S0749596X12001180) neuvoo maksimoimaan random-rakenteen. Mutta artikkelin luettuani en olekaan enää ollenkaan kärryillä siitä, mitä asioita random-muuttujaksi pitäisi laittaa.
+
+-Eikö pa-muuttuja eli aineistotyyppi voisi olla vain random-puolella? Omana interceptinään? Olisiko malli A4 maksimaalinen random-rakenne, jonka tutkimusasetelmamme sallii?
+
+-Artikkelin esimerkissä ainoa fixed-muuttuja on se muuttuja, josta ollaan kiinnostuttu. Mitä eroa on sillä, että pa laitetaan fixed-osaan interaktioon metodin kanssa vs. pa on vain random-puolella?
+
 ```{r}
 #muita vaihtoehtoja random-rakenteen testaamiseksi:
-#A3=lme(accuracy~method*pa,data=res2,random=~1+method|species,method="REML")
-A4=lme(accuracy~method*pa,data=res2,random=~1+pa|species,method="REML",na.action="na.exclude")
-#A5=lme(accuracy~method*pa,data=res2,random=~1+method*pa|species,method="REML")
-#päätimme jätttää testaamatta todettuamme, etteivät nämä ole kiinnostavia sisänsä
+A3=lmer(accuracy ~ method + (1+method|species), data=res2,REML = T,na.action="na.exclude")
 
-anova(A2,A4)
+A4=lmer(accuracy ~ method + (1+method|species)+(1|pa), data=res2,REML = T,na.action="na.exclude")
+
+#tämmöinenkin malli tässä oli aluksi..
+#A5=lme(accuracy~method*pa,data=res2,random=~1+method*pa|species,method="REML")
+
+AIC(A2,A3,A4)
 ```
 
-A4 olisi itseasiassa ollut vielä parempi mutta onko se mielekäs? Pysytään silti A2 mallissa.
+Vaihtoehtoiset mallit eivät näytä toimivan. Enkä tiedä onko niissä mitään järkeä.
 
 ```{r}
 summary(A2)
-anova(A2)
 ```
 
 Mallissa A2 metodi ja aineistotyyppi sekä niiden interaktio näyttävät olevan merkitseviä.
@@ -174,26 +199,6 @@ abline(h=0,lty=2)
 
 Residuaalit näyttää ok:lta. Lajin kohdalla ne hieman seilaavat mutta onko tämä kuinka paha/hyvä?  
 
-Teen huvikseen mallin validoinnin myös mallille A4:
-
-```{r}
-#sama validointi jos olisikin valittu A4:
-E1=resid(A4, type="normalized")
-F1=fitted(A4)
-
-par(mfrow=c(2,2), mar=c(5,5,2,2))
-plot(x=F1,y=E1,xlab="fitted",ylab="residuals")
-abline(h=0,lty=2)
-boxplot(E1~method,xlab="method",ylab="residuals",data=res2)
-abline(h=0,lty=2)
-boxplot(E1~pa,xlab="pa",ylab="residuals",data=res2)
-abline(h=0,lty=2)
-par(mfrow=c(1,1), mar=c(5,5,2,2))
-boxplot(E1~species,xlab="species",ylab="residuals",data=res2)
-abline(h=0,lty=2)
-```
-
-Ilmeisesti aika samanlaiset residuaalit. Pysytään siis edelleen mallissa A2.
 
 Keskitytään sitten fixed-osaan. Fixed-osan mallin sovituksessa käytetään "ML"-asetuksia.Tehdään neljä mallia, jotka sisältävät eri kombinaatiot muuttujista method ja pa. Vertaillaan näitä keskenään.
 
@@ -207,7 +212,7 @@ anova(A2full,A2.a)
 AIC(A2full,A2.a,A2.b,A2.c)
 ```
 
-Jo ensimmäinen vertailu antaa tulokseksi, että interaktio on merkitsevä, joten molemmat muuttujat on hyvä pitää mallissa. AIC-vertailu antaa saman tuloksen.  
+Jo ensimmäinen anova-vertailu antaa tulokseksi, että interaktio on merkitsevä, joten molemmat muuttujat ja niiden interaktio on hyvä pitää mallissa. AIC-vertailu antaa saman tuloksen.  
 
 Lopullinen malli on siis A2full, joka ajetaan vielä kerran "REML"-asetuksilla.
 
@@ -221,21 +226,132 @@ qqnorm(A2full,~ranef(.),col=1)
 intervals(A2full)
 ```
 
-Eli ennustustarkkuuteen vaikuttavat metodin ja aineiston yhdistelmä. Huonoimmat tulokset saa abu-aineistolla ja metodilla D.   
+Eli ennustustarkkuuteen vaikuttavat metodin ja aineiston yhdistelmä. Huonoimmat ennustustarkkuudet saa abu-aineistolla ja metodilla D.
 
 
-## 2.3 Kuvaaja
+## 2.4 ANOVA
+
+Vaihtoehtoinen analyysi:
+
+```{r}
+#stats
+res2 %>%
+  group_by(method,pa)%>%
+  get_summary_stats(accuracy, type = "mean_sd")
+```
+
+
+
+```{r}
+#visualization
+bxp <- ggboxplot(
+  res2, x = "method", y = "accuracy",
+  color = "pa", palette = "jco"
+  )
+bxp
+```
+
+```{r}
+#outliers
+res2 %>%
+  group_by(method,pa) %>%
+  identify_outliers(accuracy)
+
+#normality
+res2 %>%
+  group_by(method,pa) %>%
+  shapiro_test(accuracy)
+
+#qqplot
+ggqqplot(res2, "accuracy", ggtheme = theme_bw()) +
+  facet_grid(method ~ pa, labeller = "label_both")
+```
+
+Ei kai kummempaa aineistossa.
+
+```{r}
+#the test
+res.aov <- anova_test(
+  data = res2, dv = accuracy, wid = species,
+  within = c(pa, method)
+  )
+get_anova_table(res.aov)
+```
+
+Pa ja method-interaktio merkitsevä.
+
+```{r}
+# Effect of pa at each method
+one.way <- res2 %>%
+  group_by(method) %>%
+  anova_test(dv = accuracy, wid = species, within = pa) %>%
+  get_anova_table() %>%
+  adjust_pvalue(method = "bonferroni")
+one.way
+```
+
+pa ja abu aineistot eroavat toisistaan kaikilla muilla metodeilla paitsi D:llä.
+
+```{r}
+# Effect of method at both data types
+one.way <- res2 %>%
+  group_by(pa) %>%
+  anova_test(dv = accuracy, wid = species, within = method) %>%
+  get_anova_table() %>%
+  adjust_pvalue(method = "bonferroni")
+one.way
+```
+
+Metodit eroavat toisistaan kummallakin aineistotyypillä.
+
+```{r}
+# Pairwise comparisons between data types
+pwc <- res2 %>%
+  group_by(method) %>%
+  pairwise_t_test(
+    accuracy ~ pa, paired = TRUE,
+    p.adjust.method = "bonferroni"
+    )
+pwc
+```
+
+sama tulos kuin yllä koska vain kaksi data tyyppiä.
+
+```{r}
+# Pairwise comparisons between methods
+pwc <- res2 %>%
+  group_by(pa) %>%
+  pairwise_t_test(
+    accuracy ~ method, paired = TRUE,
+    p.adjust.method = "bonferroni"
+    )
+pwc
+```
+
+Kaikki muut yhdistelmät eroavat toisistaan paitsi abu:n C ja D.
+
+```{r}
+# Visualization: box plots with p-values
+pwc <- pwc %>% add_xy_position(x = "method")
+bxp + 
+  stat_pvalue_manual(pwc, tip.length = 0, hide.ns = TRUE) +
+  labs(
+    subtitle = get_test_label(res.aov, detailed = TRUE),
+    caption = get_pwc_label(pwc)
+  )
+```
+
+
+
+## 2.5 Kuvaajia
 
 Boxplotti voisi näyttää tältä:
 ```{r}
 boxplot(accuracy~pa*method,data=res2)
-
 ggplot(res2, aes(x = method, y = accuracy, interaction = pa, colour = pa)) + geom_boxplot() 
 ```
 
-
 Alkuperäinen idea kuvaajasta oli tämä:
-
 
 ```{r, out.width="100%"}
 # Piirretään kuvaaja, Fig1
@@ -250,8 +366,8 @@ Line=cbind(Line,Line3)
 
 Line=as.data.frame(Line)
 
-#pdf("Fig1.pdf")
-#jpeg("Fig1abcdef.jpeg")
+#pdf("Fig123.pdf")
+jpeg("Fig123.jpeg")
 #png("Fig1abcdef.png")
 
 #määrittää 3x3 matriisin johon kuvat piirretään
@@ -285,7 +401,7 @@ lines(Line$Line,Line$Line2,lty="dashed")
 lines(Line$Line,Line$Line3,col="grey",lty="dashed")
 lines(Line$Line3,Line$Line,col="grey",lty="dashed")
 
-text(-0.5,0.8,"c) Distribution, 2 km",cex=0.8)
+text(-0.5,0.8,"c) Distribution",cex=0.8)
 
 # d)
 plot(abu_D~abu_C,data=res,xlim=c(-1,1),
@@ -295,43 +411,31 @@ lines(Line$Line,Line$Line2,lty="dashed")
 lines(Line$Line,Line$Line3,col="grey",lty="dashed")
 lines(Line$Line3,Line$Line,col="grey",lty="dashed")
 
-text(-0.5,0.8,"d) Abundance, 2 km",cex=0.8)
+text(-0.5,0.8,"d) Abundance",cex=0.8)
 
 #dev.off()
 ```
 
+En saa kuvaajaa näkymään tässä mutta se löytyy kässäristä.
+
 Tätä pitäisi vielä miettiä, mitä plotataan ja mitä vasten? Alun perin verrattiin metodi D:tä pa/abu_past-arvoihin eli vähän sama kuin vertailu metodi A:han. siis, voitaisiinko jo hyvin yksinkertaisella validointimenetelmällä saada samoja tuloksia kuin monimutkaisemmalla metodilla?
 
-
-Plottaus esitelmään:
+Kuvaaja, jossa keskiarvot ja luottamusvälit:
 
 ```{r}
-res3=subset(res2,method=="B"|method=="D", select=c(accuracy,pa, species,method))
-stat <- summarySE(res3, measurevar="accuracy", groupvars=c("method","pa"),na.rm = T)
+#res3=subset(res2,method=="B"|method=="D", select=c(accuracy,pa, species,method))
+library(Rmisc)
+stat <- summarySE(res2, measurevar="accuracy", groupvars=c("method","pa"),na.rm = T)
 stat
 
-pd <- position_dodge(0.1) # move them .05 to the left and right
-
-# Standard error of the mean
-ggplot(stat, aes(x=method, y=accuracy, colour=pa)) + 
-    geom_errorbar(aes(ymin=accuracy-se, ymax=accuracy+se), width=.1, position=pd)+
-    geom_point(position=pd)
-
-stat$method=revalue(stat$method, c("B"="traditional", "D"="novel"))
-
-
-# Use 95% confidence interval instead of SEM
-ggplot(stat, aes(x=method, y=accuracy, colour=pa)) + 
-    geom_errorbar(aes(ymin=accuracy-ci, ymax=accuracy+ci), width=.1, position=pd) +
-    geom_line(position=pd) +
-    geom_point(position=pd)
+pd <- position_dodge(0.15) # move them .05 to the left and right
 
 # Black error bars - notice the mapping of 'group=supp' -- without it, the error
 # bars won't be dodged!
 ggplot(stat, aes(x=method, y=accuracy, colour=pa, group=pa)) + 
     geom_errorbar(aes(ymin=accuracy-ci, ymax=accuracy+ci), colour="black", width=.2, position=pd) +
-    geom_point(position=pd, size=6)+
-    ylab("Model transferability") +
+    geom_point(position=pd, size=4)+
+    ylab("Prediction accuracy") +
     scale_colour_hue(name="Data type",    # Legend label, use darker colors
                      breaks=c("pa", "abu"),
                      labels=c("Presence/absence", "Abundance"),
@@ -340,52 +444,6 @@ ggplot(stat, aes(x=method, y=accuracy, colour=pa, group=pa)) +
     theme(legend.justification=c(1,1),
           legend.position=c(0.95,0.95),
           legend.box.background=element_rect())  +             # Position legend in bottom right
-    theme(text = element_text(size = 20))
-
-
-#plottailua
-ggplot(res3, aes(x = method, y = accuracy, interaction = pa, colour = pa)) + geom_boxplot() 
+    theme(text = element_text(size = 20))+ geom_line()
 ```
-
-
-Vaihtoehtoinen analyysi:
-
-```{r}
-#stats
-res2 %>%
-  group_by(method,pa)%>%
-  get_summary_stats(accuracy, type = "mean_sd")
-
-#visualization
-bxp <- ggboxplot(
-  res2, x = "method", y = "accuracy",
-  color = "pa", palette = "jco"
-  )
-bxp
-
-#outliers
-res2 %>%
-  group_by(method,pa) %>%
-  identify_outliers(accuracy)
-
-#normality
-res2 %>%
-  group_by(method,pa) %>%
-  shapiro_test(accuracy)
-
-#qqplot
-ggqqplot(res2, "accuracy", ggtheme = theme_bw()) +
-  facet_grid(method ~ pa, labeller = "label_both")
-
-#the test
-res.aov <- anova_test(
-  data = res2, dv = accuracy, wid = species,
-  within = c(pa, method)
-  )
-get_anova_table(res.aov)
-
-#jatkuu
-
-```
-
 
