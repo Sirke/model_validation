@@ -13,7 +13,7 @@ Kullakin lajilla ennustaminen voi olla ylipäätään helpompaa tai vaikeampaa, 
 
 ```{r , include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-packages<-c("readr","tidyr","plyr","dplyr","magrittr","purrr","data.table","plotrix","jtools","ggplot2","lme4","nlme","ggpubr","rstatix")
+packages<-c("readr","tidyr","plyr","dplyr","magrittr","purrr","data.table","plotrix","jtools","ggplot2","lme4","nlme","ggpubr","rstatix","Rmisc")
 lapply(packages,library,character.only=T)
 ```
 
@@ -34,7 +34,7 @@ res$abu_D[res$P_D<10]=NA
 res$abu_C[res$P_D<10]=NA
 ```
 
-Jos minimihavaintorajana pidetään kymmentä, pohjansirkku ja pyy putoavat pois (muuttuvat NA:ksi). Tarkistan NA-havaintojen määrät.
+Jos minimihavaintorajana pidetään kymmentä, **pohjansirkku ja pyy putoavat pois** (muuttuvat NA:ksi). Tarkistan NA-havaintojen määrät jokaiselle metodille.
 
 ```{r}
 sum(is.na(res$pa_A))
@@ -46,6 +46,8 @@ sum(is.na(res$abu_B))
 sum(is.na(res$abu_C))
 sum(is.na(res$abu_D))
 ```
+
+Eli aineisto ei ole enää ihan täydellisen balanssissa. Pohjansirkulta ja pyyltä puuttuvat arvot abu-aineistosta C ja D menetelmille.
 
 
 ## 2.1 Keskiarvot ja keskivirheet
@@ -68,7 +70,7 @@ abline(h=0)
 Pitäisikö kuvaajissa pitää pa ja abu erillään?
 
 
-## 2.2 Analyysi
+## 2.2 Analyysit
 
 ### 2.2.1 Aineiston muokkaus
 
@@ -101,7 +103,7 @@ ggplot(res2,aes(x=method, y=accuracy))+geom_boxplot()+facet_grid(.~pa)
 ```
 
 
-### 2.2.2. Testaus
+### 2.2.2 Lineaarinen sekamalli
 
 Alkuperäinen idea oli käyttää lineaarista sekamuuttujamallia, jossa ennustustarkkuutta selittävät metodi ja aineistotyyppi sekä niiden välinen interaktio. Lisäksi malli huomioi lajin random-tekijänä.
 
@@ -142,13 +144,13 @@ A1=gls(accuracy ~ method*pa, method="REML", data=res2,na.action="na.exclude")
 A2=lme(accuracy ~ method*pa, random=~1|species, data=res2,method="REML",na.action="na.exclude")
 
 #tai eri funktiolla (lme4)
-A2b=lmer(accuracy ~ method*pa + (1|species), data=res2,REML = T,na.action="na.exclude")
+#A2b=lmer(accuracy ~ method*pa + (1|species), data=res2,REML = T,na.action="na.exclude")
 
 anova(A1,A2)
-AIC(A1,A2b)
+AIC(A1,A2)
 ```
 
-Sekamalli näyttäisi olevan parempi. Tosin varoitusviesti sanoo, että mallit perustuvat eri havaintomääriin. Varoitus liittyy varmaan siihen, että Kaksi lajia on abundance-aineistossa ilman C ja D arvoja.
+Sekamalli näyttäisi olevan parempi.
 
 Muitakin random-rakenteita voisi testata. Mutta ovatko ne mielekkäitä? 
 
@@ -170,34 +172,7 @@ A4=lmer(accuracy ~ method + (1+method|species)+(1|pa), data=res2,REML = T,na.act
 AIC(A2,A3,A4)
 ```
 
-Vaihtoehtoiset mallit eivät näytä toimivan. Enkä tiedä onko niissä mitään järkeä.
-
-```{r}
-summary(A2)
-```
-
-Mallissa A2 metodi ja aineistotyyppi sekä niiden interaktio näyttävät olevan merkitseviä.
-
-Tehdään seuraavaksi mallin validointi residuaalien ja kuvaajien avulla:
-
-```{r,out.width="100%"}
-E1=resid(A2, type="normalized")
-F1=fitted(A2)
-
-par(mfrow=c(2,2), mar=c(5,5,2,2))
-plot(x=F1,y=E1,xlab="fitted",ylab="residuals")
-abline(h=0,lty=2)
-boxplot(E1~method,xlab="method",ylab="residuals",data=res2)
-abline(h=0,lty=2)
-boxplot(E1~pa,xlab="pa",ylab="residuals",data=res2)
-abline(h=0,lty=2)
-par(mfrow=c(1,1), mar=c(5,5,2,2))
-boxplot(E1~species,xlab="species",ylab="residuals",data=res2)
-abline(h=0,lty=2)
-```
-
-
-Residuaalit näyttää ok:lta. Lajin kohdalla ne hieman seilaavat mutta onko tämä kuinka paha/hyvä?  
+Vaihtoehtoiset mallit eivät kaikki näytä toimivan. Enkä tiedä onko niissä mitään järkeä. 
 
 
 Keskitytään sitten fixed-osaan. Fixed-osan mallin sovituksessa käytetään "ML"-asetuksia.Tehdään neljä mallia, jotka sisältävät eri kombinaatiot muuttujista method ja pa. Vertaillaan näitä keskenään.
@@ -207,9 +182,11 @@ A2full=lme(accuracy~method*pa,data=res2,random=~1|species,method="ML",na.action=
 A2.a=lme(accuracy~method+pa,data=res2,random=~1|species,method="ML",na.action="na.exclude")
 A2.b=lme(accuracy~method,data=res2,random=~1|species,method="ML",na.action="na.exclude")
 A2.c=lme(accuracy~pa,data=res2,random=~1|species,method="ML",na.action="na.exclude")
+A2.d=lme(accuracy ~ 1, random=~1|species, data=res2,method="ML",na.action="na.exclude")
 
 anova(A2full,A2.a)
-AIC(A2full,A2.a,A2.b,A2.c)
+anova(A2full)
+AIC(A2full,A2.a,A2.b,A2.c,A2.d)
 ```
 
 Jo ensimmäinen anova-vertailu antaa tulokseksi, että interaktio on merkitsevä, joten molemmat muuttujat ja niiden interaktio on hyvä pitää mallissa. AIC-vertailu antaa saman tuloksen.  
@@ -219,6 +196,23 @@ Lopullinen malli on siis A2full, joka ajetaan vielä kerran "REML"-asetuksilla.
 ```{r}
 A2full=lme(accuracy~method*pa,data=res2,random=~1|species,method="REML",na.action="na.exclude")
 summary(A2full)
+```
+
+Mallin validointi residuaalien avulla:
+
+```{r}
+E1=resid(A2full, type="normalized")
+F1=fitted(A2full)
+par(mfrow=c(2,2), mar=c(5,5,2,2))
+plot(x=F1,y=E1,xlab="fitted",ylab="residuals",data=res2)
+abline(h=0,lty=2)
+boxplot(E1~method,xlab="method",ylab="residuals",data=res2)
+abline(h=0,lty=2)
+boxplot(E1~pa,xlab="pa",ylab="residuals",data=res2)
+abline(h=0,lty=2)
+par(mfrow=c(1,1), mar=c(5,5,2,2))
+boxplot(E1~species,xlab="species",ylab="residuals",data=res2)
+abline(h=0,lty=2)
 
 plot(A2full)
 qqnorm(A2full)
@@ -226,12 +220,12 @@ qqnorm(A2full,~ranef(.),col=1)
 intervals(A2full)
 ```
 
-Eli ennustustarkkuuteen vaikuttavat metodin ja aineiston yhdistelmä. Huonoimmat ennustustarkkuudet saa abu-aineistolla ja metodilla D.
+Eli ennustustarkkuuteen vaikuttavat metodin ja aineiston yhdistelmä. Residuaalit näyttävät ihan ok:lta.
 
 
-## 2.4 ANOVA
+### 2.2.3 ANOVA, pairwise t-tests
 
-Vaihtoehtoinen analyysi:
+Vaihtoehtoinen analyysi. Kokeilen kaikenlaista huvin ja hyödyn vuoksi.
 
 ```{r}
 #stats
@@ -239,8 +233,6 @@ res2 %>%
   group_by(method,pa)%>%
   get_summary_stats(accuracy, type = "mean_sd")
 ```
-
-
 
 ```{r}
 #visualization
@@ -267,7 +259,7 @@ ggqqplot(res2, "accuracy", ggtheme = theme_bw()) +
   facet_grid(method ~ pa, labeller = "label_both")
 ```
 
-Ei kai kummempaa aineistossa.
+Ei kai kummempaa aineistossa. Outliereitä paljon testin mukaan. Ei kuitenkaan aivan ekstreemejä. En toistaiseksi käyttänyt liikaa aikaa näiden tulkitsemiseen.
 
 ```{r}
 #the test
@@ -278,7 +270,7 @@ res.aov <- anova_test(
 get_anova_table(res.aov)
 ```
 
-Pa ja method-interaktio merkitsevä.
+Pa ja method-interaktio merkitsevä, sekä abu että pa aineistossa.
 
 ```{r}
 # Effect of pa at each method
@@ -341,15 +333,23 @@ bxp +
   )
 ```
 
+Sinänsä huono kuvaaja koska tästä ei näy kumman, pa vai abu aineiston C/D vertailu oli merkitsevä. Ja muutenkin viivat menevät pahasti päällekkäin.
 
 
-## 2.5 Kuvaajia
+## 2.3 Muita kuvaajia
 
-Boxplotti voisi näyttää tältä:
+
+### 2.3.1 Boxplotti
+
+Perus boxplottikuvaaja:
+
 ```{r}
 boxplot(accuracy~pa*method,data=res2)
 ggplot(res2, aes(x = method, y = accuracy, interaction = pa, colour = pa)) + geom_boxplot() 
 ```
+
+
+### 2.3.2 Kahden metodin korrelaatioplotti 
 
 Alkuperäinen idea kuvaajasta oli tämä:
 
@@ -420,7 +420,8 @@ En saa kuvaajaa näkymään tässä mutta se löytyy kässäristä.
 
 Tätä pitäisi vielä miettiä, mitä plotataan ja mitä vasten? Alun perin verrattiin metodi D:tä pa/abu_past-arvoihin eli vähän sama kuin vertailu metodi A:han. siis, voitaisiinko jo hyvin yksinkertaisella validointimenetelmällä saada samoja tuloksia kuin monimutkaisemmalla metodilla?
 
-Kuvaaja, jossa keskiarvot ja luottamusvälit:
+
+### 2.3.3 Luottamusvälit
 
 ```{r}
 #res3=subset(res2,method=="B"|method=="D", select=c(accuracy,pa, species,method))

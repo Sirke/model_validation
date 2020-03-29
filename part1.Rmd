@@ -267,7 +267,7 @@ huonoimmat: Sepelrastas -0.34, Fasaani -0.33, Satakieli -0.22, Hemppo -0.22
 
 ### 1.3.7 Todelliset ja ennustetut muutokset tutkimusalueella
 
-Tarkastellaan absoluuttisia todellisia ja ennustettuja muutoksia esiintymistodennäköisyyksissä koko tutkimusalueella. Ennusteet on tehty joko tyyliin C tai D, eli koko aineistoa tai osittaista aineistoa hyödyntämällä. Paperiin voisi varmaan valita vain metodin D.
+Tarkastellaan absoluuttisia todellisia ja ennustettuja muutoksia esiintymistodennäköisyyksissä koko tutkimusalueella. Ennusteet on tehty joko tyyliin C tai D, eli koko aineistoa tai osittaista aineistoa hyödyntämällä. Paperiin voisi tarvittaessa varmaan valita vain metodin D.
 
  
 ```{r}

@@ -13,6 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 paketit<-c("readr","tidyr","plyr","dplyr","magrittr","purrr","data.table","plotrix","jtools","sp","GISTools","rgdal","sf","spatialEco","ggplot2","lme4","nlme","ggpubr","rstatix","Rmisc","gdata")
 lapply(paketit,library,character.only=T)
 ```
+
 ## 3.1 Presence/absence -aineisto
 
 
@@ -86,7 +87,7 @@ for (i in 1:nsr){
 Kolme reittiä taitaa olla Suomessa, joten niiden kohdalla vesilintujen havainnot ovat NA:ta.
 
 
-### 3.1.2. Koordinaattien lisääminen 
+### 3.1.2 Koordinaattien lisääminen 
 
 Seuraavaksi liitetään kuhunkin reittiin koordinaatit.
 
@@ -425,7 +426,6 @@ data%>%
 
 ### 3.2.4 Poolatut ennustustarkkuudet
 
-
 Aineiston siivous:
 
 (Huom! Koodissa olioiden nimissä on hämäävästi 'pa' mutta nämä ovat silti abu-aineistoa.)
@@ -492,14 +492,14 @@ observations=abuKor %>%
 observations
 ```
 
-Vaikea päätellä, mitkä korrelaatioista on luotettavasti laskettu. Pohjansirkun poolattu korrelaatio perustuu edelleen vain kolmeen havaintopariin. Sen sijaan pyyn korrelaatio onkin nyt laskettu seitsemästä havaintoparista. Huomion arvoista on myös se, että esimerkiksi sinirinnan havaintoparit ovat poolatussa aineistossa vain kahdeksan kun taas alkuperäinen korrelaatio on laskettu 34:stä havaintoparista. Poolaaminen voi siis auttaa joidenkin niiden lajien kohdalla, joille on vaikea löytää reittejä, joilla olisi käyty sekä periodi 1:llä että 2:lla. Mutta jos tarkastellaan vain sitä, kuinka harvasta gridiruudusta poolattu korrelaatio on laskettu, jää huomioimatta, että yhden ruudun "takana" voi olla useampia reittejä. Jos rajaksi asettaa saman 10 voi aineistosta pudota lajeja, joista oli useita havaintoja.
+Vaikea päätellä, mitkä korrelaatioista on luotettavasti laskettu. **Pohjansirkun poolattu korrelaatio perustuu edelleen vain kolmeen havaintopariin. Sen sijaan pyyn korrelaatio onkin nyt laskettu seitsemästä havaintoparista.** Huomion arvoista on myös se, että esimerkiksi sinirinnan havaintoparit ovat poolatussa aineistossa vain kahdeksan kun taas alkuperäinen korrelaatio on laskettu 34:stä havaintoparista. Poolaaminen voi siis auttaa joidenkin niiden lajien kohdalla, joille on vaikea löytää reittejä, joilla olisi käyty sekä periodi 1:llä että 2:lla. Mutta jos tarkastellaan vain sitä, kuinka harvasta gridiruudusta poolattu korrelaatio on laskettu, jää huomioimatta, että yhden ruudun "takana" voi olla useampia reittejä. Jos rajaksi asettaa saman 10 voi aineistosta pudota lajeja, joista oli useita havaintoja.
 
 
 ## 3.3 Poolattujen ennustustarkkuuksien vertailu
 
 ### 3.3.1 Aineiston yhdistely
 
-Selvitetään, paransiko poolaus ennustustarkkuuksia.
+Selvitetään, paransiko poolaus ennustustarkkuuksia. Mikä on poolauksen ja aineistotyypin vaikutus ennustustarkkuuteen?
 
 ```{r}
 #kaikki data sisään
@@ -527,7 +527,7 @@ str(res2)
 summary(res2)
 ```
 
-Merkkaisin pohjansirkun ja pyyn poolatun abu-arvon NA:ksi koska ne edelleen perustuvat vain kolmeen ja seitsemään havaintoon. 
+Merkkaan **pohjansirkun ja pyyn poolatun abu-arvon NA:ksi** koska ne edelleen perustuvat vain kolmeen ja seitsemään havaintoon. 
 
 ```{r}
 res2$accuracy[res2$species == "Emberiza_rustica" & res2$method == "pool_D" & res2$pa == "abu"] <- NA
@@ -566,7 +566,7 @@ Nyt aineistossa siis enää vain metodi D:n arvot.
 
 ### 3.3.3 Analyysi
 
-Testataan vaikuttaako poolaus ja aineistotyyppi ennustustarkkuuksiin. Käytän samaa sekamallia kuin aikaisemminkin. Laji on random-muuttuja. Aineistona on kuitenkin vain poolaamattomat ja poolatut metodi D:llä lasketut ennustustarkkuudet (ei A,B,C). Onko tämä oikein?
+Testataan vaikuttaako poolaus ja aineistotyyppi ennustustarkkuuksiin. Käytän samaa sekamallia kuin aikaisemminkin.(En siis vertaile random-rakenteita enää). Laji on random-muuttuja. Aineistona on kuitenkin vain poolaamattomat ja poolatut metodi D:llä lasketut ennustustarkkuudet (ei A,B,C). Onko tämä oikein?
 
 ```{r}
 #fixed osan vertailua
@@ -580,11 +580,19 @@ AIC(A1,A2,A3,A4)
 
 summary(A1)
 anova(A1)
+```
 
+Interaktio näyttäisi olevan merkitsevä.
+
+```{r}
 #lopullinen malli
 A1_final=lme(accuracy~method*pa,data=res3,random=~1|species,method="REML",na.action="na.exclude")
 summary(A1_final)
+```
 
+Mallin validointi residuaaleilla:
+
+```{r}
 #validointi
 plot(A1_final)
 
@@ -603,10 +611,100 @@ boxplot(E1~species,xlab="species",ylab="residuals",data=res3)
 abline(h=0,lty=2)
 ```
 
-Eli tässäkin on tuloksena, että poolauksen ja aineistotyypin yhdistelmä vaikuttavat ennustustarkkuuteen(?).
+Eli tässäkin on tuloksena, että poolauksen ja aineistotyypin yhdistelmä vaikuttavat ennustustarkkuuteen. Residuaalit ihan ok. Mutta erothan ovat ihan minimaalisia verrattuna muuhun aineistoon.
 
 
-### 3.3.5 Kuva
+### 3.3.4 Muita testailuja
+
+#### 3.3.4.1 ANOVA
+
+```{r}
+#the test
+res.aov <- anova_test(
+  data = res2, dv = accuracy, wid = species,
+  within = c(pa, method)
+  )
+get_anova_table(res.aov)
+```
+
+```{r}
+# Effect of method at both data types
+one.way <- res2 %>%
+  group_by(pa) %>%
+  anova_test(dv = accuracy, wid = species, within = method) %>%
+  get_anova_table() %>%
+  adjust_pvalue(method = "bonferroni")
+one.way
+```
+
+```{r}
+res3$method=drop.levels(res3$method)
+# Pairwise comparisons between methods
+pwc <- res2 %>%
+  group_by(pa) %>%
+  pairwise_t_test(
+    accuracy ~ method, paired = TRUE,
+    p.adjust.method = "bonferroni"
+    )
+pwc
+```
+
+```{r}
+# Pairwise comparisons between data types
+pwc <- res3 %>%
+  group_by(method) %>%
+  pairwise_t_test(
+    accuracy ~ pa, paired = TRUE,
+    p.adjust.method = "bonferroni"
+    )
+pwc
+```
+
+```{r}
+#visualization
+bxp <- ggboxplot(
+  res3, x = "method", y = "accuracy",
+  color = "pa", palette = "jco"
+  )
+bxp
+```
+
+
+```{r}
+# Visualization: box plots with p-values
+pwc <- pwc %>% add_xy_position(x = "method")
+bxp + 
+  stat_pvalue_manual(pwc, tip.length = 0, hide.ns = TRUE) +
+  labs(
+    subtitle = get_test_label(res.aov, detailed = TRUE),
+    caption = get_pwc_label(pwc)
+  )
+```
+
+#### 3.3.4.2 Luottamusvälit
+
+```{r}
+stat <- summarySE(res2, measurevar="accuracy", groupvars=c("method","pa"),na.rm = T)
+stat
+pd <- position_dodge(0.15) # move them .05 to the left and right
+# Black error bars - notice the mapping of 'group=supp' -- without it, the error
+# bars won't be dodged!
+ggplot(stat, aes(x=method, y=accuracy, colour=pa, group=pa)) + 
+    geom_errorbar(aes(ymin=accuracy-ci, ymax=accuracy+ci), colour="black", width=.2, position=pd) +
+    geom_point(position=pd, size=4)+
+    ylab("Prediction accuracy") +
+    scale_colour_hue(name="Data type",    # Legend label, use darker colors
+                     breaks=c("pa", "abu"),
+                     labels=c("Presence/absence", "Abundance"),
+                     l=40) +                    # Use darker colors, lightness=40
+    theme_bw() +
+    theme(legend.justification=c(1,1),
+          legend.position=c(0.95,0.95),
+          legend.box.background=element_rect())  +             # Position legend in bottom right
+    theme(text = element_text(size = 20))+ geom_line()
+```
+
+### 3.3.5 Vanha kuvaaja
 
 Vanha koodi on nyt toistaiseksi vielä tässä mutta alan kääntymään boxplottien puoleen.. Koodi ei toimi ilman muokkausta koska aineisto on nyt eri muodossa.  
 
@@ -692,93 +790,4 @@ lines(Line$Line3,Line$Line,col="grey",lty="dashed")
 text(-0.5,0.8,"f) Abundance, 50km", cex=0.8)
 
 #dev.off()
-```
-
-
-Kokeilua..
-
-```{r}
-#the test
-res.aov <- anova_test(
-  data = res2, dv = accuracy, wid = species,
-  within = c(pa, method)
-  )
-get_anova_table(res.aov)
-```
-
-```{r}
-# Effect of method at both data types
-one.way <- res2 %>%
-  group_by(pa) %>%
-  anova_test(dv = accuracy, wid = species, within = method) %>%
-  get_anova_table() %>%
-  adjust_pvalue(method = "bonferroni")
-one.way
-```
-
-```{r}
-res3$method=drop.levels(res3$method)
-# Pairwise comparisons between methods
-pwc <- res2 %>%
-  group_by(pa) %>%
-  pairwise_t_test(
-    accuracy ~ method, paired = TRUE,
-    p.adjust.method = "bonferroni"
-    )
-pwc
-```
-
-```{r}
-# Pairwise comparisons between data types
-pwc <- res3 %>%
-  group_by(method) %>%
-  pairwise_t_test(
-    accuracy ~ pa, paired = TRUE,
-    p.adjust.method = "bonferroni"
-    )
-pwc
-```
-
-```{r}
-#visualization
-bxp <- ggboxplot(
-  res3, x = "method", y = "accuracy",
-  color = "pa", palette = "jco"
-  )
-bxp
-```
-
-
-```{r}
-# Visualization: box plots with p-values
-pwc <- pwc %>% add_xy_position(x = "method")
-bxp + 
-  stat_pvalue_manual(pwc, tip.length = 0, hide.ns = TRUE) +
-  labs(
-    subtitle = get_test_label(res.aov, detailed = TRUE),
-    caption = get_pwc_label(pwc)
-  )
-```
-
-Luottamusvälikuvaaja
-
-```{r}
-stat <- summarySE(res2, measurevar="accuracy", groupvars=c("method","pa"),na.rm = T)
-stat
-pd <- position_dodge(0.15) # move them .05 to the left and right
-# Black error bars - notice the mapping of 'group=supp' -- without it, the error
-# bars won't be dodged!
-ggplot(stat, aes(x=method, y=accuracy, colour=pa, group=pa)) + 
-    geom_errorbar(aes(ymin=accuracy-ci, ymax=accuracy+ci), colour="black", width=.2, position=pd) +
-    geom_point(position=pd, size=4)+
-    ylab("Prediction accuracy") +
-    scale_colour_hue(name="Data type",    # Legend label, use darker colors
-                     breaks=c("pa", "abu"),
-                     labels=c("Presence/absence", "Abundance"),
-                     l=40) +                    # Use darker colors, lightness=40
-    theme_bw() +
-    theme(legend.justification=c(1,1),
-          legend.position=c(0.95,0.95),
-          legend.box.background=element_rect())  +             # Position legend in bottom right
-    theme(text = element_text(size = 20))+ geom_line()
 ```
