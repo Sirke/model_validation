@@ -14,7 +14,7 @@ Analysoin pa ja abu-aineistot erillään. Edellisissä analyyseissahan aineistot
 knitr::opts_chunk$set(echo = TRUE)
 
 getwd()
-paketit<-c("nlme","readr","tidyr","dplyr","plyr","magrittr","purrr","ggplot2","ape","geiger","MuMIn","psych","Hmisc","nlme")
+paketit<-c("nlme","readr","tidyr","dplyr","plyr","magrittr","purrr","ggplot2","ape","geiger","MuMIn","psych","Hmisc")
 lapply(paketit,library,character.only=T)
 ```
 
