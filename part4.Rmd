@@ -14,7 +14,7 @@ Analysoin pa ja abu-aineistot erillään. Edellisissä analyyseissahan aineistot
 knitr::opts_chunk$set(echo = TRUE)
 
 getwd()
-paketit<-c("nlme","readr","tidyr","dplyr","plyr","magrittr","purrr","ggplot2","ape","geiger","MuMIn","psych","Hmisc")
+paketit<-c("visreg","nlme","readr","tidyr","dplyr","plyr","magrittr","purrr","ggplot2","ape","geiger","MuMIn","psych","Hmisc")
 lapply(paketit,library,character.only=T)
 ```
 
@@ -311,7 +311,7 @@ output1<-model.sel(malli0,malli1,malli2,malli3,malli4,malli5,malli6,malli7,malli
 output1
 ```
 
-Sama tulos.
+Sama tulos. Kun katsotaan parhaat AIC < 2 mallit, paras malli ei ole yksinkertaisin. Siksi laajennetaan AIC < 4 ja tehdään model averaging. 
 
 ```{r }
 #tehdään model averaging
@@ -402,6 +402,28 @@ malli8 <- gls(pool_abu_change ~ logmass+PrevS, data = results,correlation=bm.bir
 summary(malli8)
 ```
 
+Seuraavaksi yritän käyttää visreg-funktiota mallin visualisointiin. Sovitan mallin uudestaan niin, että log-muunnokset tehdään itse mallissa. Näin visreg osaa automaattisesti takaisinmuuntaa muuttujat.
+
+Mitenköhän visreg toimii model averaged tuloksille? Tätä pohdin peltosirkkutyössäkin. Miten validoida model averaged tulokset kun eihän siitä tule tulokseksi yhtä mallia suoraan vaan arviot estimaateille. 
+
+```{r}
+#malli uudestaan
+model <- gls(pool_abu_change ~ log(Mass)+log(Prev), data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+
+summary(model)
+
+visreg(model, "Prev")
+#onhan tämä varmasti oikein? Miksi y-akselilla on f(Prev) eikä pool_abu_change? En keksi miksi.
+
+#sama mutta muutan labelit. Poistamalla sulun ja #:n kuvaajaan saa myös smootherin
+visreg(model, "Prev",ylab="Prediction accuracy",xlab="Prevalence") #,gg=TRUE)+theme_bw() + geom_smooth(method="loess", col='#FF4E37', fill='#FF4E37')
+
+visreg(model, "Mass",ylab="Prediction accuracy",xlab="Mass") #,gg=TRUE)+theme_bw() + geom_smooth(method="loess", col='#FF4E37', fill='#FF4E37')
+```
+
+Varsinkaan painon visualisointi ei oikein vakuuta.
+
+
 Mallin validointi:
 
 ```{r }
@@ -424,6 +446,8 @@ qqline(E)
 ```
 
 Prevalenssin residuaalit ehkä tasaisemmin jakautuneet. Ollaanko tähän tyytyväisiä?
+
+
 
 
 ### 4.4.4 Testailua erilaisilla varianssirakenteilla

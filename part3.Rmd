@@ -184,7 +184,7 @@ Itse poolaus tapahtuu niin, että liitetään kuhunkin reittiin tieto, millä gr
 
 
 ```{r}
-#liiteään kuhunkin reittiin tieto, millä gridin ruudulla se on
+#liitetään kuhunkin reittiin tieto, millä gridin ruudulla se on
 pts.poly <- point.in.poly(Ay1, gridi)
 data<-as.data.frame(pts.poly)
 
@@ -537,6 +537,16 @@ res2$accuracy[res2$species == "Bonasa_bonasia" & res2$method == "pool_D" & res2$
 write.csv(res2,"results_and_pooled.csv",row.names=F)
 ```
 
+Teen taulukon, jossa on lajikohtaiset ennustustarkkuudet.
+
+```{r}
+traits<-read.csv("traits_table.csv",sep = ";")
+table=res2%>%unite("method",method,pa)%>%spread(method, accuracy)%>%inner_join(.,traits,by="species")
+summary(table)
+write.csv(table,"table.csv")
+```
+
+
 
 ### 3.3.2 Aineiston tarkastelu
 
@@ -551,6 +561,8 @@ Valitsen aineistosta vain metodi D:n, poolaamattomat ja poolatut ennustustarkkuu
 
 ```{r}
 res3=subset(res2,method=="D"|method=="pool_D")
+res3$method=drop.levels(res3$method)
+summary(res3)
 ggplot(res3, aes(x = method, y = accuracy, interaction = pa, colour = pa)) + geom_boxplot()
 ```
 
@@ -621,7 +633,7 @@ Eli tässäkin on tuloksena, että poolauksen ja aineistotyypin yhdistelmä vaik
 ```{r}
 #the test
 res.aov <- anova_test(
-  data = res2, dv = accuracy, wid = species,
+  data = res3, dv = accuracy, wid = species,
   within = c(pa, method)
   )
 get_anova_table(res.aov)
@@ -629,7 +641,7 @@ get_anova_table(res.aov)
 
 ```{r}
 # Effect of method at both data types
-one.way <- res2 %>%
+one.way <- res3 %>%
   group_by(pa) %>%
   anova_test(dv = accuracy, wid = species, within = method) %>%
   get_anova_table() %>%
@@ -637,10 +649,11 @@ one.way <- res2 %>%
 one.way
 ```
 
+Sekä pa että abu aineistolla metodilla on väliä.
+
 ```{r}
-res3$method=drop.levels(res3$method)
 # Pairwise comparisons between methods
-pwc <- res2 %>%
+pwc <- res3 %>%
   group_by(pa) %>%
   pairwise_t_test(
     accuracy ~ method, paired = TRUE,
@@ -648,6 +661,8 @@ pwc <- res2 %>%
     )
 pwc
 ```
+
+Sama tulos kuin yllä koska vain kaksi metodia vertailtavana.
 
 ```{r}
 # Pairwise comparisons between data types
@@ -659,6 +674,8 @@ pwc <- res3 %>%
     )
 pwc
 ```
+
+Aineistotyypillä sen sijaan ei ole niin suurta vaikutusta. Oli aineisto poolattu tai ei, kummatkin aineistotyypit, sekä pa että abu, antavat yhtä "huonoja" ennustustarkkuuksia.
 
 ```{r}
 #visualization
@@ -684,24 +701,22 @@ bxp +
 #### 3.3.4.2 Luottamusvälit
 
 ```{r}
-stat <- summarySE(res2, measurevar="accuracy", groupvars=c("method","pa"),na.rm = T)
+stat <- summarySE(res3, measurevar="accuracy", groupvars=c("method","pa"),na.rm = T)
 stat
-pd <- position_dodge(0.15) # move them .05 to the left and right
+pd <- position_dodge(0.2) # move them .05 to the left and right
 # Black error bars - notice the mapping of 'group=supp' -- without it, the error
 # bars won't be dodged!
-ggplot(stat, aes(x=method, y=accuracy, colour=pa, group=pa)) + 
+
+ggplot(stat, aes(x=method, y=accuracy, shape=pa,group=pa)) + 
     geom_errorbar(aes(ymin=accuracy-ci, ymax=accuracy+ci), colour="black", width=.2, position=pd) +
     geom_point(position=pd, size=4)+
     ylab("Prediction accuracy") +
-    scale_colour_hue(name="Data type",    # Legend label, use darker colors
-                     breaks=c("pa", "abu"),
-                     labels=c("Presence/absence", "Abundance"),
-                     l=40) +                    # Use darker colors, lightness=40
+    
     theme_bw() +
     theme(legend.justification=c(1,1),
-          legend.position=c(0.95,0.95),
+          legend.position=c(0.20,0.95),
           legend.box.background=element_rect())  +             # Position legend in bottom right
-    theme(text = element_text(size = 20))+ geom_line()
+    theme(text = element_text(size = 20))
 ```
 
 ### 3.3.5 Vanha kuvaaja
