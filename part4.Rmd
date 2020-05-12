@@ -408,7 +408,7 @@ Mitenköhän visreg toimii model averaged tuloksille? Tätä pohdin peltosirkkut
 
 ```{r}
 #malli uudestaan
-model <- gls(pool_abu_change ~ log(Mass)+log(Prev), data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+model <- gls(pool_abu_change ~ logmass+log(Prev), data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
 
 summary(model)
 
@@ -418,7 +418,11 @@ visreg(model, "Prev")
 #sama mutta muutan labelit. Poistamalla sulun ja #:n kuvaajaan saa myös smootherin
 visreg(model, "Prev",ylab="Prediction accuracy",xlab="Prevalence") #,gg=TRUE)+theme_bw() + geom_smooth(method="loess", col='#FF4E37', fill='#FF4E37')
 
-visreg(model, "Mass",ylab="Prediction accuracy",xlab="Mass") #,gg=TRUE)+theme_bw() + geom_smooth(method="loess", col='#FF4E37', fill='#FF4E37')
+visreg(model, "logmass",ylab="Prediction accuracy",xlab="log(Mass)") #,gg=TRUE)+theme_bw() + geom_smooth(method="loess", col='#FF4E37', fill='#FF4E37')
+
+#selittävät muuttujat voisivat olla samassa kuvaajassakin
+#mutta silloin tässä ei näy nuo residuaalit
+visreg2d(model, x="Prev", y="logmass", plot.type="image")
 ```
 
 Varsinkaan painon visualisointi ei oikein vakuuta.
