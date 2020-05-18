@@ -202,12 +202,15 @@ Kokeilen testata metodien ja data tyypin välisiä eroja emmeans-paketin avulla.
 
 ```{r}
 emmeans(A2full, list(pairwise ~ method|pa))
+emmeans(A2full, specs=pairwise ~ method:pa)
 
 emm2 = emmeans(A2full, specs = pairwise ~ method|pa, adjust="bonferroni")
 emm2
 
 emm3 = emmeans(A2full, specs =pairwise ~ pa|method, adjust="bonferroni")
 emm3
+
+
 ```
 
 Tulokset mietityttävät koska tämän testin mukaan pa-aineistolla metodit A ja B sekä C ja D eivät eroa toisistaan. Seuraavassa osiossa teen t-testejä mielestäni samalla tavalla (bonferroni), mutta tulokset ovat erilaiset. Mielestäni nämä tulokset vaikuttavat järkevämmiltä, ainakin kun katsoo luottamusvälejä ja niiden päällekkäisyyksiä.
@@ -451,12 +454,16 @@ Tätä pitäisi vielä miettiä, mitä plotataan ja mitä vasten? Alun perin ver
 library(Rmisc)
 stat <- summarySE(res2, measurevar="accuracy", groupvars=c("method","pa"),na.rm = T)
 stat
+stat$lower=stat$accuracy-stat$ci
+stat$upper=stat$accuracy+stat$ci
+round(stat[,4:9],digits = 3)
+names(stat)[2] <- "Data_type"
 
 pd <- position_dodge(0.2) # move them .05 to the left and right
 
 # Black error bars - notice the mapping of 'group=supp' -- without it, the error
 # bars won't be dodged!
-ggplot(stat, aes(x=method, y=accuracy, shape=pa, group=pa)) + 
+ggplot(stat, aes(x=method, y=accuracy, shape=Data_type, group=Data_type)) + 
     geom_errorbar(aes(ymin=accuracy-ci, ymax=accuracy+ci), colour="black", width=.2, position=pd) +
     geom_point(position=pd, size=4)+
     ylab("Prediction accuracy") +
