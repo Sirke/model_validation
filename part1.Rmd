@@ -11,11 +11,11 @@ knitr::opts_chunk$set(echo = TRUE)
 # 1. Ennustustarkkuuksien laskeminen
 
 ## 1.1 Ennustemallit
-Malli on nyt ajettu 120 lajilla, joiden prevalenssi on ollut vähintään 0.05. Tällä hetkellä saatavilla on ollut vasta thin=10 aineisto. Mallista on ajettu kahta versiota. Toisessa on käytetty aineistoa vain vuoteen 1999 asti ja toisessa vuoteen 2016 asti.
+Malli on nyt ajettu 120 lajilla, joiden prevalenssi on ollut vähintään 0.05. Tällä hetkellä saatavilla on ollut vasta thin=100 aineisto. Mallista on ajettu kahta versiota. Toisessa on käytetty aineistoa vain vuoteen 1999 asti ja toisessa vuoteen 2016 asti.
 
-Malleja, joiden tekemisessä oli käytetty aineistoa vain vuoteen 1999 asti, pyydettiin ennustamaan tulevaisuutta niin, että kaikki muut muuttujat paitsi vuosi muuttuivat. Vuosi fiksattiin paikoilleen vuoteen 1997.
+Malleja, joiden tekemisessä oli käytetty aineistoa vain vuoteen 1999 asti, pyydettiin ennustamaan tulevaisuutta.
 
-Malli: XFormula = ~ JunJul + DJF + AprMay +Year + Urb + Br + Co + Op + Ma + We + Effort*Method  
+Malli: XFormula = ~ JunJul + DJF + AprMay  + Urb + Br + Co + Op + Ma + We + Effort*Method  
 
 Alla vielä koko koodi:
 
@@ -23,7 +23,7 @@ Alla vielä koko koodi:
 #Malli:  
 
 XFormula = ~ JunJul + DJF + AprMay+
-  Year+Urb + Br + Co + Op + Ma + We + Effort*Method
+  Urb + Br + Co + Op + Ma + We + Effort*Method
 for (thin in c(1)){
   samples = 1000
   nChains = 4
@@ -75,6 +75,7 @@ getwd()
 localDir = "."
 PredictionDir = file.path(localDir, "data")
 ```
+
 ```{r include=FALSE}
 paketit<-c("readr","tidyr","plyr","dplyr","magrittr","purrr","data.table","plotrix","jtools","sp","GISTools","rgdal","sf","spatialEco","ggplot2","ggrepel","psych")
 lapply(paketit,library,character.only=T)
@@ -85,7 +86,7 @@ lapply(paketit,library,character.only=T)
 #mpred1: posterior mean based on model 1; mpred2: posterior mean based on model 2
 
 samples = 1000
-thin = 10
+thin = 100  #muista vaihtaa tämä!!
 nChains = 4
 modeltype = 1 #1 on pa-aineistolle
 
@@ -223,7 +224,7 @@ cor(pred,obs, use="na.or.complete")
 ggplot(laji, aes(x=pred,y=obs))+ geom_point()+ xlim(-1,1)+ylim(-1,1)+ geom_abline(intercept = 0, slope =1) + geom_hline(yintercept=0) + geom_vline(xintercept = 0) +ggtitle("Tikli")
 ```
 
-Yhtä lajia tarkastellessa huomaa miten pa-aineistolla ennusteet ovat lähellä nollaa mutta havainnot vaihtelevat "rajummin" -1 ja 1 välillä. Ennusteet ovat positiivisia mutta havainnot taitavat olla suuremmaksi osaksi nollaa tai negatiivisia. Viherpeipon ennustustarkkuus olikin pa-aineistolle -0.12. Tiklille tarkkuus oli parempi 0.37.
+Yhtä lajia tarkastellessa huomaa miten pa-aineistolla ennusteet ovat lähellä nollaa mutta havainnot vaihtelevat "rajummin" -1 ja 1 välillä. Ennusteet ovat positiivisia mutta havainnot taitavat olla suuremmaksi osaksi nollaa tai negatiivisia. Viherpeipon ennustustarkkuus olikin pa-aineistolle -0.12. Tiklille tarkkuus oli parempi 0.40.
 
 Tarkistan vielä kuinka monesta havaintoparista kunkin lajin korrelaatio on laskettu. Pa-aineistolla joukosta puuttuvat vain muutamat vesilintujen NA-havainnot. Abu-aineistolla tilanne on eri.
 

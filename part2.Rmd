@@ -56,8 +56,8 @@ Lasketaan ennustustarkkuuksien keskiarvot ja keskivirheet kullekin metodi/aineis
 
 ```{r }
 #Compute means and standard errors
-res %>% dplyr::select(2:9)%>%colMeans(.,na.rm = T)
-res %>% dplyr::select(2:9)%>%std.error()
+knitr::kable(res %>% dplyr::select(2:9)%>%colMeans(.,na.rm = T),digits=3)
+knitr::kable(res %>% dplyr::select(2:9)%>%std.error(),digits=3)
 
 #aineiston jakauma, boxplot
 boxplot(res[c(-1,-10)])
@@ -85,7 +85,7 @@ res_abu=gather(res_abu,"method","accuracy",2:5)
 res_abu$method=as.factor(revalue(res_abu$method,c("abu_A"="A","abu_B"="B","abu_C"="C","abu_D"="D")))
 res_abu$pa=as.factor("abu")
 
-res2=rbind(res_pa,res_abu)
+res2=rbind(res_abu,res_pa)
 str(res2)
 summary(res2)
 
@@ -450,7 +450,6 @@ Tätä pitäisi vielä miettiä, mitä plotataan ja mitä vasten? Alun perin ver
 ### 2.3.3 Luottamusvälit
 
 ```{r}
-#res3=subset(res2,method=="B"|method=="D", select=c(accuracy,pa, species,method))
 library(Rmisc)
 stat <- summarySE(res2, measurevar="accuracy", groupvars=c("method","pa"),na.rm = T)
 stat
@@ -463,9 +462,10 @@ pd <- position_dodge(0.2) # move them .05 to the left and right
 
 # Black error bars - notice the mapping of 'group=supp' -- without it, the error
 # bars won't be dodged!
-ggplot(stat, aes(x=method, y=accuracy, shape=Data_type, group=Data_type)) + 
+ggplot(stat, aes(x=method, y=accuracy, group=Data_type)) + 
     geom_errorbar(aes(ymin=accuracy-ci, ymax=accuracy+ci), colour="black", width=.2, position=pd) +
-    geom_point(position=pd, size=4)+
+    geom_point(aes(shape=Data_type),position=pd, size=4)+
+    scale_shape_manual(values=c(19,17))+
     ylab("Prediction accuracy") +
     xlab("Validation method") +
     theme_bw() +

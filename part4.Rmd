@@ -63,26 +63,26 @@ Poolattu 50 x 50 km aineisto, pa ja abu:
 #poolattu pa aineisto
 op<-par(mfrow=c(2,2),mar=c(5,4,1,2))
 boxplot(pool_pa_change~Hab,data=results,ylab="pool_pa_D",xlab="Habitat")
-plot(pool_pa_change~PrevS, data = results,ylab="pool_pa_D",xlab="muunnos(Prevalence)")
-abline(lm(pool_pa_change~PrevS,data = results))
+plot(pool_pa_change~Prev, data = results,ylab="pool_pa_D",xlab="Prevalence")
+abline(lm(pool_pa_change~Prev,data = results))
 boxplot(pool_pa_change~Mig,data=results,ylab="pool_pa_D",xlab="Migration")
-plot(pool_pa_change~logmass, data = results,ylab="pool_pa_D",xlab="log(Mass)")
-abline(lm(pool_pa_change~logmass,data = results))
+plot(pool_pa_change~Mass, data = results,ylab="pool_pa_D",xlab="Mass")
+abline(lm(pool_pa_change~Mass,data = results))
 par(op)
 
 #poolattu abu aineisto
 op<-par(mfrow=c(2,2),mar=c(5,4,1,2))
 boxplot(pool_abu_change~Hab,data=results,ylab="pool_abu_D",xlab="Habitat")
-plot(pool_abu_change~PrevS, data = results,ylab="pool_abu_D",xlab="muunnos(Prevalence)")
+plot(pool_abu_change~Prev, data = results,ylab="pool_abu_D",xlab="Prevalence")
 abline(lm(pool_abu_change~Prev,data = results))
 boxplot(pool_abu_change~Mig,data=results,ylab="pool_abu_D",xlab="Migration")
-plot(pool_abu_change~logmass, data = results,ylab="pool_abu_D",xlab="log(Mass)")
-abline(lm(pool_abu_change~logmass,data = results))
+plot(pool_abu_change~Mass, data = results,ylab="pool_abu_D",xlab="Mass")
+abline(lm(pool_abu_change~Mass,data = results))
 par(op)
 
 ggplot(results,aes(x=Prev,y=pool_abu_change))+geom_point(aes(colour = factor(Hab)))
 
-ggplot(results,aes(x=logmass,y=pool_abu_change))+geom_point(aes(colour = factor(Mig)))
+ggplot(results,aes(x=Mass,y=pool_abu_change))+geom_point(aes(colour = factor(Mig)))
 ```
 
 Prevalenssilla näyttäisi olevan jonkinlainen suhde ennustustarkkuuteen. Ainakin se on kummallakin aineistolla niukasti positiivisesti korreloitunut.
@@ -165,13 +165,14 @@ Valitaan ne jatkoon ja tehdään model averaging.
 
 Tai sitten kahden AICc yksikön sisällä on vain kaksi mallia -> valitaan niistä yksinkertaisempi  -> malli0
 
-Mallinvalinnasta AIC-arvojen avulla voi lukea [täältä](http://webhome.auburn.edu/~tds0009/PDFs/arnold%20et%20al.%202010.pdf). Tosin tämän artikkelin mukaan olisin ehkä ennemmin vertaillut weights-arvoja. Lainaus: "If the primary objective of modeling is to evaluate the relative importance of many potential predictor variables, such as in many habitatselection
+Mallinvalinnasta AIC-arvojen avulla voi lukea [täältä](http://webhome.auburn.edu/~tds0009/PDFs/arnold%20et%20al.%202010.pdf). Tosin tämän artikkelin mukaan olisin ehkä ennemmin vertaillut weights-arvoja. Lainaus: "If the primary objective of modeling is to evaluate the relative importance of many potential predictor variables, such as in many habitat selection
 studies, then summing Akaike model weights across all models that include that variable can be a useful approach."
 
 ```{r }
 #tehdään model averaging
-output2<-model.sel(malli0,malli3,malli8,malli4)
-summary(model.avg(output2, revised.var = TRUE))
+topmodels = get.models(output1,subset=delta<4)
+#topmodels<-model.sel(malli0,malli3,malli8,malli4)
+summary(model.avg(topmodels, revised.var = TRUE))
 ```
 
 Mikään ei näytä selittävän ennustustarkkuutta. Full-average arvot kaikille muuttujille ovat ei-merkitseviä.
@@ -232,23 +233,24 @@ output1<-model.sel(malli0,malli1,malli2,malli3,malli4,malli5,malli6,malli7,malli
 output1
 ```
 
-Mallit 8, 14, 13 ovat neljän yksikön marginaalissa.
+Mallit 10, 8, 14, 4 ovat neljän yksikön marginaalissa.
 
-(Tai, kahden AICc yksikön sisään mahtuu malli 8 ja 14, joista 8 on yksinkertaisempi.)
+(Tai, kahden AICc yksikön sisään mahtuu malli 10 ja 14, joista vasta toiseksi paras 10 on yksinkertaisempi.)
 
 ```{r }
 #tehdään model averaging
-output2<-model.sel(malli8,malli13,malli14)
-summary(model.avg(output2, revised.var = TRUE))
+topmodels = get.models(output1,subset=delta<4)
+#topmodels<-model.sel(malli8,malli13,malli14)
+summary(model.avg(topmodels, revised.var = TRUE))
 ```
 
-Paino ja prevalenssi merkitseviä full-average vertailussa. Eli yksinkertaisin malli8 näyttäisi sisältävän tarvittavat selittävät tekijät. 
+Pelkkä prevalenssi merkitsevä full-average vertailussa. Eli yksinkertaisin malli4 näyttäisi sisältävän tarvittavat selittävät tekijät. 
 
 ```{r }
 #sovitetaan malli uudestaan REML asetuksilla
-malli8 <- gls(pool_abu_change ~ logmass+Prev, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+malli_final <- gls(pool_abu_change ~ Prev, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
 
-summary(malli8)
+summary(malli_final)
 ```
 
 Mitäpä tästä mallista nyt sanoisi? Selittääkö se mitään vai ei?
@@ -261,8 +263,8 @@ results2=subset(results,species!="Emberiza_rustica" & species!="Bonasa_bonasia")
 
 #seuraavaksi mallin validointia kuvaajista
 op<-par(mfrow=c(2,3),mar=c(5,4,1,2))
-plot(malli8)
-E<-resid(malli8)
+plot(malli_final)
+E<-resid(malli_final)
 hist(E, xlab = "residuals",main = "")
 plot(results2$Prev,E,xlab = "prevalence",ylab="residuals")
 plot(results2$Hab,E,xlab = "habitat",ylab="residuals")
@@ -315,16 +317,17 @@ Sama tulos. Kun katsotaan parhaat AIC < 2 mallit, paras malli ei ole yksinkertai
 
 ```{r }
 #tehdään model averaging
-output2<-model.sel(malli0,malli3,malli8,malli4)
-output2
+topmodels = get.models(output1,subset=delta<4)
+#output2<-model.sel(malli0,malli3,malli8,malli4)
 
-summary(model.avg(output2, revised.var = TRUE))
+
+summary(model.avg(topmodels, revised.var = TRUE))
 
 #sama hieman eri koodilla
 #summary(model.avg(output1, subset=delta<4))
 
 #luottamusvälit
-confint(model.avg(output1, subset=delta<4))
+confint(model.avg(topmodels, subset=delta<4))
 ```
  
 Sama tulos. Mikään tekijä ei selitä ennustustarkkuutta.
@@ -335,13 +338,13 @@ Kokeilin myös hakea muuttujille luottamusvälit.
 
 ```{r }
 # sovitetaan malli uudestaan REML asetuksilla
-malli0 <- gls(pool_pa_change ~ 1, data = results,correlation=bm.birds,method="REML")
+malli_final <- gls(pool_pa_change ~ 1, data = results,correlation=bm.birds,method="REML")
 
-summary(malli0)
+summary(malli_final)
 
 op<-par(mfrow=c(2,3),mar=c(5,4,1,2))
-plot(malli0,add.smooth = F,which =1)
-E<-resid(malli0)
+plot(malli_final,add.smooth = F,which =1)
+E<-resid(malli_final)
 hist(E, xlab = "residuals",main = "")
 plot(results$PrevS,E,xlab = "prevalence",ylab="residuals")
 plot(results$Hab,E,xlab = "habitat",ylab="residuals")
@@ -387,19 +390,24 @@ Sama tulos.
 
 ```{r }
 #tehdään model averaging
-output2<-model.sel(malli8,malli13,malli14)
-summary(model.avg(output2, revised.var = TRUE))
+topmodels = get.models(output1,subset=delta<4)
+#output2<-model.sel(malli0,malli3,malli8,malli4)
+
+summary(model.avg(topmodels, revised.var = TRUE))
+
+#sama hieman eri koodilla
+#summary(model.avg(output1, subset=delta<4))
 
 #luottamusvälit
-confint(model.avg(output1, subset=delta<4))
+confint(model.avg(topmodels, subset=delta<4))
 ```
 
-Sama tulos.
+Sama tulos. Pelkkä prevalenssi. Eihän habitaatti ole tässä merkitsevä, vaikka sen luottamusvälit negatiivisena koko ajan pysyvätkin?
 
 ```{r }
 #sovitetaan malli uudestaan REML asetuksilla
-malli8 <- gls(pool_abu_change ~ logmass+PrevS, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
-summary(malli8)
+malli_final <- gls(pool_abu_change ~ PrevS, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+summary(malli_final)
 ```
 
 Seuraavaksi yritän käyttää visreg-funktiota mallin visualisointiin. Sovitan mallin uudestaan niin, että log-muunnokset tehdään itse mallissa. Näin visreg osaa automaattisesti takaisinmuuntaa muuttujat.
@@ -408,7 +416,7 @@ Mitenköhän visreg toimii model averaged tuloksille? Tätä pohdin peltosirkkut
 
 ```{r}
 #malli uudestaan
-model <- gls(pool_abu_change ~ logmass+log(Prev), data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+model <- gls(pool_abu_change ~ log(Prev), data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
 
 summary(model)
 
@@ -418,14 +426,13 @@ visreg(model, "Prev")
 #sama mutta muutan labelit. Poistamalla sulun ja #:n kuvaajaan saa myös smootherin
 visreg(model, "Prev",ylab="Prediction accuracy",xlab="Prevalence") #,gg=TRUE)+theme_bw() + geom_smooth(method="loess", col='#FF4E37', fill='#FF4E37')
 
-visreg(model, "logmass",ylab="Prediction accuracy",xlab="log(Mass)") #,gg=TRUE)+theme_bw() + geom_smooth(method="loess", col='#FF4E37', fill='#FF4E37')
+#visreg(model, "logmass",ylab="Prediction accuracy",xlab="log(Mass)") #,gg=TRUE)+theme_bw() + geom_smooth(method="loess", col='#FF4E37', fill='#FF4E37')
 
 #selittävät muuttujat voisivat olla samassa kuvaajassakin
 #mutta silloin tässä ei näy nuo residuaalit
-visreg2d(model, x="Prev", y="logmass", plot.type="image")
+#visreg2d(model, x="Prev", y="logmass", plot.type="image")
 ```
 
-Varsinkaan painon visualisointi ei oikein vakuuta.
 
 
 Mallin validointi:
@@ -436,8 +443,8 @@ results2=subset(results,species!="Emberiza_rustica" & species!="Bonasa_bonasia")
 
 #seuraavaksi mallin validointia kuvaajista
 op<-par(mfrow=c(2,3),mar=c(5,4,1,2))
-plot(malli8)
-E<-resid(malli8)
+plot(malli_final)
+E<-resid(malli_final)
 hist(E, xlab = "residuals",main = "")
 plot(results2$PrevS,E,xlab = "prevalence",ylab="residuals")
 plot(results2$Hab,E,xlab = "habitat",ylab="residuals")
@@ -450,7 +457,8 @@ qqline(E)
 ```
 
 Prevalenssin residuaalit ehkä tasaisemmin jakautuneet. Ollaanko tähän tyytyväisiä?
-
+Habitaatin ja muuttokäyttäytymisen residuaalit ovat vähän vinksallaan. Haittaako tämä?
+Onko tämä malli lopulta kovin toimiva? Voiko tuloksiin luottaa?
 
 
 
