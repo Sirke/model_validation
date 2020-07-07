@@ -91,6 +91,12 @@ Ennustustarkkuus vaihtelee suuresti harvinaisemmille lajeille verrattuna yleisem
 
 Pitkän matkan muuttajissa näyttää korostuvan pienet lajit. Pienillä lajeilla enemmän vaihtelua ennustustarkkuudessa.
 
+```{r}
+pairs(results[8:9])
+```
+
+Massa ja yleisyys eivät näytä korreloivan. 
+
 
 ## 4.3 Fylogenia
 
@@ -336,9 +342,11 @@ Selvensin itselleni mitä tuo argumentti *revised.var* oikein tekee. Se laskee s
 
 Kokeilin myös hakea muuttujille luottamusvälit.
 
+Mallin validointi niin, että validoidaan AICc-vertailun mukaan paras malli.
+
 ```{r }
 # sovitetaan malli uudestaan REML asetuksilla
-malli_final <- gls(pool_pa_change ~ 1, data = results,correlation=bm.birds,method="REML")
+malli_final <- gls(pool_pa_change ~ logmass, data = results,correlation=bm.birds,method="REML")
 
 summary(malli_final)
 
@@ -404,9 +412,10 @@ confint(model.avg(topmodels, subset=delta<4))
 
 Sama tulos. Pelkkä prevalenssi. Eihän habitaatti ole tässä merkitsevä, vaikka sen luottamusvälit negatiivisena koko ajan pysyvätkin?
 
+
 ```{r }
 #sovitetaan malli uudestaan REML asetuksilla
-malli_final <- gls(pool_abu_change ~ PrevS, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+malli_final <- gls(pool_abu_change ~ PrevS + Hab + logmass, data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
 summary(malli_final)
 ```
 
@@ -416,7 +425,7 @@ Mitenköhän visreg toimii model averaged tuloksille? Tätä pohdin peltosirkkut
 
 ```{r}
 #malli uudestaan
-model <- gls(pool_abu_change ~ log(Prev), data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
+model <- gls(pool_abu_change ~ log(Prev) + Hab + log(Mass), data = results,correlation=bm.birds2,method="REML",na.action="na.omit")
 
 summary(model)
 
@@ -435,7 +444,7 @@ visreg(model, "Prev",ylab="Prediction accuracy",xlab="Prevalence") #,gg=TRUE)+th
 
 
 
-Mallin validointi:
+Mallin validointi perustuen AICc-vertailun parhaimpaan malliin:
 
 ```{r }
 #plottaus ei toimi jos aineistoissa on eri määrä havaintoja
@@ -446,7 +455,7 @@ op<-par(mfrow=c(2,3),mar=c(5,4,1,2))
 plot(malli_final)
 E<-resid(malli_final)
 hist(E, xlab = "residuals",main = "")
-plot(results2$PrevS,E,xlab = "prevalence",ylab="residuals")
+plot(results2$PrevS,E,xlab = "logPrevalence",ylab="residuals")
 plot(results2$Hab,E,xlab = "habitat",ylab="residuals")
 plot(results2$Mig,E,xlab = "migration",ylab="residuals")
 plot(results2$logmass,E,xlab = "logMass",ylab="residuals")
@@ -457,9 +466,6 @@ qqline(E)
 ```
 
 Prevalenssin residuaalit ehkä tasaisemmin jakautuneet. Ollaanko tähän tyytyväisiä?
-Habitaatin ja muuttokäyttäytymisen residuaalit ovat vähän vinksallaan. Haittaako tämä?
-Onko tämä malli lopulta kovin toimiva? Voiko tuloksiin luottaa?
-
 
 
 ### 4.4.4 Testailua erilaisilla varianssirakenteilla
