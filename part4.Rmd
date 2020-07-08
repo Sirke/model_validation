@@ -91,8 +91,10 @@ Ennustustarkkuus vaihtelee suuresti harvinaisemmille lajeille verrattuna yleisem
 
 Pitkän matkan muuttajissa näyttää korostuvan pienet lajit. Pienillä lajeilla enemmän vaihtelua ennustustarkkuudessa.
 
+
 ```{r}
 pairs(results[8:9])
+cor(results$Mass,results$PrevS)
 ```
 
 Massa ja yleisyys eivät näytä korreloivan. 
