@@ -442,7 +442,16 @@ visreg(model, "Prev",ylab="Prediction accuracy",xlab="Prevalence") #,gg=TRUE)+th
 #selittävät muuttujat voisivat olla samassa kuvaajassakin
 #mutta silloin tässä ei näy nuo residuaalit
 #visreg2d(model, x="Prev", y="logmass", plot.type="image")
+
 ```
+
+Mustavalkoinen versio:
+
+```{r}
+visreg(model, "Prev",ylab="Prediction accuracy",xlab="log(Prevalence)",fill=list(col=grey(c(0.7), alpha=0.4)),
+       line=list(lty=1, col="black"),points=list(cex=1))
+```
+
 
 
 

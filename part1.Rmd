@@ -522,8 +522,8 @@ ggplot(kat, aes(x=Ap2k, y=Ayk))+ geom_point()+
   geom_vline(xintercept = 0, color = "black")+
   xlab("Mean predicted change, C")+
   ylab("Mean observed change")+ 
-  geom_abline(intercept = 0, slope = 1, color="red",linetype="dashed", size=1.5)+
-  geom_text(aes(label=kat),hjust=0, vjust=0) +  geom_smooth()                                                                                                                      
+  geom_abline(intercept = 0, slope = 1, color="red",linetype="dashed", size=1.5)
+#+ geom_text(aes(label=kat),hjust=0, vjust=0) +  geom_smooth()                                                                                                                      
 ```
 
 Tyyli D.
@@ -534,8 +534,8 @@ ggplot(kat, aes(x=Ap1k, y=Ayk))+
   geom_vline(xintercept = 0, color = "black")+
   xlab("Mean predicted change, D")+
   ylab("Mean observed change")+ 
-  geom_abline(intercept = 0, slope = 1, color="red",linetype="dashed", size=1.5)+
-  geom_text(aes(label=kat),hjust=0, vjust=0)+  geom_smooth() +xlim(-0.3,0.3)+ylim(-1,1)
+  geom_abline(intercept = 0, slope = 1, color="red",linetype="dashed", size=1.5)
+  #+geom_text(aes(label=kat),hjust=0, vjust=0)+  geom_smooth() +xlim(-0.3,0.3)+ylim(-1,1)
 
 write.csv(kat,"mean_observed_predicted_changes_abu.csv",row.names = F)
 ```

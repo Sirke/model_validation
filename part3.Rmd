@@ -706,24 +706,46 @@ stat
 stat$lower=stat$accuracy-stat$ci
 stat$upper=stat$accuracy+stat$ci
 names(stat)[2] <- "Data_type"
+stat$method=revalue(stat$method, c("D"="D", "pool_D"="pooled D"))
 knitr::kable(stat)
 
 pd <- position_dodge(0.2) # move them .05 to the left and right
 # Black error bars - notice the mapping of 'group=supp' -- without it, the error
 # bars won't be dodged!
 
-ggplot(stat, aes(x=method, y=accuracy, group=Data_type)) + 
-    geom_errorbar(aes(ymin=accuracy-ci, ymax=accuracy+ci), colour="black", width=.2, position=pd) +
-    geom_point(aes(shape=Data_type),position=pd, size=4)+
-    scale_shape_manual(values=c(19,17))+
-    ylab("Prediction accuracy") +
+#ggplot(stat, aes(x=method, y=accuracy, group=Data_type)) + 
+#    geom_errorbar(aes(ymin=accuracy-ci, ymax=accuracy+ci), colour="black", width=.2, position=pd) +
+#    geom_point(aes(shape=Data_type),position=pd, size=4)+
+#    scale_shape_manual(values=c(19,17))+
+#    ylab("Prediction accuracy") +
+##    xlab("Validation method") +
+#    theme_bw() +
+#    theme(legend.justification=c(1,1),
+#          legend.position=c(0.3,0.95),
+#          legend.box.background=element_rect())  +             # Position legend in bottom right
+#    theme(text = element_text(size = 17)) +
+#    labs(fill = "Data type")
+
+ggplot(stat, aes(y=accuracy, x=method,shape=Data_type)) + geom_errorbar(aes(ymin=accuracy-ci, ymax=accuracy+ci), colour="black", width=.2, position=pd) +ylab("Prediction accuracy") +
     xlab("Validation method") +
     theme_bw() +
     theme(legend.justification=c(1,1),
           legend.position=c(0.3,0.95),
           legend.box.background=element_rect())  +             # Position legend in bottom right
-    theme(text = element_text(size = 17)) +
-    labs(fill = "Data type")
+    theme(text = element_text(size = 20)) +
+    geom_point(position=pd, size=4) +  scale_shape_discrete(name = "Data type", labels = c("abu", "POC")) + scale_shape_manual(values=c(17,19))
+
+ggplot(stat, aes(y=accuracy, x=method,shape=Data_type)) + 
+  geom_errorbar(aes(ymin=accuracy-ci, ymax=accuracy+ci), colour="black", width=.2, position=pd) +
+  ylab("Prediction accuracy") +
+    xlab("Validation method") +
+    theme_bw() +
+    theme(legend.justification=c(1,1),
+          legend.position=c(0.3,0.95),
+          legend.box.background=element_rect())  +             # Position legend in bottom right
+    theme(text = element_text(size = 20)) +
+    geom_point(position=pd, size=4) +  
+  scale_shape_discrete(name = "Data type", labels = c("abu", "POC")) 
 ```
 
 ### 3.3.5 Vanha kuvaaja
