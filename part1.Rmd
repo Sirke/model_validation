@@ -86,7 +86,7 @@ lapply(paketit,library,character.only=T)
 #mpred1: posterior mean based on model 1; mpred2: posterior mean based on model 2
 
 samples = 1000
-thin = 100  #muista vaihtaa tämä!!
+thin = 1000  #muista vaihtaa tämä!!
 nChains = 4
 modeltype = 1 #1 on pa-aineistolle
 

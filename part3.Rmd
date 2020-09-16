@@ -26,7 +26,7 @@ localDir = "."
 PredictionDir = file.path(localDir, "data")
 
 samples = 1000
-thin = 100 #muista vaihtaa tämä!!
+thin = 1000 #muista vaihtaa tämä!!
 nChains = 4
 modeltype = 1 #1 on pa-aineistolle
 
