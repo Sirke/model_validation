@@ -348,7 +348,7 @@ Mallin validointi niin, että validoidaan AICc-vertailun mukaan paras malli.
 
 ```{r }
 # sovitetaan malli uudestaan REML asetuksilla
-malli_final <- gls(pool_pa_change ~ logmass, data = results,correlation=bm.birds,method="REML")
+malli_final <- gls(pool_pa_change ~ log(Mass) + PrevS, data = results,correlation=bm.birds,method="REML")
 
 summary(malli_final)
 
