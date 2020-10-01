@@ -388,6 +388,17 @@ plot(A,B,xlim=c(-1,1), ylim=c(-1,1)) + abline(0,1)+ abline(h=0)+ abline(v=0)
 ```
 Molemmat metodit suht hyviä. A:lle ennusteet parempia.
 
+```{r}
+P_D = rep(NA,ns)
+for (i in 1:ns){
+  P_D[i] = pairwiseCount(Ap1[,i],Ay[,i])
+}
+sort(P_D)
+mean(P_D)
+```
+
+
+
 ### 1.4.3 Ennustustarkkuudet C ja D
 
 ```{r }
@@ -485,7 +496,7 @@ for (i in 1:ns){
   P_D[i] = pairwiseCount(Ap1[,i],Ay[,i])
 }
 sort(P_D)
-
+mean(P_D)
 #liitän uuden sarakkeen tuloksiin
 res=cbind(res,P_D)
 #save as csv for further analysis
