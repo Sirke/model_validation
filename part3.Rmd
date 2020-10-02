@@ -731,7 +731,7 @@ ggplot(stat, aes(y=accuracy, x=method,shape=Data_type)) + geom_errorbar(aes(ymin
     theme_bw() +
     theme(legend.justification=c(1,1),
           legend.position=c(0.3,0.95),
-          legend.box.background=element_rect())  +             # Position legend in bottom right
+          legend.box.background=element_rect())  +           
     theme(text = element_text(size = 20)) +
     geom_point(position=pd, size=4) +  scale_shape_discrete(name = "Data type", labels = c("abu", "POC")) + scale_shape_manual(values=c(17,19))
 
@@ -742,10 +742,13 @@ ggplot(stat, aes(y=accuracy, x=method,shape=Data_type)) +
     theme_bw() +
     theme(legend.justification=c(1,1),
           legend.position=c(0.3,0.95),
-          legend.box.background=element_rect())  +             # Position legend in bottom right
+          legend.box.background=element_rect())  +             
     theme(text = element_text(size = 20)) +
     geom_point(position=pd, size=4) +  
-  scale_shape_discrete(name = "Data type", labels = c("abu", "POC")) 
+  scale_shape_discrete(name = "Data type", labels = c("abundance", "occurrence")) + geom_hline(yintercept = 0, linetype="dashed")
+
+ggsave("plot2.png")
+
 ```
 
 ### 3.3.5 Vanha kuvaaja

@@ -492,7 +492,9 @@ ggplot(stat, aes(y=accuracy, x=method,shape=Data_type))+
           legend.box.background=element_rect())  +             # Position legend in bottom right
     theme(text = element_text(size = 20)) +
     geom_point(position=pd, size=4,fill="white") + 
-  scale_shape_discrete(name = "Data type", labels = c("abu", "POC"))
+  scale_shape_discrete(name = "Data type", labels = c("abundance", "occurrence"))+geom_hline(yintercept=0,linetype="dashed")
+
+ggsave("plot1.png")
 
 ```
 
