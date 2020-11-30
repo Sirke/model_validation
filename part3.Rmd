@@ -30,7 +30,7 @@ thin = 1000 #muista vaihtaa tämä!!
 nChains = 4
 modeltype = 1 #1 on pa-aineistolle
 
-#model 1: data until 2006; model 2: full data
+#model 1: data until 1999; model 2: full data
 #mpred1: posterior mean based on model 1; mpred2: posterior mean based on model 2
 
 filename = file.path(PredictionDir, paste("predictions_",c("pa","abundance")[modeltype],
@@ -278,6 +278,231 @@ paKor %>%
   write.csv('pa_pool50_results.csv',row.names=F)
 ```
 
+Metodi B
+
+```{r}
+#yhdistetään tulokset, havainnot ja ennusteet samaan dataframeen
+paKor<-left_join(payhd,payhdPred,by=c("grid_id"="grid_id","Yspecies"="Pspecies"))
+
+#lasketaan korrelaatiot
+paKor_B=paKor %>%
+  group_by(Yspecies) %>%
+  dplyr::summarise(pool_pa_change= cor(Pper2, Yper2, use= "na.or.complete"))%T>%
+  write.csv('pa_pool50_results_methodB.csv',row.names=F)
+```
+
+Metodit C ja A
+
+```{r }
+getwd()
+localDir = "."
+PredictionDir = file.path(localDir, "data")
+
+samples = 1000
+thin = 1000 #muista vaihtaa tämä!!
+nChains = 4
+modeltype = 1 #1 on pa-aineistolle
+
+#model 1: data until 2006; model 2: full data
+#mpred1: posterior mean based on model 1; mpred2: posterior mean based on model 2
+
+filename = file.path(PredictionDir, paste("predictions_",c("pa","abundance")[modeltype],
+                                          "_chains_",as.character(nChains),"_thin_", as.character(thin),"_samples_", as.character(samples),
+                                          ".Rdata",sep = ""))
+load(filename) #mpred1, mpred2, Y, studyDesign
+routes=levels(studyDesign$Route)
+nr=length(routes)
+years=levels(studyDesign$Year)
+ns=dim(mpred1)[2]
+
+#määritellään periodit 
+period1=(studyDesign$Year=="Year_1996" | studyDesign$Year=="Year_1997" | studyDesign$Year=="Year_1998" | studyDesign$Year=="Year_1999")
+period2=(studyDesign$Year=="Year_2013" | studyDesign$Year=="Year_2014" | studyDesign$Year=="Year_2015" | studyDesign$Year=="Year_2016")
+
+#valitaan ennusteista ja havainnoista oikeat vuodet
+pm2p1=mpred2[period1,]  
+pm2p2=mpred2[period2,] #tähän vaihdetaan mpred2 ja pm2 eli malli2, jonka sovituksessa käytetty koko aineistoa
+
+y1=Y[period1,]
+y2=Y[period2,]
+
+#lasketaan kuinka monta kertaa kullakin linjalla on k?yty
+sd1 = studyDesign[period1,]
+sd2 = studyDesign[period2,]
+
+visits1 = rep(NA,nr)
+visits2 = rep(NA,nr)
+for (i in 1:nr){
+  visits1[i] = sum(sd1$Route==routes[i])
+  visits2[i] = sum(sd2$Route==routes[i])
+}
+
+#lasketaan kullekin linjalle (jolla on käyty kahdesti kummankin periodin aikana, yhteensä 592 kpl) keskiarvot periodeittain
+#havainnot ja ennusteet erikseen, periodit 1 ja 2 erikseen
+selroutes = routes[which(visits1>=2 & visits2>=2)]
+nsr = length(selroutes)
+
+Ap1=matrix(NA,nrow = nsr,ncol = ns)
+Ap2=matrix(NA,nrow = nsr,ncol = ns)
+Ay1=matrix(NA,nrow = nsr,ncol = ns)
+Ay2=matrix(NA,nrow = nsr,ncol = ns)
+
+for (i in 1:nsr){
+  take1 = which(sd1$Route == selroutes[i] )
+  take2 = which(sd2$Route == selroutes[i] )
+  Ap1[i,] = colMeans(pm2p1[take1,])
+  Ap2[i,] = colMeans(pm2p2[take2,]) 
+  Ay1[i,] = colMeans(y1[take1,]) #Suomen vesilinnut vain NA:ta
+  Ay2[i,] = colMeans(y2[take2,])
+}
+```
+
+
+```{r}
+#matriisit on muutettava dataframeiksi
+Ap1=as.data.frame(Ap1)  
+Ap1=cbind(selroutes,Ap1)
+setnames(Ap1,"selroutes","Route")
+
+Ap2=as.data.frame(Ap2)
+Ap2=cbind(selroutes,Ap2)
+setnames(Ap2,"selroutes","Route")
+
+Ay1=as.data.frame(Ay1)
+Ay1=cbind(selroutes,Ay1)
+setnames(Ay1,"selroutes","Route")
+
+Ay2=as.data.frame(Ay2)
+Ay2=cbind(selroutes,Ay2)
+setnames(Ay2,"selroutes","Route")
+
+#lisätään havaintoihin ja ennusteisiin ensin oikeat reittikoodit (1-2591)
+Ap1<-left_join(Ap1,d,by="Route")
+Ap2<-left_join(Ap2,d,by="Route")
+Ay1<-left_join(Ay1,d,by="Route")
+Ay2<-left_join(Ay2,d,by="Route")
+
+#...ja vihdoin myös koordinaatit
+Ap1<-left_join(Ap1,xy,by=c("routeid"="route"))
+Ap2<-left_join(Ap2,xy,by=c("routeid"="route"))
+Ay1<-left_join(Ay1,xy,by=c("routeid"="route"))
+Ay2<-left_join(Ay2,xy,by=c("routeid"="route"))
+
+#tallenna tiedot
+write.csv(Ay1,"pa_obs_per1.csv",row.names = F)
+write.csv(Ay2,"pa_obs_per2.csv",row.names = F)
+write.csv(Ap1,"pa_pred_per1.csv",row.names = F)
+write.csv(Ap2,"pa_pred_per2.csv",row.names = F)
+
+#luetaan sisään reitit, havainnot ja ennusteet
+coordinates(Ay1)<-c("x","y")
+plot(Ay1)
+proj4string(Ay1) <-CRS("+init=EPSG:3035")
+
+coordinates(Ay2)<-c("x","y")
+proj4string(Ay2) <-CRS("+init=EPSG:3035")
+
+coordinates(Ap1)<-c("x","y")
+proj4string(Ap1) <-CRS("+init=EPSG:3035")
+
+coordinates(Ap2)<-c("x","y")
+proj4string(Ap2) <-CRS("+init=EPSG:3035")
+
+#liitetään kuhunkin reittiin tieto, millä gridin ruudulla se on
+pts.poly <- point.in.poly(Ay1, gridi)
+data<-as.data.frame(pts.poly)
+
+#ryhmitelään linjat gridiruuduittain ja lasketaan keskiarvot kullekin sarakkeelle, eli lajeittain.
+data%>%
+  group_by(grid_id) %>%
+  summarise_at(vars(-Route), list(~mean(., na.rm=T))) %>% #jos jollain lajilla on yhdellä linjalla NA:ta se ei vaikuta keskiarvon laskemiseen. 
+  write.csv(.,file = "pool_pa_obs_per1.csv",row.names=F)
+
+#ja sama muille aineistoille
+pts.poly <- point.in.poly(Ay2, gridi)
+data<-as.data.frame(pts.poly)
+data%>%
+  group_by(grid_id) %>%
+  summarise_at(vars(-Route), list(~mean(., na.rm=T))) %>%
+  write.csv(.,file = "pool_pa_obs_per2.csv",row.names=F)
+
+pts.poly <- point.in.poly(Ap1, gridi)
+data<-as.data.frame(pts.poly)
+data%>%
+  group_by(grid_id) %>%
+  summarise_at(vars(-Route), list(~mean(., na.rm=T))) %>%
+  write.csv(.,file = "pool_pa_pred_per1.csv",row.names=F)
+
+pts.poly <- point.in.poly(Ap2, gridi)
+data<-as.data.frame(pts.poly)
+data%>%
+  group_by(grid_id) %>%
+  summarise_at(vars(-Route), list(~mean(., na.rm=T))) %>%
+  write.csv(.,file = "pool_pa_pred_per2.csv",row.names=F)
+
+#luetaan aineisto takaisin sisään
+paY1<-read.csv("pool_pa_obs_per1.csv",header=T,sep=",")
+paY2<-read.csv("pool_pa_obs_per2.csv",header=T,sep=",")
+papred1<-read.csv("pool_pa_pred_per1.csv",header=T,sep=",")
+papred2<-read.csv("pool_pa_pred_per2.csv",header=T,sep=",")
+
+#heivataan turhat sarakkeet
+names(paY1)
+drops <- c("routeid","left","top","right","bottom","coords.x1","coords.x2")
+paY1<-paY1[ , !(names(paY1) %in% drops)]
+paY2<-paY2[ , !(names(paY2) %in% drops)]
+papred1<-papred1[ , !(names(papred1) %in% drops)]
+papred2<-papred2[ , !(names(papred2) %in% drops)]
+
+#korjataan sarakkeiden lajinimet kunnollisiksi
+a<-colnames(Y)
+b<-"grid_id"
+a<-c(b,a)
+
+names(paY1)<-a
+names(paY2)<-a
+names(papred1)<-a
+names(papred2)<-a
+
+#lasketaan erotukset periodin 1 ja 2 välilä
+#pa
+#obs
+pacounts_gather<-gather(paY1,key="Yspecies",value="Yper1",Acrocephalus_palustris:Vanellus_vanellus)
+pacounts_gather2<-gather(paY2,key="Yspecies",value="Yper2",Acrocephalus_palustris:Vanellus_vanellus)
+payhd<-left_join(pacounts_gather,pacounts_gather2,by=c("grid_id"="grid_id","Yspecies"="Yspecies"))
+payhd$difY<-payhd$Yper2-payhd$Yper1
+
+#pred
+papred_gather<-gather(papred1,key="Pspecies",value="Pper1",Acrocephalus_palustris:Vanellus_vanellus)
+papred_gather2<-gather(papred2,key="Pspecies",value="Pper2",Acrocephalus_palustris:Vanellus_vanellus)
+payhdPred<-left_join(papred_gather,papred_gather2,by=c("grid_id"="grid_id","Pspecies"="Pspecies"))
+payhdPred$difPred<-payhdPred$Pper2-payhdPred$Pper1
+
+#yhdistetään tulokset, havainnot ja ennusteet samaan dataframeen
+paKor<-left_join(payhd,payhdPred,by=c("grid_id"="grid_id","Yspecies"="Pspecies"))
+keep<-c("Yspecies","difPred","difY")
+paKor<-paKor[,keep,drop=F]
+
+#lasketaan korrelaatiot
+paKor_C=paKor %>%
+  group_by(Yspecies) %>%
+  dplyr::summarise(pool_pa_change= cor(difPred, difY, use= "na.or.complete"))%T>%
+  write.csv('pa_pool50_results_methodC.csv',row.names=F)
+
+#method A
+
+#yhdistetään tulokset, havainnot ja ennusteet samaan dataframeen
+paKor<-left_join(payhd,payhdPred,by=c("grid_id"="grid_id","Yspecies"="Pspecies"))
+
+#lasketaan korrelaatiot
+paKor_A=paKor %>%
+  group_by(Yspecies) %>%
+  dplyr::summarise(pool_pa_change= cor(Pper2, Yper2, use= "na.or.complete"))%T>%
+  write.csv('pa_pool50_results_methodA.csv',row.names=F)
+```
+
+
+
 ## 3.2 Abundance -aineisto
 
 Tehdään sama proseduuri myös abu-aineistolle.
@@ -495,6 +720,220 @@ observations
 Vaikea päätellä, mitkä korrelaatioista on luotettavasti laskettu. **Pohjansirkun poolattu korrelaatio perustuu edelleen vain kolmeen havaintopariin. Sen sijaan pyyn korrelaatio onkin nyt laskettu seitsemästä havaintoparista.** Huomion arvoista on myös se, että esimerkiksi sinirinnan havaintoparit ovat poolatussa aineistossa vain kahdeksan kun taas alkuperäinen korrelaatio on laskettu 34:stä havaintoparista. Poolaaminen voi siis auttaa joidenkin niiden lajien kohdalla, joille on vaikea löytää reittejä, joilla olisi käyty sekä periodi 1:llä että 2:lla. Mutta jos tarkastellaan vain sitä, kuinka harvasta gridiruudusta poolattu korrelaatio on laskettu, jää huomioimatta, että yhden ruudun "takana" voi olla useampia reittejä. Jos rajaksi asettaa saman 10 voi aineistosta pudota lajeja, joista oli useita havaintoja.
 
 
+Metodi B
+
+```{r}
+abuKor<-left_join(payhd,payhdPred,by=c("grid_id"="grid_id","Yspecies"="Pspecies"))
+
+abuKor_B=abuKor %>%
+  group_by(Yspecies) %>%
+  dplyr::summarise(pool_abu_change= cor(Pper2, Yper2, use= "na.or.complete"))%T>%
+  write.csv('abu_pool50_results_methodB.csv',row.names=F)
+```
+
+Metodit A ja C
+
+```{r}
+modeltype = 2 #2 on abu-aineistolle
+
+#model 1: data until 2006; model 2: full data
+#mpred1: posterior mean based on model 1; mpred2: posterior mean based on model 2
+
+filename = file.path(PredictionDir, paste("predictions_",c("pa","abundance")[modeltype],
+                                          "_chains_",as.character(nChains),"_thin_", as.character(thin),"_samples_", as.character(samples),
+                                          ".Rdata",sep = ""))
+load(filename) #mpred1, mpred2, Y, studyDesign
+routes=levels(studyDesign$Route)
+nr=length(routes)
+years=levels(studyDesign$Year)
+ns=dim(mpred1)[2]
+
+period1=(studyDesign$Year=="Year_1996" | studyDesign$Year=="Year_1997" | studyDesign$Year=="Year_1998" | studyDesign$Year=="Year_1999")
+period2=(studyDesign$Year=="Year_2013" | studyDesign$Year=="Year_2014" | studyDesign$Year=="Year_2015" | studyDesign$Year=="Year_2016")
+
+pm2p1=mpred2[period1,]
+pm2p2=mpred2[period2,] #m2 eli käytetty koko aineistoa
+
+y1=Y[period1,]
+y2=Y[period2,]
+
+sd1 = studyDesign[period1,]
+sd2 = studyDesign[period2,]
+
+visits1 = rep(NA,nr)
+visits2 = rep(NA,nr)
+for (i in 1:nr){
+  visits1[i] = sum(sd1$Route==routes[i])
+  visits2[i] = sum(sd2$Route==routes[i])
+}
+
+# lasketaan kullekin linjalle (jolla on k?yty kahdesti kummankin periodin aikana) keskiarvot periodeittain
+#havainnot ja ennusteet erikseen
+selroutes = routes[which(visits1>=2 & visits2>=2)]
+nsr = length(selroutes)
+
+Ap1=matrix(NA,nrow = nsr,ncol = ns)
+Ap2=matrix(NA,nrow = nsr,ncol = ns)
+Ay1=matrix(NA,nrow = nsr,ncol = ns)
+Ay2=matrix(NA,nrow = nsr,ncol = ns)
+
+for(j in 1:ns){
+  for (i in 1:nsr){
+    take1 = which(sd1$Route == selroutes[i] & y1[,j]>-1) 
+    take2 = which(sd2$Route == selroutes[i] & y2[,j]>-1)
+    Ap1[i,j] = mean(pm2p1[take1,j]) #ei laske ennusteille keskiarvoa niiltä linjoilta, jotka ovat havainnoissa NA
+    Ap2[i,j] = mean(pm2p2[take2,j]) #tähän pitää myös vaihtaa pm2, jotta laskee oikeasta mallista (koko aineisto)
+    Ay1[i,j] = mean(y1[take1,j], na.rm=T) #NA:t jätetään huomiotta keskiarvoa laskettaessa
+    Ay2[i,j] = mean(y2[take2,j], na.rm=T)
+  }}
+```
+
+
+```{r}
+#matriisit on muutettava dataframeiksi
+Ap1=as.data.frame(Ap1)  
+Ap1=cbind(selroutes,Ap1)
+setnames(Ap1,"selroutes","Route")
+
+Ap2=as.data.frame(Ap2)
+Ap2=cbind(selroutes,Ap2)
+setnames(Ap2,"selroutes","Route")
+
+Ay1=as.data.frame(Ay1)
+Ay1=cbind(selroutes,Ay1)
+setnames(Ay1,"selroutes","Route")
+
+Ay2=as.data.frame(Ay2)
+Ay2=cbind(selroutes,Ay2)
+setnames(Ay2,"selroutes","Route")
+
+#lisätään havaintoihin ja ennusteisiin ensin oikeat reittikoodit (1-2591)
+Ap1<-left_join(Ap1,d,by="Route")
+Ap2<-left_join(Ap2,d,by="Route")
+Ay1<-left_join(Ay1,d,by="Route")
+Ay2<-left_join(Ay2,d,by="Route")
+
+#...ja koordinaatit
+Ap1<-left_join(Ap1,xy,by=c("routeid"="route"))
+Ap2<-left_join(Ap2,xy,by=c("routeid"="route"))
+Ay1<-left_join(Ay1,xy,by=c("routeid"="route"))
+Ay2<-left_join(Ay2,xy,by=c("routeid"="route"))
+
+#save observations and predictions for pooling in GIS
+write.csv(Ay1,"abu_obs_per1.csv",row.names = F)
+write.csv(Ay2,"abu_obs_per2.csv",row.names = F)
+write.csv(Ap1,"abu_pred_per1.csv",row.names = F)
+write.csv(Ap2,"abu_pred_per2.csv",row.names = F)
+```
+
+```{r}
+#luetaan sisään reitit koordinaatteineen
+coordinates(Ay1)<-c("x","y")
+proj4string(Ay1) <-CRS("+init=EPSG:3035")
+
+coordinates(Ay2)<-c("x","y")
+proj4string(Ay2) <-CRS("+init=EPSG:3035")
+
+coordinates(Ap1)<-c("x","y")
+proj4string(Ap1) <-CRS("+init=EPSG:3035")
+
+coordinates(Ap2)<-c("x","y")
+proj4string(Ap2) <-CRS("+init=EPSG:3035")
+
+#join data based on polygons
+pts.poly <- point.in.poly(Ay1, gridi)
+data<-as.data.frame(pts.poly)
+data%>%
+  group_by(grid_id) %>%
+  summarise_at(vars(-Route), list(~mean(., na.rm=T))) %>% #NA:t eivät vaikuta laskuihin
+  write.csv(.,file = "pool_abu_obs_per1.csv",row.names=F,na="")
+
+pts.poly <- point.in.poly(Ay2, gridi)
+data<-as.data.frame(pts.poly)
+data%>%
+  group_by(grid_id) %>%
+  summarise_at(vars(-Route), list(~mean(., na.rm=T))) %>%
+  write.csv(.,file = "pool_abu_obs_per2.csv",row.names=F,na="")
+
+pts.poly <- point.in.poly(Ap1, gridi)
+data<-as.data.frame(pts.poly)
+data%>%
+  group_by(grid_id) %>%
+  summarise_at(vars(-Route), list(~mean(., na.rm=T))) %>%
+  write.csv(.,file = "pool_abu_pred_per1.csv",row.names=F,na="")
+
+pts.poly <- point.in.poly(Ap2, gridi)
+data<-as.data.frame(pts.poly)
+data%>%
+  group_by(grid_id) %>%
+  summarise_at(vars(-Route), list(~mean(., na.rm=T))) %>%
+  write.csv(.,file = "pool_abu_pred_per2.csv",row.names=F,na="")
+```
+
+
+```{r}
+#luetaan aineisto takaisin sisään
+paY1<-read.csv("pool_abu_obs_per1.csv",header=T,sep=",")
+paY2<-read.csv("pool_abu_obs_per2.csv",header=T,sep=",")
+papred1<-read.csv("pool_abu_pred_per1.csv",header=T,sep=",")
+papred2<-read.csv("pool_abu_pred_per2.csv",header=T,sep=",")
+
+#heivataan turhat sarakkeet
+drops <- c("routeid","left","top","right","bottom","coords.x1","coords.x2")
+paY1<-paY1[ , !(names(paY1) %in% drops)]
+paY2<-paY2[ , !(names(paY2) %in% drops)]
+papred1<-papred1[ , !(names(papred1) %in% drops)]
+papred2<-papred2[ , !(names(papred2) %in% drops)]
+
+#korjataan sarakkeiden lajinimet kunnollisiksi
+a<-colnames(Y)
+b<-"grid_id"
+a<-c(b,a)
+
+names(paY1)<-a
+names(paY2)<-a
+names(papred1)<-a
+names(papred2)<-a
+```
+
+
+```{r}
+#seuraavaksi lasketaan erotukset periodin 1 ja 2 välilä
+#abu
+#obs
+pacounts_gather<-gather(paY1,key="Yspecies",value="Yper1",Acrocephalus_palustris:Vanellus_vanellus)
+pacounts_gather2<-gather(paY2,key="Yspecies",value="Yper2",Acrocephalus_palustris:Vanellus_vanellus)
+payhd<-left_join(pacounts_gather,pacounts_gather2,by=c("grid_id"="grid_id","Yspecies"="Yspecies"))
+payhd$difY<-payhd$Yper2-payhd$Yper1
+
+#pred
+papred_gather<-gather(papred1,key="Pspecies",value="Pper1",Acrocephalus_palustris:Vanellus_vanellus)
+papred_gather2<-gather(papred2,key="Pspecies",value="Pper2",Acrocephalus_palustris:Vanellus_vanellus)
+payhdPred<-left_join(papred_gather,papred_gather2,by=c("grid_id"="grid_id","Pspecies"="Pspecies"))
+payhdPred$difPred<-payhdPred$Pper2-payhdPred$Pper1
+
+#pa
+abuKor<-left_join(payhd,payhdPred,by=c("grid_id"="grid_id","Yspecies"="Pspecies"))
+keep<-c("Yspecies","difPred","difY")
+abuKor<-abuKor[,keep,drop=F]
+
+abuKor_C=abuKor %>%
+  group_by(Yspecies) %>%
+  dplyr::summarise(pool_abu_change= cor(difPred, difY, use= "na.or.complete"))%T>%
+  write.csv('abu_pool50_results_methodC.csv',row.names=F)
+```
+
+```{r}
+abuKor<-left_join(payhd,payhdPred,by=c("grid_id"="grid_id","Yspecies"="Pspecies"))
+
+abuKor_A=abuKor %>%
+  group_by(Yspecies) %>%
+  dplyr::summarise(pool_abu_change= cor(Pper2, Yper2, use= "na.or.complete"))%T>%
+  write.csv('abu_pool50_results_methodA.csv',row.names=F)
+```
+
+
+
 ## 3.3 Poolattujen ennustustarkkuuksien vertailu
 
 ### 3.3.1 Aineiston yhdistely
@@ -506,6 +945,14 @@ Selvitetään, paransiko poolaus ennustustarkkuuksia. Mikä on poolauksen ja ain
 res<-read.csv("results_with_NA.csv")
 pool_pa<-read.csv("pa_pool50_results.csv")
 pool_abu<-read.csv("abu_pool50_results.csv")
+
+pool_paC=read.csv("pa_pool50_results_methodC.csv")
+pool_paB=read.csv("pa_pool50_results_methodB.csv")
+pool_paA=read.csv("pa_pool50_results_methodA.csv")
+
+pool_abuC=read.csv("abu_pool50_results_methodC.csv")
+pool_abuB=read.csv("abu_pool50_results_methodB.csv")
+pool_abuA=read.csv("abu_pool50_results_methodA.csv")
 
 #100km gridi
 #pool_pa<-read.csv("pa_pool100_results.csv")
@@ -521,8 +968,32 @@ pool_abu$pa=as.factor("abu")
 pool_pa=pool_pa %>% dplyr::rename(species = Yspecies, accuracy = pool_pa_change)
 pool_abu=pool_abu %>% dplyr::rename(species = Yspecies,accuracy = pool_abu_change)
 
+pool_paC$method=as.factor("pool_C")
+pool_paB$method=as.factor("pool_B")
+pool_paA$method=as.factor("pool_A")
+
+pool_paC$pa=as.factor("pa")
+pool_paB$pa=as.factor("pa")
+pool_paA$pa=as.factor("pa")
+
+pool_abuC$method=as.factor("pool_C")
+pool_abuB$method=as.factor("pool_B")
+pool_abuA$method=as.factor("pool_A")
+
+pool_abuC$pa=as.factor("abu")
+pool_abuB$pa=as.factor("abu")
+pool_abuA$pa=as.factor("abu")
+
+helpabu=rbind(pool_abuC,pool_abuB,pool_abuA)
+helppa=rbind(pool_paC,pool_paB,pool_paA)
+
+helpabu=helpabu %>% dplyr::rename(species = Yspecies, accuracy = pool_abu_change)
+helppa=helppa %>% dplyr::rename(species = Yspecies,accuracy = pool_pa_change)
+
+help=rbind(helpabu,helppa)
+
 #yhdistetään kaikki tulokset samaan taulukkoon
-res2=rbind(res,pool_abu,pool_pa)
+res2=rbind(res,pool_abu,pool_pa,help)
 str(res2)
 summary(res2)
 ```
@@ -532,6 +1003,9 @@ Merkkaan **pohjansirkun ja pyyn poolatun abu-arvon NA:ksi** koska ne edelleen pe
 ```{r}
 res2$accuracy[res2$species == "Emberiza_rustica" & res2$method == "pool_D" & res2$pa == "abu"] <- NA
 res2$accuracy[res2$species == "Bonasa_bonasia" & res2$method == "pool_D" & res2$pa == "abu"] <- NA
+
+res2$accuracy[res2$species == "Emberiza_rustica" & res2$method == "pool_C" & res2$pa == "abu"] <- NA
+res2$accuracy[res2$species == "Bonasa_bonasia" & res2$method == "pool_C" & res2$pa == "abu"] <- NA
 
 #tallennetaan
 write.csv(res2,"results_and_pooled.csv",row.names=F)
@@ -554,7 +1028,7 @@ Tarkastellaan poolattuja ennustustarkkuuksia muihin metodeihin verrattuna:
 
 ```{r}
 #plottailua
-ggplot(res2, aes(x = method, y = accuracy, interaction = pa, colour = pa)) + geom_boxplot() 
+ggplot(res2, aes(x = method, y = accuracy,  colour = pa)) + geom_boxplot() +facet_grid(.~pa)
 ```
 
 Valitsen aineistosta vain metodi D:n, poolaamattomat ja poolatut ennustustarkkuudet, ja tarkastelen vain niitä vierekkäin.
@@ -624,6 +1098,147 @@ abline(h=0,lty=2)
 ```
 
 Eli tässäkin on tuloksena, että poolauksen ja aineistotyypin yhdistelmä vaikuttavat ennustustarkkuuteen. Residuaalit ihan ok. Mutta erothan ovat ihan minimaalisia verrattuna muuhun aineistoon.
+
+### verrataan C vs. pool_C
+
+```{r}
+res4=subset(res2,method=="C"|method=="pool_C")
+res4$method=drop.levels(res4$method)
+summary(res4)
+ggplot(res4, aes(x = method, y = accuracy, interaction = pa, colour = pa)) + geom_boxplot()
+
+res4%>%
+  group_by(method,pa) %>%
+  summarise(means=mean(accuracy,na.rm=T),std.errors=std.error(accuracy,na.rm=T))
+
+#fixed osan vertailua
+A1=lme(accuracy~method*pa,data=res4,random=~1|species,method="ML",na.action="na.exclude")
+A2=lme(accuracy~method+pa,data=res4,random=~1|species,method="ML",na.action="na.exclude")
+A3=lme(accuracy~method,data=res4,random=~1|species,method="ML",na.action="na.exclude")
+A4=lme(accuracy~pa,data=res4,random=~1|species,method="ML",na.action="na.exclude")
+
+anova(A1,A2)
+AIC(A1,A2,A3,A4)
+
+summary(A1)
+anova(A1)
+```
+
+### verrataan B vs. pool_B
+
+```{r}
+res5=subset(res2,method=="B"|method=="pool_B")
+res5$method=drop.levels(res5$method)
+summary(res5)
+ggplot(res5, aes(x = method, y = accuracy, interaction = pa, colour = pa)) + geom_boxplot()
+
+res5%>%
+  group_by(method,pa) %>%
+  summarise(means=mean(accuracy,na.rm=T),std.errors=std.error(accuracy,na.rm=T))
+
+#fixed osan vertailua
+A1=lme(accuracy~method*pa,data=res5,random=~1|species,method="ML",na.action="na.exclude")
+A2=lme(accuracy~method+pa,data=res5,random=~1|species,method="ML",na.action="na.exclude")
+A3=lme(accuracy~method,data=res5,random=~1|species,method="ML",na.action="na.exclude")
+A4=lme(accuracy~pa,data=res5,random=~1|species,method="ML",na.action="na.exclude")
+
+anova(A1,A2)
+AIC(A1,A2,A3,A4)
+
+summary(A1)
+anova(A1)
+```
+
+### verrataan A vs. pool_A
+
+```{r}
+res6=subset(res2,method=="A"|method=="pool_A")
+res6$method=drop.levels(res6$method)
+summary(res6)
+ggplot(res6, aes(x = method, y = accuracy, interaction = pa, colour = pa)) + geom_boxplot()
+
+res6%>%
+  group_by(method,pa) %>%
+  summarise(means=mean(accuracy,na.rm=T),std.errors=std.error(accuracy,na.rm=T))
+
+#fixed osan vertailua
+A1=lme(accuracy~method*pa,data=res6,random=~1|species,method="ML",na.action="na.exclude")
+A2=lme(accuracy~method+pa,data=res6,random=~1|species,method="ML",na.action="na.exclude")
+A3=lme(accuracy~method,data=res6,random=~1|species,method="ML",na.action="na.exclude")
+A4=lme(accuracy~pa,data=res6,random=~1|species,method="ML",na.action="na.exclude")
+
+anova(A1,A2)
+AIC(A1,A2,A3,A4)
+
+summary(A1)
+anova(A1)
+```
+
+
+### Analyysi kaikilla poolatuilla metodeilla
+
+```{r}
+#aineisto uusiksi
+poolres=res2
+poolres$pool=NA
+
+poolres$pool[poolres$method=="A"|poolres$method=="B"|poolres$method=="C"|poolres$method=="D"]<-"NPo" 
+poolres$pool[poolres$method=="pool_A"|poolres$method=="pool_B"|poolres$method=="pool_C"|poolres$method=="pool_D"]<-"Po" 
+poolres$pool=as.factor(poolres$pool)
+poolres$method=stringr::str_replace(poolres$method,'pool_','') 
+poolres$method=as.factor(poolres$method)
+
+#tarkistellaan taulukkona
+poolres %>%
+  group_by(method,pa,pool) %>%
+  summarise(means=mean(accuracy,na.rm=T),std.errors=std.error(accuracy,na.rm=T))
+
+#plottailua
+ggplot(poolres,aes(x=method,y=accuracy,color=pool))+geom_boxplot()+facet_grid(.~pa)
+
+#tallenna
+write.csv(poolres, "poolres.csv",row.names = F)
+```
+
+Pa-aineisto:
+
+```{r}
+#jaetaan aineisto pa ja abu aineistoihin
+poolresPA=subset(poolres,pa=="pa")
+poolresABU=subset(poolres,pa=="abu")
+
+#fixed osan vertailua, PA aineisto:
+A1=lme(accuracy~method*pool,data=poolresPA,random=~1|species,method="ML",na.action="na.exclude")
+A2=lme(accuracy~method+pool,data=poolresPA,random=~1|species,method="ML",na.action="na.exclude")
+A3=lme(accuracy~method,data=poolresPA,random=~1|species,method="ML",na.action="na.exclude")
+A4=lme(accuracy~pool,data=poolresPA,random=~1|species,method="ML",na.action="na.exclude")
+
+anova(A1,A2)
+AIC(A1,A2,A3,A4)
+
+summary(A3)
+anova(A3)
+```
+
+Eli vain pa-aineistolla vain metodilla on väliä, ei niinkään poolauksella?
+
+Abu-aineisto:
+
+```{r}
+#fixed osan vertailua, abu aineisto:
+A1=lme(accuracy~method*pool,data=poolresABU,random=~1|species,method="ML",na.action="na.exclude")
+A2=lme(accuracy~method+pool,data=poolresABU,random=~1|species,method="ML",na.action="na.exclude")
+A3=lme(accuracy~method,data=poolresABU,random=~1|species,method="ML",na.action="na.exclude")
+A4=lme(accuracy~pool,data=poolresABU,random=~1|species,method="ML",na.action="na.exclude")
+
+anova(A1,A2)
+AIC(A1,A2,A3,A4)
+
+summary(A1)
+anova(A1)
+```
+
+Mutta abu aineistolla sekä metodilla että poolauksella yhdessä on vaikutusta?
 
 
 ### 3.3.4 Muita testailuja
@@ -698,7 +1313,7 @@ bxp +
   )
 ```
 
-#### 3.3.4.2 Luottamusvälit
+### 3.3.5 Luottamusvälit
 
 ```{r}
 stat <- summarySE(res3, measurevar="accuracy", groupvars=c("method","pa"),na.rm = T)
@@ -708,7 +1323,8 @@ stat$upper=stat$accuracy+stat$ci
 names(stat)[2] <- "Data_type"
 stat$method=revalue(stat$method, c("D"="D", "pool_D"="pooled D"))
 knitr::kable(stat)
-
+names(res3)[4] <- "Data_type"
+res3$method=revalue(res3$method, c("D"="D", "pool_D"="pooled D"))
 pd <- position_dodge(0.2) # move them .05 to the left and right
 # Black error bars - notice the mapping of 'group=supp' -- without it, the error
 # bars won't be dodged!
@@ -735,23 +1351,155 @@ ggplot(stat, aes(y=accuracy, x=method,shape=Data_type)) + geom_errorbar(aes(ymin
     theme(text = element_text(size = 20)) +
     geom_point(position=pd, size=4) +  scale_shape_discrete(name = "Data type", labels = c("abu", "POC")) + scale_shape_manual(values=c(17,19))
 
+ggsave("plot2_simple.png")
+
 ggplot(stat, aes(y=accuracy, x=method,shape=Data_type)) + 
   geom_errorbar(aes(ymin=accuracy-ci, ymax=accuracy+ci), colour="black", width=.2, position=pd) +
   ylab("Prediction accuracy") +
     xlab("Validation method") +
     theme_bw() +
     theme(legend.justification=c(1,1),
-          legend.position=c(0.3,0.95),
+          legend.position=c(0.23,0.95),
           legend.box.background=element_rect())  +             
-    theme(text = element_text(size = 20)) +
+    theme(text = element_text(size = 15)) +
     geom_point(position=pd, size=4) +  
-  scale_shape_discrete(name = "Data type", labels = c("abundance", "occurrence")) + geom_hline(yintercept = 0, linetype="dashed")
+  scale_shape_discrete(name = "Data type", labels = c("abundance", "occurrence")) + geom_hline(yintercept = 0, linetype="dashed")+
+  geom_point(data=res3,position=pd, alpha=0.08)
 
-ggsave("plot2.png")
+ggsave("plot2_alpha.png")
+
+ggplot(stat, aes(y=accuracy, x=method,shape=Data_type)) + 
+  geom_errorbar(aes(ymin=accuracy-ci, ymax=accuracy+ci), colour="black", width=.2, position=pd) +
+  ylab("Prediction accuracy") +
+    xlab("Validation method") +
+    theme_bw() +
+    theme(legend.justification=c(1,1),
+          legend.position=c(0.23,0.95),
+          legend.box.background=element_rect())  +             
+    theme(text = element_text(size = 15)) +
+    geom_point(position=pd, size=4) +  
+  scale_shape_discrete(name = "Data type", labels = c("abundance", "occurrence")) + geom_hline(yintercept = 0, linetype="dashed")+
+  geom_point(data=res3,position=pd, size=0.5)
+
+ggsave("plot2_noalpha.png")
 
 ```
 
-### 3.3.5 Vanha kuvaaja
+```{r}
+stat <- summarySE(res2, measurevar="accuracy", groupvars=c("method","pa"),na.rm = T)
+stat
+stat$lower=stat$accuracy-stat$ci
+stat$upper=stat$accuracy+stat$ci
+names(stat)[2] <- "Data_type"
+stat$method=revalue(stat$method, c("D"="D", "pool_D"="pooled D"))
+knitr::kable(stat)
+names(res2)[4] <- "Data_type"
+res2$method=revalue(res2$method, c("D"="D", "pool_D"="pooled D"))
+pd <- position_dodge(0.2) # move them .05 to the left and right
+# Black error bars - notice the mapping of 'group=supp' -- without it, the error
+# bars won't be dodged!
+
+#ggplot(stat, aes(x=method, y=accuracy, group=Data_type)) + 
+#    geom_errorbar(aes(ymin=accuracy-ci, ymax=accuracy+ci), colour="black", width=.2, position=pd) +
+#    geom_point(aes(shape=Data_type),position=pd, size=4)+
+#    scale_shape_manual(values=c(19,17))+
+#    ylab("Prediction accuracy") +
+##    xlab("Validation method") +
+#    theme_bw() +
+#    theme(legend.justification=c(1,1),
+#          legend.position=c(0.3,0.95),
+#          legend.box.background=element_rect())  +             # Position legend in bottom right
+#    theme(text = element_text(size = 17)) +
+#    labs(fill = "Data type")
+
+ggplot(stat, aes(y=accuracy, x=method,shape=Data_type)) + geom_errorbar(aes(ymin=accuracy-ci, ymax=accuracy+ci), colour="black", width=.2, position=pd) +ylab("Prediction accuracy") +
+    xlab("Validation method") +
+    theme_bw() +
+    theme(legend.justification=c(1,1),
+          legend.position=c(0.3,0.95),
+          legend.box.background=element_rect())  +           
+    theme(text = element_text(size = 20)) +
+    geom_point(position=pd, size=4) +  scale_shape_discrete(name = "Data type", labels = c("abu", "POC")) + scale_shape_manual(values=c(17,19))
+
+ggsave("plot2_allmethods_simple.png")
+
+ggplot(stat, aes(y=accuracy, x=method,shape=Data_type)) + 
+  geom_errorbar(aes(ymin=accuracy-ci, ymax=accuracy+ci), colour="black", width=.2, position=pd) +
+  ylab("Prediction accuracy") +
+    xlab("Validation method") +
+    theme_bw() +
+    theme(legend.justification=c(1,1),
+          legend.position=c(0.23,0.95),
+          legend.box.background=element_rect())  +             
+    theme(text = element_text(size = 15)) +
+    geom_point(position=pd, size=4) +  
+  scale_shape_discrete(name = "Data type", labels = c("abundance", "occurrence")) + geom_hline(yintercept = 0, linetype="dashed")+
+  geom_point(data=res2,position=pd, alpha=0.08)
+
+ggsave("plot2_allmethods_alpha.png")
+
+ggplot(stat, aes(y=accuracy, x=method,shape=Data_type)) + 
+  geom_errorbar(aes(ymin=accuracy-ci, ymax=accuracy+ci), colour="black", width=.2, position=pd) +
+  ylab("Prediction accuracy") +
+    xlab("Validation method") +
+    theme_bw() +
+    theme(legend.justification=c(1,1),
+          legend.position=c(0.23,0.30),
+          legend.box.background=element_rect())  +             
+    theme(text = element_text(size = 15)) +
+    geom_point(position=pd, size=4) +  
+  scale_shape_discrete(name = "Data type", labels = c("abundance", "occurrence")) + geom_hline(yintercept = 0, linetype="dashed")+
+  geom_point(data=res2,position=pd, size=0.5)
+
+ggsave("plot2_allmethods_noalpha.png")
+
+```
+
+```{r}
+stat <- summarySE(poolres, measurevar="accuracy", groupvars=c("method","pa","pool"),na.rm = T)
+stat
+stat$lower=stat$accuracy-stat$ci
+stat$upper=stat$accuracy+stat$ci
+#names(stat)[2] <- "Data_type"
+#names(stat)[3] <- "Spatial_scale"
+#stat$pool=revalue(stat$pool, c("NPo"="non-pooled", "Po"="pooled"))
+knitr::kable(stat)
+#names(res2)[4] <- "Data_type"
+
+pd <- position_dodge(0.4) # move them .05 to the left and right
+# Black error bars - notice the mapping of 'group=supp' -- without it, the error
+# bars won't be dodged!
+#levels(stat$pa) <- c("pa", "abu")
+#levels(poolres$pa) <- c("pa", "abu")
+poolres$pa=revalue(poolres$pa, c("pa"="occurrence", "abu"="abundance"))
+stat$pa=revalue(stat$pa, c("pa"="occurrence", "abu"="abundance"))
+stat$pool=revalue(stat$pool, c("NPo"="non-pooled", "Po"="pooled"))
+
+stat$pa=factor(stat$pa, levels=c("occurrence","abundance"))
+
+ggplot(stat, aes(y=accuracy, x=method, group=pool)) + 
+  geom_point(aes(shape=pool),position=pd,size=2.5)  + 
+  scale_shape_manual(values=c(19,17),name = "Spatial scale") + 
+  geom_errorbar(aes(ymin=accuracy-ci, ymax=accuracy+ci), colour="black", width=.4, position=pd) +
+  ylab("Prediction accuracy") +
+  xlab("Validation method") +
+  theme_bw() +
+  theme(legend.justification=c(1,1),
+          legend.box.background=element_rect()) +           
+  theme(text = element_text(size = 15)) +
+  geom_point(data=poolres,position=pd, size=0.5) +
+  facet_grid(.~pa) + 
+  geom_hline(yintercept = 0, linetype="dashed") +
+  theme(legend.title = element_text(colour="black", size=10, 
+                                      face="bold")) +
+  theme(legend.text = element_text(colour="black", size=10, 
+                                     face="bold"))
+
+ggsave("plot3_pa_pool_method.png")
+```
+
+
+### 3.3.6 Vanha kuvaaja
 
 Vanha koodi on nyt toistaiseksi vielä tässä mutta alan kääntymään boxplottien puoleen.. Koodi ei toimi ilman muokkausta koska aineisto on nyt eri muodossa.  
 

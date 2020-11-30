@@ -29,13 +29,13 @@ output:
 ***
 ***
   
-```{r child = "part3.Rmd"}
+```{r child = "part3_new.Rmd"}
 ```
   
 ***
 ***
   
-```{r child = "part4.Rmd"}
+```{r child = "part4_new.Rmd"}
 ```
   
 ***

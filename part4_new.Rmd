@@ -1,0 +1,322 @@
+---
+title: "part5"
+author: "me"
+date: "12 joulukuuta 2019"
+output: html_document
+---
+
+# 4. Traits analyysi
+
+Selvitetään ovatko tietyt lajiominaisuudet kytköksissä ennustustarkkuuteen.  
+Analysoin pa ja abu-aineistot erillään. Edellisissä analyyseissahan aineistot on analysoitu yhdessä (metodin ja aineistotyypin (pa/abu) interaktio). Meneekö tämä siis oikein?
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+getwd()
+paketit<-c("visreg","nlme","readr","tidyr","dplyr","plyr","magrittr","purrr","ggplot2","ape","geiger","MuMIn","psych","Hmisc")
+lapply(paketit,library,character.only=T)
+```
+
+## 4.1 Aineisto sisään ja taulukoiden kokoaminen
+
+Valitsen tarkasteluun vain poolatut ennustustarkkuudet. Järjestelen aineiston eri tavalla (vanhaan koodiin sopivaksi).
+
+```{r }
+#aineiston valinta, leväyttäminen ja uudelleen nimeäminen
+poolres<-read.csv("poolres.csv")
+
+#lisätään lajiominaisuudet taulukkoon
+traits<-read.csv("traits_table.csv",sep = ";")
+results<-inner_join(poolres,traits,by="species")
+str(results)
+results$species=as.factor(results$species)
+
+#uusi muuttuja, massan logaritmi
+results$logmass<-log(results$Mass)
+
+#uusi muuttuja, log-muunnettu prevalenssi
+results$PrevS=log(results$Prev)
+
+#arcsin-muunnos (kokeiltu)
+#asinTransform <- function(p) { asin(sqrt(p)) }
+#results$PrevS=asinTransform(results$Prev)
+
+#logit-muunnos (kokeilin, antaa ihan samanlaiset residuaalit)
+#logitTransform <- function(p) { log(p/(1-p)) }
+#results$PrevS=logitTransform(results$Prev)
+
+#tallenna tarvittaessa omaksi taulukokseen
+#write.csv(results,"accuracies_traits.csv",row.names = F)
+```
+
+## 4.2 Aineiston tarkastelu
+
+Tarkastellaan aineistoa kuvaajista.
+
+Poolattu 50 x 50 km aineisto, pa ja abu, habitat:
+
+```{r }
+#jaetaan aineisto pa ja abu aineistoihin
+resPA=subset(results,pa=="pa")
+resABU=subset(results,pa=="abu")
+
+#pa aineisto
+ggplot(resPA, aes(x=Hab, y=accuracy)) + 
+  geom_boxplot(aes(fill=method)) + facet_grid(. ~pool ) +
+  ggtitle("occurrence data")
+
+ggplot(resABU, aes(x=Hab, y=accuracy)) + 
+  geom_boxplot(aes(fill=method)) + facet_grid(. ~pool ) +
+  ggtitle("abundance data")
+```
+
+Migration
+
+```{r }
+#pa aineisto
+ggplot(resPA, aes(x=Mig, y=accuracy)) + 
+  geom_boxplot(aes(fill=method))+ facet_grid(. ~pool ) +
+  ggtitle("occurrence data")
+
+ggplot(resABU, aes(x=Mig, y=accuracy)) + 
+  geom_boxplot(aes(fill=method))+ facet_grid(. ~pool ) +
+  ggtitle("abundance data")
+```
+
+Prevalence
+
+```{r }
+#pa aineisto
+ggplot(resPA, aes(x=PrevS, y=accuracy,color=method)) + 
+  geom_point () + 
+  geom_smooth(method=lm) +
+  ggtitle("occurrence data") +
+  facet_grid(. ~pool) 
+#abu
+ggplot(resABU, aes(x=PrevS, y=accuracy,color=method)) + 
+  geom_point()+ 
+   geom_smooth(method=lm) +
+  facet_grid(. ~pool ) +
+  ggtitle("abundance data")
+```
+
+Mass
+
+```{r }
+#pa aineisto
+ggplot(resPA, aes(x=logmass, y=accuracy,color=method)) + 
+  geom_point () + 
+  geom_smooth(method=lm) +
+  ggtitle("occurrence data") +
+  facet_grid(. ~pool) 
+#abu
+ggplot(resABU, aes(x=logmass, y=accuracy,color=method)) + 
+  geom_point()+ 
+   geom_smooth(method=lm) +
+  facet_grid(. ~pool ) +
+  ggtitle("abundance data")
+```
+
+Tarkistan massan ja prevalenssin korrelaation:
+
+```{r}
+pairs(results[8:9])
+cor(results$logmass,results$PrevS)
+```
+
+Massa ja yleisyys eivät näytä korreloivan. 
+
+
+## 4.3 Fylogenia
+
+BirdTree.org palvelusta on haettu lintujen sukupuu (tai itseasiassa tiedosto sisältää 100 vaihtoehtoista sukupuuta, joista valitaan yksi). 
+
+```{r error=T}
+#luetaan aineisto sisään, Multiphylo eli monta puuta
+linnut <- read.nexus("output.nex")
+#valitaan vain yksi puu, mikä tahansa sadasta
+linnut2<-linnut[[99]]
+#define a variance-covariance structure based on the model of Brownian evolution
+bm.birds=corBrownian(1,phy=linnut2)
+
+#tehdään fylogenialistasta matriisi
+lintupuu<-vcv.phylo(linnut2)
+#matriisin voi värittää havainnollistamaan lintulajien sukulaisuutta
+heatmap(lintupuu,Rowv = NA,Colv = NA)
+
+#abu-aineistoa varten pari lajia pois, muuten koodi ei toimi
+linnut3=drop.tip(linnut2, "Emberiza_rustica", trim.internal = TRUE, subtree = FALSE,
+         root.edge = 0, rooted = is.rooted(linnut2), collapse.singles = TRUE,
+         interactive = FALSE)
+linnut4=drop.tip(linnut3, "Bonasa_bonasia", trim.internal = TRUE, subtree = FALSE,
+         root.edge = 0, rooted = is.rooted(linnut2), collapse.singles = TRUE,
+         interactive = FALSE)
+bm.birds2=corBrownian(1,phy=linnut4)
+
+#aineiston rivien nimet muutetaan lattareiksi jolloin keskustelee fylogeniapuun kanssa
+rownames(resPA)=resPA$species
+rownames(resABU)=resABU$species
+```
+
+Rivien nimeäminen ei toimi koska sama laji esiintyy useammalla rivillä. Mallien rakentamista varten fylogeniapuussa pitäisi kuitenkin olla rivinimet?
+
+
+"The so called **Brownian motion** (also called random walk or diffusion)
+3191 model of trait evolution, which is the simplest model among the many alternative models of how
+3192 traits might evolve (Beaulieu et al., 2012)."
+
+
+## 4.4 Analyysit
+
+Selvitetään, vaikuttavatko lajien ominaisuudet (muuttokäyttäytyminen 'Mig', elinympäristö 'Hab', paino 'logMass' tai prevalenssi 'Prev') ennustustarkkuuteen. Analyysissä pitäisi huomioida fylogenia eli, että lajit voivat olla ominaisuuksiltaan samankaltaisia (ja siten omata myös samanlaiset ennustustarkkuudet) läheisen sukulaisuussuhteen takia. 
+
+### 4.4.1 Pa-aineisto
+
+Luodaan kaikki mahdolliset mallivaihtoehdot, 16 kpl.
+
+```{r error=T}
+#luodaan eri mallivaihtoehtoja
+malli0 <- gls(accuracy ~ 1, data = resPA,correlation=bm.birds,method="ML") #pa-aineistolle bm.birds
+malli1 <- gls(accuracy ~ Mig, data = resPA,correlation=bm.birds,method="ML")
+malli2 <- gls(accuracy ~ Hab, data = resPA,correlation=bm.birds,method="ML")
+malli3 <- gls(accuracy ~ log(Mass), data = resPA,correlation=bm.birds,method="ML")
+malli4 <- gls(accuracy ~ Prev, data = resPA,correlation=bm.birds,method="ML")
+malli5 <- gls(accuracy ~ Mig + Hab, data = resPA,correlation=bm.birds,method="ML")
+malli6 <- gls(accuracy ~ Hab + log(Mass), data = resPA,correlation=bm.birds,method="ML")
+malli7 <- gls(accuracy ~ Mig + log(Mass), data = resPA,correlation=bm.birds,method="ML")
+malli8 <- gls(accuracy ~ log(Mass)+Prev, data = resPA,correlation=bm.birds,method="ML")
+malli9 <- gls(accuracy ~ Mig +Prev, data = resPA,correlation=bm.birds,method="ML")
+malli10 <- gls(accuracy ~ Hab+Prev, data = resPA,correlation=bm.birds,method="ML")
+malli11 <- gls(accuracy ~ Mig + Hab + log(Mass), data = resPA,correlation=bm.birds,method="ML")
+malli12 <- gls(accuracy ~ Mig + Hab + Prev, data = resPA,correlation=bm.birds,method="ML")
+malli13 <- gls(accuracy ~ Mig + Prev + log(Mass), data = resPA,correlation=bm.birds,method="ML")
+malli14 <- gls(accuracy ~ Prev + Hab + log(Mass), data = resPA,correlation=bm.birds,method="ML")
+malli15 <- gls(accuracy ~ Mig + Hab + log(Mass)+Prev, data = resPA,correlation=bm.birds,method="ML")
+
+#mallin valintaa MuMin paketin avulla
+output1<-model.sel(malli0,malli1,malli2,malli3,malli4,malli5,malli6,malli7,malli8,malli9,malli10,malli11,malli12,malli13,malli14,malli15) 
+
+# AICc Table
+output1
+```
+
+
+
+
+
+Mallinvalinnasta AIC-arvojen avulla voi lukea [täältä](http://webhome.auburn.edu/~tds0009/PDFs/arnold%20et%20al.%202010.pdf). Tosin tämän artikkelin mukaan olisin ehkä ennemmin vertaillut weights-arvoja. Lainaus: "If the primary objective of modeling is to evaluate the relative importance of many potential predictor variables, such as in many habitat selection
+studies, then summing Akaike model weights across all models that include that variable can be a useful approach."
+
+```{r error=T}
+#tehdään model averaging
+topmodels = get.models(output1,subset=delta<4)
+summary(model.avg(topmodels, revised.var = TRUE))
+```
+
+
+
+```{r error=T}
+# sovitetaan malli uudestaan REML asetuksilla
+malli0 <- gls(pool_pa_change ~ 1, data = results,correlation=bm.birds,method="REML")
+
+summary(malli0)
+
+op<-par(mfrow=c(2,3),mar=c(5,4,1,2))
+plot(malli0,add.smooth = F,which =1)
+E<-resid(malli0)
+hist(E, xlab = "residuals",main = "")
+plot(results$Prev,E,xlab = "prevalence",ylab="residuals")
+plot(results$Hab,E,xlab = "habitat",ylab="residuals")
+plot(results$Mig,E,xlab = "migration",ylab="residuals")
+plot(results$logmass,E,xlab = "logMass",ylab="residuals")
+par(op)
+```
+
+
+
+
+
+**Huom!** Otson koodissa fylogenia rakennetaan "corPagel" asetuksilla. Tällä ei kai käytännössä kuitenkaan ole suurta eroa corBrownian-asetukseen.
+
+**Huom!** Mallien sovittaminen REML-asetuksilla ei aiheuta muutosta tuloksiin. Nollamalli oli entistä selvemmällä erolla parhain malli. Päädyttiin siihen, että mallin valinta tulisi tehdä kuitenkin ML-asetuksella.
+
+
+
+### 4.4.2 Abu-aineistolle
+
+Abu-aineistossa on muutama NA-havainto, joka monimutkaistaa koodaamista. Gls-mallit toimivat kyllä NA-havaintojenkin kanssa (na.action="na.omit", huom: "na.exclude" ei toimi tässä) mutta fylogenia puu sisältää kaksi lajia liikaa (pohjansirkku ja pyy). Fylogenia puuta on siis muokattava. Edit: Tein tämän jo koodin alussa. Näissä malleissa käytetään siis fylogeniana 'bm.birds2'-fylogeniaa, jossa vain 118 lajia.
+
+
+```{r error=T}
+#luodaan eri mallivaihtoehtoja
+malli0 <- gls(accuracy ~ 1, data = resABU,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli1 <- gls(accuracy ~ Mig, data = resABU,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli2 <- gls(accuracy ~ Hab, data = resABU,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli3 <- gls(accuracy ~ logmass, data = resABU,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli4 <- gls(accuracy ~ Prev, data = resABU,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli5 <- gls(accuracy ~ Mig + Hab, data = resABU,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli6 <- gls(accuracy ~ Hab + logmass, data = resABU,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli7 <- gls(accuracy ~ Mig + logmass, data = resABU,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli8 <- gls(accuracy ~ logmass + Prev, data = resABU,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli9 <- gls(accuracy ~ Mig + Prev, data = resABU,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli10 <- gls(accuracy ~ Hab + Prev, data = resABU,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli11 <- gls(accuracy ~ Mig + Hab + logmass, data = resABU,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli12 <- gls(accuracy ~ Mig + Hab + Prev, data = resABU,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli13 <- gls(accuracy ~ Mig + Prev + logmass, data = resABU,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli14 <- gls(accuracy ~ Prev + Hab + logmass, data = resABU,correlation=bm.birds2,method="ML",na.action="na.omit")
+malli15 <- gls(accuracy ~ Mig + Hab + logmass+Prev, data = resABU,correlation=bm.birds2,method="ML",na.action="na.omit")
+
+#mallin valintaa MuMin paketin avulla
+output1<-model.sel(malli0,malli1,malli2,malli3,malli4,malli5,malli6,malli7,malli8,malli9,malli10,malli11,malli12,malli13,malli14,malli15) 
+
+# AICc Table
+output1
+```
+
+
+
+```{r error=T}
+#tehdään model averaging
+topmodels = get.models(output1,subset=delta<4)
+summary(model.avg(topmodels, revised.var = TRUE))
+```
+
+
+
+```{r error=T}
+#sovitetaan malli uudestaan REML asetuksilla
+malli_final <- gls(accuracy ~ Prev, data = resABU,correlation=bm.birds2,method="REML",na.action="na.omit")
+summary(malli_final)
+```
+
+Mitäpä tästä mallista nyt sanoisi? Selittääkö se mitään vai ei?
+
+Mallin validointi:
+
+```{r error=T}
+#plottaus ei toimi jos aineistoissa on eri määrä havaintoja
+results2=subset(results,species!="Emberiza_rustica" & species!="Bonasa_bonasia")
+
+#seuraavaksi mallin validointia kuvaajista
+op<-par(mfrow=c(2,3),mar=c(5,4,1,2))
+plot(malli_final)
+E<-resid(malli_final)
+hist(E, xlab = "residuals",main = "")
+plot(results2$Prev,E,xlab = "prevalence",ylab="residuals")
+plot(results2$Hab,E,xlab = "habitat",ylab="residuals")
+plot(results2$Mig,E,xlab = "migration",ylab="residuals")
+plot(results2$logmass,E,xlab = "logMass",ylab="residuals")
+par(op)
+
+qqnorm(E)
+qqline(E)
+```
+
+
+
+Residuaalien ja sovitettujen arvojen tulkinnasta lisää [täällä](https://online.stat.psu.edu/stat462/node/120/).
+
+
+
+

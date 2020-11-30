@@ -1,0 +1,840 @@
+---
+title: "part3"
+author: "me"
+date: "12 joulukuuta 2019"
+output: html_document
+---
+
+# 3. Poolaus
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+paketit<-c("readr","tidyr","plyr","dplyr","magrittr","purrr","data.table","plotrix","jtools","sp","GISTools","rgdal","sf","spatialEco","ggplot2","lme4","nlme","ggpubr","rstatix","Rmisc","gdata")
+lapply(paketit,library,character.only=T)
+```
+
+## 3.1 Presence/absence -aineisto
+
+
+### 3.1.1 Aineisto sisälle ja periodien keskiarvojen lasku
+Luetaan havainnot ja ennusteet sisään ja lasketaan kullekin lajille periodien 1 ja 2 ennustettujen ja todellisten esiintymistodennäköisyyksien reittikohtaiset keskiarvot.
+
+```{r }
+getwd()
+localDir = "."
+PredictionDir = file.path(localDir, "data")
+
+samples = 1000
+thin = 1000 #muista vaihtaa tämä!!
+nChains = 4
+modeltype = 1 #1 on pa-aineistolle
+
+#model 1: data until 2006; model 2: full data
+#mpred1: posterior mean based on model 1; mpred2: posterior mean based on model 2
+
+filename = file.path(PredictionDir, paste("predictions_",c("pa","abundance")[modeltype],
+                                          "_chains_",as.character(nChains),"_thin_", as.character(thin),"_samples_", as.character(samples),
+                                          ".Rdata",sep = ""))
+load(filename) #mpred1, mpred2, Y, studyDesign
+routes=levels(studyDesign$Route)
+nr=length(routes)
+years=levels(studyDesign$Year)
+ns=dim(mpred1)[2]
+
+#määritellään periodit 
+period1=(studyDesign$Year=="Year_1996" | studyDesign$Year=="Year_1997" | studyDesign$Year=="Year_1998" | studyDesign$Year=="Year_1999")
+period2=(studyDesign$Year=="Year_2013" | studyDesign$Year=="Year_2014" | studyDesign$Year=="Year_2015" | studyDesign$Year=="Year_2016")
+
+#valitaan ennusteista ja havainnoista oikeat vuodet
+pm1p1=mpred1[period1,]  
+pm1p2=mpred1[period2,] #pm1p2 = predictions by model 1 to period 2
+
+y1=Y[period1,]
+y2=Y[period2,]
+
+#lasketaan kuinka monta kertaa kullakin linjalla on k?yty
+sd1 = studyDesign[period1,]
+sd2 = studyDesign[period2,]
+
+visits1 = rep(NA,nr)
+visits2 = rep(NA,nr)
+for (i in 1:nr){
+  visits1[i] = sum(sd1$Route==routes[i])
+  visits2[i] = sum(sd2$Route==routes[i])
+}
+
+#lasketaan kullekin linjalle (jolla on käyty kahdesti kummankin periodin aikana, yhteensä 264 kpl) keskiarvot periodeittain
+#havainnot ja ennusteet erikseen, periodit 1 ja 2 erikseen
+selroutes = routes[which(visits1>=2 & visits2>=2)]
+nsr = length(selroutes)
+
+Ap1=matrix(NA,nrow = nsr,ncol = ns)
+Ap2=matrix(NA,nrow = nsr,ncol = ns)
+Ay1=matrix(NA,nrow = nsr,ncol = ns)
+Ay2=matrix(NA,nrow = nsr,ncol = ns)
+
+for (i in 1:nsr){
+  take1 = which(sd1$Route == selroutes[i] )
+  take2 = which(sd2$Route == selroutes[i] )
+  Ap1[i,] = colMeans(pm1p1[take1,])
+  Ap2[i,] = colMeans(pm1p2[take2,]) 
+  Ay1[i,] = colMeans(y1[take1,]) #Suomen vesilinnut vain NA:ta
+  Ay2[i,] = colMeans(y2[take2,])
+}
+```
+
+Kolme reittiä taitaa olla Suomessa, joten niiden kohdalla vesilintujen havainnot ovat NA:ta.
+
+
+### 3.1.2 Koordinaattien lisääminen 
+
+Seuraavaksi liitetään kuhunkin reittiin koordinaatit.
+
+```{r}
+#lisätään kullekin linjalle koordinaatit
+routeyear<-read.csv("studydesign.csv",header=T,sep=",")
+xy<-read.csv("xy.csv",header=T,sep=",")
+
+#koordinaateista puuttuu nollia
+xy<-xy%>%
+  mutate(x = x * 1000) %>%
+  mutate(y = y * 1000) 
+
+#jotta koordinaatit saa liitettyä oikealle linjalle, tehdään taulukko, jossa reiteillä on molemmat koodaukset (alkuperäiset ja 1-2591)
+Route<-unique(routeyear$Route)
+routeid<-c(1:2591)
+d<-data.frame(Route,routeid)
+
+#matriisit on muutettava dataframeiksi
+Ap1=as.data.frame(Ap1)  
+Ap1=cbind(selroutes,Ap1)
+setnames(Ap1,"selroutes","Route")
+
+Ap2=as.data.frame(Ap2)
+Ap2=cbind(selroutes,Ap2)
+setnames(Ap2,"selroutes","Route")
+
+Ay1=as.data.frame(Ay1)
+Ay1=cbind(selroutes,Ay1)
+setnames(Ay1,"selroutes","Route")
+
+Ay2=as.data.frame(Ay2)
+Ay2=cbind(selroutes,Ay2)
+setnames(Ay2,"selroutes","Route")
+
+#lisätään havaintoihin ja ennusteisiin ensin oikeat reittikoodit (1-2591)
+Ap1<-left_join(Ap1,d,by="Route")
+Ap2<-left_join(Ap2,d,by="Route")
+Ay1<-left_join(Ay1,d,by="Route")
+Ay2<-left_join(Ay2,d,by="Route")
+
+#...ja vihdoin myös koordinaatit
+Ap1<-left_join(Ap1,xy,by=c("routeid"="route"))
+Ap2<-left_join(Ap2,xy,by=c("routeid"="route"))
+Ay1<-left_join(Ay1,xy,by=c("routeid"="route"))
+Ay2<-left_join(Ay2,xy,by=c("routeid"="route"))
+```
+Ylläolevaa koodin pätkää voi vielä siloitella jos on aikaa.
+
+Tallennan havainnot ja ennusteet, jolloin poolausta on helpompi tarkistaa GIS:llä.
+
+```{r}
+#tallenna tiedot
+write.csv(Ay1,"pa_obs_per1.csv",row.names = F)
+write.csv(Ay2,"pa_obs_per2.csv",row.names = F)
+write.csv(Ap1,"pa_pred_per1.csv",row.names = F)
+write.csv(Ap2,"pa_pred_per2.csv",row.names = F)
+```
+
+
+### 3.1.3 Poolaus
+
+Kootaan reitit 50 km x 50 km (tai 100x100 km) ruutuihin, eli lasketaan todelliset ja ennustetut esiintymistodennäköisyydet kaikkien yhteen ruutuun sijoittuvien reittien periodien keskiarvojen keskiarvoina.  
+
+Luetaan ensin kaikki aineisto koordinaatteineen sisälle.  
+Ay1 ja 2 ovat todellisia havaintoja, periodeittain. Ap1 ja 2 ovat ennusteita.
+
+```{r}
+#luetaan sisään reitit, havainnot ja ennusteet
+coordinates(Ay1)<-c("x","y")
+plot(Ay1)
+proj4string(Ay1) <-CRS("+init=EPSG:3035")
+
+coordinates(Ay2)<-c("x","y")
+proj4string(Ay2) <-CRS("+init=EPSG:3035")
+
+coordinates(Ap1)<-c("x","y")
+proj4string(Ap1) <-CRS("+init=EPSG:3035")
+
+coordinates(Ap2)<-c("x","y")
+proj4string(Ap2) <-CRS("+init=EPSG:3035")
+```
+
+Gridit olen tehnyt jo aiemmin QGis:llä. 
+
+```{r}
+gridi<- readOGR(dsn="./gridit", layer="grid50km")
+#gridi<- readOGR(dsn="./gridit", layer="grid100km")
+proj4string(gridi)
+plot(gridi)
+```
+
+Itse poolaus tapahtuu niin, että liitetään kuhunkin reittiin tieto, millä gridin ruudulla (id-numero) se on, jonka jälkeen ryhmitellään kaikki reitit gridiruuduittain ja lasketaan niille keskiarvot. Tallennan taas kaikki tiedot niin, että ne on helppo lukea ja tarkistaa GIS:llä.
+
+
+```{r}
+#liitetään kuhunkin reittiin tieto, millä gridin ruudulla se on
+pts.poly <- point.in.poly(Ay1, gridi)
+data<-as.data.frame(pts.poly)
+
+#ryhmitelään linjat gridiruuduittain ja lasketaan keskiarvot kullekin sarakkeelle, eli lajeittain.
+data%>%
+  group_by(grid_id) %>%
+  summarise_at(vars(-Route), list(~mean(., na.rm=T))) %>% #jos jollain lajilla on yhdellä linjalla NA:ta se ei vaikuta keskiarvon laskemiseen. 
+  write.csv(.,file = "pool_pa_obs_per1.csv",row.names=F)
+
+#ja sama muille aineistoille
+pts.poly <- point.in.poly(Ay2, gridi)
+data<-as.data.frame(pts.poly)
+data%>%
+  group_by(grid_id) %>%
+  summarise_at(vars(-Route), list(~mean(., na.rm=T))) %>%
+  write.csv(.,file = "pool_pa_obs_per2.csv",row.names=F)
+
+pts.poly <- point.in.poly(Ap1, gridi)
+data<-as.data.frame(pts.poly)
+data%>%
+  group_by(grid_id) %>%
+  summarise_at(vars(-Route), list(~mean(., na.rm=T))) %>%
+  write.csv(.,file = "pool_pa_pred_per1.csv",row.names=F)
+
+pts.poly <- point.in.poly(Ap2, gridi)
+data<-as.data.frame(pts.poly)
+data%>%
+  group_by(grid_id) %>%
+  summarise_at(vars(-Route), list(~mean(., na.rm=T))) %>%
+  write.csv(.,file = "pool_pa_pred_per2.csv",row.names=F)
+```
+
+### 3.1.4 Poolatut ennustustarkkuudet
+
+Lopulta lasketaan uudestaan ennustustarkkuudet poolatuilla arvoilla. Toistaiseksi vain metodilla D.
+
+Luetaan aineisto takaisin sisään ja siivotaan sitä hieman:
+
+```{r}
+#luetaan aineisto takaisin sisään
+paY1<-read.csv("pool_pa_obs_per1.csv",header=T,sep=",")
+paY2<-read.csv("pool_pa_obs_per2.csv",header=T,sep=",")
+papred1<-read.csv("pool_pa_pred_per1.csv",header=T,sep=",")
+papred2<-read.csv("pool_pa_pred_per2.csv",header=T,sep=",")
+
+#heivataan turhat sarakkeet
+names(paY1)
+drops <- c("routeid","left","top","right","bottom","coords.x1","coords.x2")
+paY1<-paY1[ , !(names(paY1) %in% drops)]
+paY2<-paY2[ , !(names(paY2) %in% drops)]
+papred1<-papred1[ , !(names(papred1) %in% drops)]
+papred2<-papred2[ , !(names(papred2) %in% drops)]
+
+#korjataan sarakkeiden lajinimet kunnollisiksi
+a<-colnames(Y)
+b<-"grid_id"
+a<-c(b,a)
+
+names(paY1)<-a
+names(paY2)<-a
+names(papred1)<-a
+names(papred2)<-a
+```
+
+Lasketaan periodien välinen muutos havainnoille ja ennusteille ja näiden korrelaatiot. (primitiivinen koodaus, voi parannella myöhemmin..)
+
+```{r}
+#lasketaan erotukset periodin 1 ja 2 välilä
+#pa
+#obs
+pacounts_gather<-gather(paY1,key="Yspecies",value="Yper1",Acrocephalus_palustris:Vanellus_vanellus)
+pacounts_gather2<-gather(paY2,key="Yspecies",value="Yper2",Acrocephalus_palustris:Vanellus_vanellus)
+payhd<-left_join(pacounts_gather,pacounts_gather2,by=c("grid_id"="grid_id","Yspecies"="Yspecies"))
+payhd$difY<-payhd$Yper2-payhd$Yper1
+
+#pred
+papred_gather<-gather(papred1,key="Pspecies",value="Pper1",Acrocephalus_palustris:Vanellus_vanellus)
+papred_gather2<-gather(papred2,key="Pspecies",value="Pper2",Acrocephalus_palustris:Vanellus_vanellus)
+payhdPred<-left_join(papred_gather,papred_gather2,by=c("grid_id"="grid_id","Pspecies"="Pspecies"))
+payhdPred$difPred<-payhdPred$Pper2-payhdPred$Pper1
+
+#yhdistetään tulokset, havainnot ja ennusteet samaan dataframeen
+paKor<-left_join(payhd,payhdPred,by=c("grid_id"="grid_id","Yspecies"="Pspecies"))
+keep<-c("Yspecies","difPred","difY")
+paKor<-paKor[,keep,drop=F]
+
+#lasketaan korrelaatiot
+paKor %>%
+  group_by(Yspecies) %>%
+  dplyr::summarise(pool_pa_change= cor(difPred, difY, use= "na.or.complete"))%T>%
+  write.csv('pa_pool50_results.csv',row.names=F)
+```
+
+## 3.2 Abundance -aineisto
+
+Tehdään sama proseduuri myös abu-aineistolle.
+
+### 3.2.1 Aineisto sisälle ja periodien keskiarvojen lasku
+
+```{r}
+modeltype = 2 #2 on abu-aineistolle
+
+#model 1: data until 2006; model 2: full data
+#mpred1: posterior mean based on model 1; mpred2: posterior mean based on model 2
+
+filename = file.path(PredictionDir, paste("predictions_",c("pa","abundance")[modeltype],
+                                          "_chains_",as.character(nChains),"_thin_", as.character(thin),"_samples_", as.character(samples),
+                                          ".Rdata",sep = ""))
+load(filename) #mpred1, mpred2, Y, studyDesign
+routes=levels(studyDesign$Route)
+nr=length(routes)
+years=levels(studyDesign$Year)
+ns=dim(mpred1)[2]
+
+period1=(studyDesign$Year=="Year_1996" | studyDesign$Year=="Year_1997" | studyDesign$Year=="Year_1998" | studyDesign$Year=="Year_1999")
+period2=(studyDesign$Year=="Year_2013" | studyDesign$Year=="Year_2014" | studyDesign$Year=="Year_2015" | studyDesign$Year=="Year_2016")
+
+pm1p1=mpred1[period1,]
+pm1p2=mpred1[period2,] #pm1p2 = predictions by model 1 to period 2
+
+y1=Y[period1,]
+y2=Y[period2,]
+
+sd1 = studyDesign[period1,]
+sd2 = studyDesign[period2,]
+
+visits1 = rep(NA,nr)
+visits2 = rep(NA,nr)
+for (i in 1:nr){
+  visits1[i] = sum(sd1$Route==routes[i])
+  visits2[i] = sum(sd2$Route==routes[i])
+}
+
+# lasketaan kullekin linjalle (jolla on k?yty kahdesti kummankin periodin aikana) keskiarvot periodeittain
+#havainnot ja ennusteet erikseen
+selroutes = routes[which(visits1>=2 & visits2>=2)]
+nsr = length(selroutes)
+
+Ap1=matrix(NA,nrow = nsr,ncol = ns)
+Ap2=matrix(NA,nrow = nsr,ncol = ns)
+Ay1=matrix(NA,nrow = nsr,ncol = ns)
+Ay2=matrix(NA,nrow = nsr,ncol = ns)
+
+for(j in 1:ns){
+  for (i in 1:nsr){
+    take1 = which(sd1$Route == selroutes[i] & y1[,j]>-1) 
+    take2 = which(sd2$Route == selroutes[i] & y2[,j]>-1)
+    Ap1[i,j] = mean(pm1p1[take1,j]) #ei laske ennusteille keskiarvoa niiltä linjoilta, jotka ovat havainnoissa NA
+    Ap2[i,j] = mean(pm1p2[take2,j]) 
+    Ay1[i,j] = mean(y1[take1,j], na.rm=T) #NA:t jätetään huomiotta keskiarvoa laskettaessa
+    Ay2[i,j] = mean(y2[take2,j], na.rm=T)
+  }}
+```
+
+### 3.2.2 Koordinaattien lisääminen
+
+```{r}
+#matriisit on muutettava dataframeiksi
+Ap1=as.data.frame(Ap1)  
+Ap1=cbind(selroutes,Ap1)
+setnames(Ap1,"selroutes","Route")
+
+Ap2=as.data.frame(Ap2)
+Ap2=cbind(selroutes,Ap2)
+setnames(Ap2,"selroutes","Route")
+
+Ay1=as.data.frame(Ay1)
+Ay1=cbind(selroutes,Ay1)
+setnames(Ay1,"selroutes","Route")
+
+Ay2=as.data.frame(Ay2)
+Ay2=cbind(selroutes,Ay2)
+setnames(Ay2,"selroutes","Route")
+
+#lisätään havaintoihin ja ennusteisiin ensin oikeat reittikoodit (1-2591)
+Ap1<-left_join(Ap1,d,by="Route")
+Ap2<-left_join(Ap2,d,by="Route")
+Ay1<-left_join(Ay1,d,by="Route")
+Ay2<-left_join(Ay2,d,by="Route")
+
+#...ja koordinaatit
+Ap1<-left_join(Ap1,xy,by=c("routeid"="route"))
+Ap2<-left_join(Ap2,xy,by=c("routeid"="route"))
+Ay1<-left_join(Ay1,xy,by=c("routeid"="route"))
+Ay2<-left_join(Ay2,xy,by=c("routeid"="route"))
+
+#save observations and predictions for pooling in GIS
+write.csv(Ay1,"abu_obs_per1.csv",row.names = F)
+write.csv(Ay2,"abu_obs_per2.csv",row.names = F)
+write.csv(Ap1,"abu_pred_per1.csv",row.names = F)
+write.csv(Ap2,"abu_pred_per2.csv",row.names = F)
+```
+
+### 3.2.3 Poolaus
+
+```{r}
+#luetaan sisään reitit koordinaatteineen
+coordinates(Ay1)<-c("x","y")
+proj4string(Ay1) <-CRS("+init=EPSG:3035")
+
+coordinates(Ay2)<-c("x","y")
+proj4string(Ay2) <-CRS("+init=EPSG:3035")
+
+coordinates(Ap1)<-c("x","y")
+proj4string(Ap1) <-CRS("+init=EPSG:3035")
+
+coordinates(Ap2)<-c("x","y")
+proj4string(Ap2) <-CRS("+init=EPSG:3035")
+
+#join data based on polygons
+pts.poly <- point.in.poly(Ay1, gridi)
+data<-as.data.frame(pts.poly)
+data%>%
+  group_by(grid_id) %>%
+  summarise_at(vars(-Route), list(~mean(., na.rm=T))) %>% #NA:t eivät vaikuta laskuihin
+  write.csv(.,file = "pool_abu_obs_per1.csv",row.names=F,na="")
+
+pts.poly <- point.in.poly(Ay2, gridi)
+data<-as.data.frame(pts.poly)
+data%>%
+  group_by(grid_id) %>%
+  summarise_at(vars(-Route), list(~mean(., na.rm=T))) %>%
+  write.csv(.,file = "pool_abu_obs_per2.csv",row.names=F,na="")
+
+pts.poly <- point.in.poly(Ap1, gridi)
+data<-as.data.frame(pts.poly)
+data%>%
+  group_by(grid_id) %>%
+  summarise_at(vars(-Route), list(~mean(., na.rm=T))) %>%
+  write.csv(.,file = "pool_abu_pred_per1.csv",row.names=F,na="")
+
+pts.poly <- point.in.poly(Ap2, gridi)
+data<-as.data.frame(pts.poly)
+data%>%
+  group_by(grid_id) %>%
+  summarise_at(vars(-Route), list(~mean(., na.rm=T))) %>%
+  write.csv(.,file = "pool_abu_pred_per2.csv",row.names=F,na="")
+```
+
+### 3.2.4 Poolatut ennustustarkkuudet
+
+Aineiston siivous:
+
+(Huom! Koodissa olioiden nimissä on hämäävästi 'pa' mutta nämä ovat silti abu-aineistoa.)
+
+```{r}
+paY1<-read.csv("pool_abu_obs_per1.csv",header=T,sep=",")
+paY2<-read.csv("pool_abu_obs_per2.csv",header=T,sep=",")
+papred1<-read.csv("pool_abu_pred_per1.csv",header=T,sep=",")
+papred2<-read.csv("pool_abu_pred_per2.csv",header=T,sep=",")
+
+#heivataan turhat sarakkeet
+drops <- c("routeid","left","top","right","bottom","coords.x1","coords.x2")
+paY1<-paY1[ , !(names(paY1) %in% drops)]
+paY2<-paY2[ , !(names(paY2) %in% drops)]
+papred1<-papred1[ , !(names(papred1) %in% drops)]
+papred2<-papred2[ , !(names(papred2) %in% drops)]
+
+#korjataan sarakkeiden lajinimet kunnollisiksi
+a<-colnames(Y)
+b<-"grid_id"
+a<-c(b,a)
+
+names(paY1)<-a
+names(paY2)<-a
+names(papred1)<-a
+names(papred2)<-a
+```
+
+Muutokset periodien välillä ja korrelaatiot:
+
+```{r}
+#seuraavaksi lasketaan erotukset periodin 1 ja 2 välilä
+#abu
+#obs
+pacounts_gather<-gather(paY1,key="Yspecies",value="Yper1",Acrocephalus_palustris:Vanellus_vanellus)
+pacounts_gather2<-gather(paY2,key="Yspecies",value="Yper2",Acrocephalus_palustris:Vanellus_vanellus)
+payhd<-left_join(pacounts_gather,pacounts_gather2,by=c("grid_id"="grid_id","Yspecies"="Yspecies"))
+payhd$difY<-payhd$Yper2-payhd$Yper1
+
+#pred
+papred_gather<-gather(papred1,key="Pspecies",value="Pper1",Acrocephalus_palustris:Vanellus_vanellus)
+papred_gather2<-gather(papred2,key="Pspecies",value="Pper2",Acrocephalus_palustris:Vanellus_vanellus)
+payhdPred<-left_join(papred_gather,papred_gather2,by=c("grid_id"="grid_id","Pspecies"="Pspecies"))
+payhdPred$difPred<-payhdPred$Pper2-payhdPred$Pper1
+
+#pa
+abuKor<-left_join(payhd,payhdPred,by=c("grid_id"="grid_id","Yspecies"="Pspecies"))
+keep<-c("Yspecies","difPred","difY")
+abuKor<-abuKor[,keep,drop=F]
+
+abuKor %>%
+  group_by(Yspecies) %>%
+  dplyr::summarise(pool_abu_change= cor(difPred, difY, use= "na.or.complete"))%T>%
+  write.csv('abu_pool50_results.csv',row.names=F)
+```
+
+Kuinka moneen havaintopariin poolatut ennustustarkkuudet perustuvat? vieläkö mukana on lajeja, joista vain muutama havainto?
+
+```{r}
+observations=abuKor %>%
+  group_by(Yspecies) %>%
+  dplyr::summarise(Ngrid= length(which(!is.na(difPred))))
+
+observations
+```
+
+Vaikea päätellä, mitkä korrelaatioista on luotettavasti laskettu. **Pohjansirkun poolattu korrelaatio perustuu edelleen vain kolmeen havaintopariin. Sen sijaan pyyn korrelaatio onkin nyt laskettu seitsemästä havaintoparista.** Huomion arvoista on myös se, että esimerkiksi sinirinnan havaintoparit ovat poolatussa aineistossa vain kahdeksan kun taas alkuperäinen korrelaatio on laskettu 34:stä havaintoparista. Poolaaminen voi siis auttaa joidenkin niiden lajien kohdalla, joille on vaikea löytää reittejä, joilla olisi käyty sekä periodi 1:llä että 2:lla. Mutta jos tarkastellaan vain sitä, kuinka harvasta gridiruudusta poolattu korrelaatio on laskettu, jää huomioimatta, että yhden ruudun "takana" voi olla useampia reittejä. Jos rajaksi asettaa saman 10 voi aineistosta pudota lajeja, joista oli useita havaintoja.
+
+
+## 3.3 Poolattujen ennustustarkkuuksien vertailu
+
+### 3.3.1 Aineiston yhdistely
+
+Selvitetään, paransiko poolaus ennustustarkkuuksia. Mikä on poolauksen ja aineistotyypin vaikutus ennustustarkkuuteen?
+
+```{r}
+#kaikki data sisään
+res<-read.csv("results_with_NA.csv")
+pool_pa<-read.csv("pa_pool50_results.csv")
+pool_abu<-read.csv("abu_pool50_results.csv")
+
+#100km gridi
+#pool_pa<-read.csv("pa_pool100_results.csv")
+#pool_abu<-read.csv("abu_pool100_results.csv")
+
+#muokataan taulukoita
+pool_pa$method=as.factor("pool_D")
+pool_pa$pa=as.factor("pa")
+
+pool_abu$method=as.factor("pool_D")
+pool_abu$pa=as.factor("abu")
+
+pool_pa=pool_pa %>% dplyr::rename(species = Yspecies, accuracy = pool_pa_change)
+pool_abu=pool_abu %>% dplyr::rename(species = Yspecies,accuracy = pool_abu_change)
+
+#yhdistetään kaikki tulokset samaan taulukkoon
+res2=rbind(res,pool_abu,pool_pa)
+str(res2)
+summary(res2)
+```
+
+Merkkaan **pohjansirkun ja pyyn poolatun abu-arvon NA:ksi** koska ne edelleen perustuvat vain kolmeen ja seitsemään havaintoon. 
+
+```{r}
+res2$accuracy[res2$species == "Emberiza_rustica" & res2$method == "pool_D" & res2$pa == "abu"] <- NA
+res2$accuracy[res2$species == "Bonasa_bonasia" & res2$method == "pool_D" & res2$pa == "abu"] <- NA
+
+#tallennetaan
+write.csv(res2,"results_and_pooled.csv",row.names=F)
+```
+
+Teen taulukon, jossa on lajikohtaiset ennustustarkkuudet.
+
+```{r}
+traits<-read.csv("traits_table.csv",sep = ";")
+table=res2%>%unite("method",method,pa)%>%spread(method, accuracy)%>%inner_join(.,traits,by="species")
+summary(table)
+write.csv(table,"table.csv")
+```
+
+
+
+### 3.3.2 Aineiston tarkastelu
+
+Tarkastellaan poolattuja ennustustarkkuuksia muihin metodeihin verrattuna:
+
+```{r}
+#plottailua
+ggplot(res2, aes(x = method, y = accuracy, interaction = pa, colour = pa)) + geom_boxplot() 
+```
+
+Valitsen aineistosta vain metodi D:n, poolaamattomat ja poolatut ennustustarkkuudet, ja tarkastelen vain niitä vierekkäin.
+
+```{r}
+res3=subset(res2,method=="D"|method=="pool_D")
+res3$method=drop.levels(res3$method)
+summary(res3)
+ggplot(res3, aes(x = method, y = accuracy, interaction = pa, colour = pa)) + geom_boxplot()
+```
+
+Näyttää siltä, että poolaus on parantanut ennustustarkkuuksia vain hitusen. Tarkastellaan keskiarvoja ja keskivirheitä:  
+
+```{r}
+res3%>%
+  group_by(method,pa) %>%
+  summarise(means=mean(accuracy,na.rm=T),std.errors=std.error(accuracy,na.rm=T))
+```
+
+Nyt aineistossa siis enää vain metodi D:n arvot.
+
+### 3.3.3 Analyysi
+
+Testataan vaikuttaako poolaus ja aineistotyyppi ennustustarkkuuksiin. Käytän samaa sekamallia kuin aikaisemminkin.(En siis vertaile random-rakenteita enää). Laji on random-muuttuja. Aineistona on kuitenkin vain poolaamattomat ja poolatut metodi D:llä lasketut ennustustarkkuudet (ei A,B,C). Onko tämä oikein?
+
+```{r}
+#fixed osan vertailua
+A1=lme(accuracy~method*pa,data=res3,random=~1|species,method="ML",na.action="na.exclude")
+A2=lme(accuracy~method+pa,data=res3,random=~1|species,method="ML",na.action="na.exclude")
+A3=lme(accuracy~method,data=res3,random=~1|species,method="ML",na.action="na.exclude")
+A4=lme(accuracy~pa,data=res3,random=~1|species,method="ML",na.action="na.exclude")
+
+anova(A1,A2)
+AIC(A1,A2,A3,A4)
+
+summary(A1)
+anova(A1)
+```
+
+Interaktio näyttäisi olevan merkitsevä.
+
+```{r}
+#lopullinen malli
+A1_final=lme(accuracy~method*pa,data=res3,random=~1|species,method="REML",na.action="na.exclude")
+summary(A1_final)
+```
+
+Mallin validointi residuaaleilla:
+
+```{r}
+#validointi
+plot(A1_final)
+
+E1=resid(A1_final, type="normalized")
+F1=fitted(A1_final)
+
+par(mfrow=c(2,2), mar=c(5,5,2,2))
+plot(x=F1,y=E1,xlab="fitted",ylab="residuals")
+abline(h=0,lty=2)
+boxplot(E1~method,xlab="method",ylab="residuals",data=res3)
+abline(h=0,lty=2)
+boxplot(E1~pa,xlab="pa",ylab="residuals",data=res3)
+abline(h=0,lty=2)
+par(mfrow=c(1,1), mar=c(5,5,2,2))
+boxplot(E1~species,xlab="species",ylab="residuals",data=res3)
+abline(h=0,lty=2)
+```
+
+Eli tässäkin on tuloksena, että poolauksen ja aineistotyypin yhdistelmä vaikuttavat ennustustarkkuuteen. Residuaalit ihan ok. Mutta erothan ovat ihan minimaalisia verrattuna muuhun aineistoon.
+
+
+### 3.3.4 Muita testailuja
+
+#### 3.3.4.1 ANOVA
+
+```{r}
+#the test
+res.aov <- anova_test(
+  data = res3, dv = accuracy, wid = species,
+  within = c(pa, method)
+  )
+get_anova_table(res.aov)
+```
+
+```{r}
+# Effect of method at both data types
+one.way <- res3 %>%
+  group_by(pa) %>%
+  anova_test(dv = accuracy, wid = species, within = method) %>%
+  get_anova_table() %>%
+  adjust_pvalue(method = "bonferroni")
+one.way
+```
+
+Sekä pa että abu aineistolla metodilla on väliä.
+
+```{r}
+# Pairwise comparisons between methods
+pwc <- res3 %>%
+  group_by(pa) %>%
+  pairwise_t_test(
+    accuracy ~ method, paired = TRUE,
+    p.adjust.method = "bonferroni"
+    )
+pwc
+```
+
+Sama tulos kuin yllä koska vain kaksi metodia vertailtavana.
+
+```{r}
+# Pairwise comparisons between data types
+pwc <- res3 %>%
+  group_by(method) %>%
+  pairwise_t_test(
+    accuracy ~ pa, paired = TRUE,
+    p.adjust.method = "bonferroni"
+    )
+pwc
+```
+
+Aineistotyypillä sen sijaan ei ole niin suurta vaikutusta. Oli aineisto poolattu tai ei, kummatkin aineistotyypit, sekä pa että abu, antavat yhtä "huonoja" ennustustarkkuuksia.
+
+```{r}
+#visualization
+bxp <- ggboxplot(
+  res3, x = "method", y = "accuracy",
+  color = "pa", palette = "jco"
+  )
+bxp
+```
+
+
+```{r}
+# Visualization: box plots with p-values
+pwc <- pwc %>% add_xy_position(x = "method")
+bxp + 
+  stat_pvalue_manual(pwc, tip.length = 0, hide.ns = TRUE) +
+  labs(
+    subtitle = get_test_label(res.aov, detailed = TRUE),
+    caption = get_pwc_label(pwc)
+  )
+```
+
+#### 3.3.4.2 Luottamusvälit
+
+```{r}
+stat <- summarySE(res3, measurevar="accuracy", groupvars=c("method","pa"),na.rm = T)
+stat
+stat$lower=stat$accuracy-stat$ci
+stat$upper=stat$accuracy+stat$ci
+names(stat)[2] <- "Data_type"
+stat$method=revalue(stat$method, c("D"="D", "pool_D"="pooled D"))
+knitr::kable(stat)
+
+pd <- position_dodge(0.2) # move them .05 to the left and right
+# Black error bars - notice the mapping of 'group=supp' -- without it, the error
+# bars won't be dodged!
+
+#ggplot(stat, aes(x=method, y=accuracy, group=Data_type)) + 
+#    geom_errorbar(aes(ymin=accuracy-ci, ymax=accuracy+ci), colour="black", width=.2, position=pd) +
+#    geom_point(aes(shape=Data_type),position=pd, size=4)+
+#    scale_shape_manual(values=c(19,17))+
+#    ylab("Prediction accuracy") +
+##    xlab("Validation method") +
+#    theme_bw() +
+#    theme(legend.justification=c(1,1),
+#          legend.position=c(0.3,0.95),
+#          legend.box.background=element_rect())  +             # Position legend in bottom right
+#    theme(text = element_text(size = 17)) +
+#    labs(fill = "Data type")
+
+ggplot(stat, aes(y=accuracy, x=method,shape=Data_type)) + geom_errorbar(aes(ymin=accuracy-ci, ymax=accuracy+ci), colour="black", width=.2, position=pd) +ylab("Prediction accuracy") +
+    xlab("Validation method") +
+    theme_bw() +
+    theme(legend.justification=c(1,1),
+          legend.position=c(0.3,0.95),
+          legend.box.background=element_rect())  +           
+    theme(text = element_text(size = 20)) +
+    geom_point(position=pd, size=4) +  scale_shape_discrete(name = "Data type", labels = c("abu", "POC")) + scale_shape_manual(values=c(17,19))
+
+ggplot(stat, aes(y=accuracy, x=method,shape=Data_type)) + 
+  geom_errorbar(aes(ymin=accuracy-ci, ymax=accuracy+ci), colour="black", width=.2, position=pd) +
+  ylab("Prediction accuracy") +
+    xlab("Validation method") +
+    theme_bw() +
+    theme(legend.justification=c(1,1),
+          legend.position=c(0.3,0.95),
+          legend.box.background=element_rect())  +             
+    theme(text = element_text(size = 20)) +
+    geom_point(position=pd, size=4) +  
+  scale_shape_discrete(name = "Data type", labels = c("abundance", "occurrence")) + geom_hline(yintercept = 0, linetype="dashed")
+
+ggsave("plot2.png")
+
+```
+
+### 3.3.5 Vanha kuvaaja
+
+Vanha koodi on nyt toistaiseksi vielä tässä mutta alan kääntymään boxplottien puoleen.. Koodi ei toimi ilman muokkausta koska aineisto on nyt eri muodossa.  
+
+Ehkä jokin ylläolevista kuvaajista olisi hyvä.
+
+```{r,eval=FALSE, fig.width=14, fig.height=12}
+#piirretään sama kuvaaja, jossa nyt mukana myös poolatut arvot
+
+#määritetään kuvalle raamit ja nimi
+Line=c(-1,1)
+Line2=c(-1,1)
+Line3=c(0,0)
+
+Line=cbind(Line,Line2)
+Line=cbind(Line,Line3)
+
+Line=as.data.frame(Line)
+
+#pdf("Pooled_Fig1.pdf")
+
+#määrittää 3x3 matriisin johon kuvat piirretään
+layout(matrix(c(1,2,7,3,4,7,5,6,7), 3, 3, byrow = TRUE))
+
+# a)
+plot(pa_B~pa_A,data=res2,xlim=c(-1,1),
+     ylim=c(-1,1),cex.axis=0.8,xlab="Prediction accuracy (A)",
+     ylab="Prediction accuracy (B)")
+lines(Line$Line,Line$Line2,lty="dashed")
+lines(Line$Line,Line$Line3,col="grey",lty="dashed")
+lines(Line$Line3,Line$Line,col="grey",lty="dashed")
+
+text(-0.5,0.8,"a) Distribution",cex=0.8)
+
+
+# b)
+plot(abu_B~abu_A,data=res2,xlim=c(-1,1),
+     ylim=c(-1,1),cex.axis=0.8,xlab="Prediction accuracy (A)",
+     ylab="Prediction accuracy (B)")
+lines(Line$Line,Line$Line2,lty="dashed")
+lines(Line$Line,Line$Line3,col="grey",lty="dashed")
+lines(Line$Line3,Line$Line,col="grey",lty="dashed")
+
+text(-0.5,0.8,"b) Abundance",cex=0.8)
+
+# c)
+plot(pa_D~pa_C,data=res2,xlim=c(-1,1),
+     ylim=c(-1,1),cex.axis=0.8,xlab="Prediction accuracy (C)",
+     ylab="Prediction accuracy (D)")
+lines(Line$Line,Line$Line2,lty="dashed")
+lines(Line$Line,Line$Line3,col="grey",lty="dashed")
+lines(Line$Line3,Line$Line,col="grey",lty="dashed")
+
+text(-0.5,0.8,"c) Distribution, 2 km",cex=0.8)
+
+# d)
+plot(abu_D~abu_C,data=res2,xlim=c(-1,1),
+     ylim=c(-1,1),cex.axis=0.8,xlab="Prediction accuracy (C)",
+     ylab="Prediction accuracy (D)")
+lines(Line$Line,Line$Line2,lty="dashed")
+lines(Line$Line,Line$Line3,col="grey",lty="dashed")
+lines(Line$Line3,Line$Line,col="grey",lty="dashed")
+
+text(-0.5,0.8,"d) Abundance, 2 km",cex=0.8)
+
+# e) 
+plot(pool_pa_change~pa_D,data=res2,xlim=c(-1,1),
+     ylim=c(-1,1),cex.axis=0.8,xlab="Prediction accuracy (D)",
+     ylab="Pooled prediction accuracy (change)")
+lines(Line$Line,Line$Line2,lty="dashed")
+lines(Line$Line,Line$Line3,col="grey",lty="dashed")
+lines(Line$Line3,Line$Line,col="grey",lty="dashed")
+
+text(-0.5,0.8,"e) Distribution, 50 km",cex=0.8)
+
+# f)
+plot(pool_abu_change~abu_D,data=res2,xlim=c(-1,1),
+     ylim=c(-1,1),cex.axis=0.8,xlab="Prediction accuracy (D)",
+     ylab="Pooled prediction accuracy (change)")
+lines(Line$Line,Line$Line2,lty="dashed")
+lines(Line$Line,Line$Line3,col="grey",lty="dashed")
+lines(Line$Line3,Line$Line,col="grey",lty="dashed")
+
+text(-0.5,0.8,"f) Abundance, 50km", cex=0.8)
+
+#dev.off()
+```

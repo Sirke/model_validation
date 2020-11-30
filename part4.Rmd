@@ -319,6 +319,9 @@ output1<-model.sel(malli0,malli1,malli2,malli3,malli4,malli5,malli6,malli7,malli
 
 # AICc Table
 output1
+
+#taulukko wordiin
+write.table(output1, "model_selection_table_pa.csv")
 ```
 
 Sama tulos. Kun katsotaan parhaat AIC < 2 mallit, paras malli ei ole yksinkertaisin. Siksi laajennetaan AIC < 4 ja tehdään model averaging. 
@@ -394,6 +397,9 @@ output1<-model.sel(malli0,malli1,malli2,malli3,malli4,malli5,malli6,malli7,malli
 
 # AICc Table
 output1
+
+#taulukko wordiin
+write.table(output1, "model_selection_table_abu.csv")
 ```
 
 Sama tulos. 
@@ -595,3 +601,32 @@ par(op)
 
 
 Nämä residuaalit näyttävät mielestäni paremmilta kuin alkuperäiset mutta en tiedä onko varianssien sörkkiminen kuinka järkevää. Toisaalta habitaatin residuaalit ovat nyt vastaavasti enemmän pielessä.
+
+### kokeillaan muillekin metodeille
+
+
+```{r eval=FALSE, include=FALSE}
+#aineiston valinta, leväyttäminen ja uudelleen nimeäminen
+res<-read.csv("results_and_pooled.csv")
+res=res[,c(1,4,2,3)]
+
+res %>% 
+  gather(variable, value, -(pa:method)) %>%
+  unite(temp, method, variable) %>%
+  spread(temp, value)
+
+res$method=NULL
+res4=res3 %>% dplyr::rename(pool_pa_change = pa, pool_abu_change = abu)
+
+#lisätään lajiominaisuudet taulukkoon
+traits<-read.csv("traits_table.csv",sep = ";")
+results<-inner_join(res4,traits,by="species")
+str(results)
+
+#uusi muuttuja, massan logaritmi
+results$logmass<-log(results$Mass)
+
+#uusi muuttuja, log-muunnettu prevalenssi
+results$PrevS=log(results$Prev)
+
+```
