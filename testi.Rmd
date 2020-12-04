@@ -1,0 +1,57 @@
+```{r, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+getwd()
+paketit<-c("visreg","nlme","readr","tidyr","plyr","dplyr","magrittr","purrr","ggplot2","ape","geiger","MuMIn","psych","Hmisc","MCMCglmm")
+lapply(paketit,library,character.only=T)
+```
+
+## 4.1 Aineisto sisään ja taulukoiden kokoaminen
+
+Valitsen tarkasteluun vain poolatut ennustustarkkuudet. Järjestelen aineiston eri tavalla (vanhaan koodiin sopivaksi).
+
+```{r }
+#aineiston valinta, leväyttäminen ja uudelleen nimeäminen
+poolres<-read.csv("poolres.csv")
+
+#lisätään lajiominaisuudet taulukkoon
+traits<-read.csv("traits_table.csv",sep = ";")
+results<-inner_join(poolres,traits,by="species")
+str(results)
+results$species=as.factor(results$species)
+
+#uusi muuttuja, massan logaritmi
+results$logmass<-log(results$Mass)
+
+#uusi muuttuja, log-muunnettu prevalenssi
+results$PrevS=log(results$Prev)
+```
+
+
+```{r }
+#jaetaan aineisto pa ja abu aineistoihin
+resPA=subset(results,pa=="pa")
+resABU=subset(results,pa=="abu")
+
+#pa aineisto
+ggplot(resPA, aes(x=Hab, y=accuracy)) + 
+  geom_boxplot(aes(fill=method)) + facet_grid(. ~pool ) +
+  ggtitle("occurrence data")
+
+ggplot(resABU, aes(x=Hab, y=accuracy)) + 
+  geom_boxplot(aes(fill=method)) + facet_grid(. ~pool ) +
+  ggtitle("abundance data")
+```
+
+```{r}
+#luetaan aineisto sisään, Multiphylo eli monta puuta
+linnut <- read.nexus("output.nex")
+#valitaan vain yksi puu, mikä tahansa sadasta
+linnut2<-linnut[[99]]
+#tehdään puusta malliin sopiva fylogeniarakenne
+bm.birds<-inverseA(linnut2)$Ainv
+```
+
+```{r echo=TRUE, results='hide', cache=T}
+m20<- MCMCglmm(accuracy ~ logmass+ method + pool, random=~species, data = resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=13000, burnin=30, thin=10)
+```

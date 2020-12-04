@@ -457,7 +457,7 @@ Tätä pitäisi vielä miettiä, mitä plotataan ja mitä vasten? Alun perin ver
 
 ### 2.3.3 Luottamusvälit
 
-```{r}
+```{r echo = T, results = 'hide', cache=T}
 library(Rmisc)
 stat <- summarySE(res2, measurevar="accuracy", groupvars=c("method","pa"),na.rm = T)
 stat

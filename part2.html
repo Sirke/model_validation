@@ -1089,29 +1089,11 @@ text(-0.5,0.8,&quot;d) Abundance&quot;,cex=0.8)
 <h3>2.3.3 Luottamusvälit</h3>
 <pre class="r"><code>library(Rmisc)
 stat &lt;- summarySE(res2, measurevar=&quot;accuracy&quot;, groupvars=c(&quot;method&quot;,&quot;pa&quot;),na.rm = T)
-stat</code></pre>
-<pre><code>##   method  pa   N    accuracy        sd         se         ci
-## 1      A abu 120 0.405471135 0.1628117 0.01486261 0.02942945
-## 2      A  pa 120 0.574904752 0.1676330 0.01530273 0.03030093
-## 3      B abu 120 0.312797596 0.1870312 0.01707354 0.03380731
-## 4      B  pa 120 0.535540286 0.1797158 0.01640573 0.03248499
-## 5      C abu 118 0.011986434 0.1850550 0.01703570 0.03373830
-## 6      C  pa 120 0.023247787 0.1398196 0.01276373 0.02527346
-## 7      D abu 118 0.002695576 0.1797458 0.01654694 0.03277035
-## 8      D  pa 120 0.023863762 0.1345628 0.01228385 0.02432325</code></pre>
-<pre class="r"><code>stat$lower=stat$accuracy-stat$ci
+stat
+stat$lower=stat$accuracy-stat$ci
 stat$upper=stat$accuracy+stat$ci
-round(stat[,4:9],digits = 3)</code></pre>
-<pre><code>##   accuracy    sd    se    ci  lower upper
-## 1    0.405 0.163 0.015 0.029  0.376 0.435
-## 2    0.575 0.168 0.015 0.030  0.545 0.605
-## 3    0.313 0.187 0.017 0.034  0.279 0.347
-## 4    0.536 0.180 0.016 0.032  0.503 0.568
-## 5    0.012 0.185 0.017 0.034 -0.022 0.046
-## 6    0.023 0.140 0.013 0.025 -0.002 0.049
-## 7    0.003 0.180 0.017 0.033 -0.030 0.035
-## 8    0.024 0.135 0.012 0.024  0.000 0.048</code></pre>
-<pre class="r"><code>names(res2)[4] &lt;- &quot;Data_type&quot;
+round(stat[,4:9],digits = 3)
+names(res2)[4] &lt;- &quot;Data_type&quot;
 names(stat)[2] &lt;- &quot;Data_type&quot;
 
 pd &lt;- position_dodge(0.2) # move them .05 to the left and right

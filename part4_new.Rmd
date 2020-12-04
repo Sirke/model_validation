@@ -14,7 +14,7 @@ Analysoin pa ja abu-aineistot erillään. Edellisissä analyyseissahan aineistot
 knitr::opts_chunk$set(echo = TRUE)
 
 getwd()
-paketit<-c("visreg","nlme","readr","tidyr","dplyr","plyr","magrittr","purrr","ggplot2","ape","geiger","MuMIn","psych","Hmisc")
+paketit<-c("visreg","nlme","readr","tidyr","plyr","dplyr","magrittr","purrr","ggplot2","ape","geiger","MuMIn","psych","Hmisc","MCMCglmm")
 lapply(paketit,library,character.only=T)
 ```
 
@@ -132,190 +132,211 @@ Massa ja yleisyys eivät näytä korreloivan.
 
 BirdTree.org palvelusta on haettu lintujen sukupuu (tai itseasiassa tiedosto sisältää 100 vaihtoehtoista sukupuuta, joista valitaan yksi). 
 
-```{r error=T}
+MCMCglmm-funktio vaatii fylogenian tietyssä rakenteessa:
+ 
+ginverse= a list of sparse inverse matrices (A−1) that are proportional to the covariance
+structure of the random effects. The names of the matrices should correspond
+to columns in data that are associated with the random term. All levels of the
+random term should appear as rownames for the matrices.
+
+```{r}
 #luetaan aineisto sisään, Multiphylo eli monta puuta
 linnut <- read.nexus("output.nex")
 #valitaan vain yksi puu, mikä tahansa sadasta
 linnut2<-linnut[[99]]
-#define a variance-covariance structure based on the model of Brownian evolution
-bm.birds=corBrownian(1,phy=linnut2)
-
-#tehdään fylogenialistasta matriisi
-lintupuu<-vcv.phylo(linnut2)
-#matriisin voi värittää havainnollistamaan lintulajien sukulaisuutta
-heatmap(lintupuu,Rowv = NA,Colv = NA)
-
-#abu-aineistoa varten pari lajia pois, muuten koodi ei toimi
-linnut3=drop.tip(linnut2, "Emberiza_rustica", trim.internal = TRUE, subtree = FALSE,
-         root.edge = 0, rooted = is.rooted(linnut2), collapse.singles = TRUE,
-         interactive = FALSE)
-linnut4=drop.tip(linnut3, "Bonasa_bonasia", trim.internal = TRUE, subtree = FALSE,
-         root.edge = 0, rooted = is.rooted(linnut2), collapse.singles = TRUE,
-         interactive = FALSE)
-bm.birds2=corBrownian(1,phy=linnut4)
-
-#aineiston rivien nimet muutetaan lattareiksi jolloin keskustelee fylogeniapuun kanssa
-rownames(resPA)=resPA$species
-rownames(resABU)=resABU$species
+#tehdään puusta malliin sopiva fylogeniarakenne
+bm.birds<-inverseA(linnut2)$Ainv
 ```
-
-Rivien nimeäminen ei toimi koska sama laji esiintyy useammalla rivillä. Mallien rakentamista varten fylogeniapuussa pitäisi kuitenkin olla rivinimet?
-
-
-"The so called **Brownian motion** (also called random walk or diffusion)
-3191 model of trait evolution, which is the simplest model among the many alternative models of how
-3192 traits might evolve (Beaulieu et al., 2012)."
 
 
 ## 4.4 Analyysit
 
-Selvitetään, vaikuttavatko lajien ominaisuudet (muuttokäyttäytyminen 'Mig', elinympäristö 'Hab', paino 'logMass' tai prevalenssi 'Prev') ennustustarkkuuteen. Analyysissä pitäisi huomioida fylogenia eli, että lajit voivat olla ominaisuuksiltaan samankaltaisia (ja siten omata myös samanlaiset ennustustarkkuudet) läheisen sukulaisuussuhteen takia. 
+Selvitetään, vaikuttavatko lajien ominaisuudet (muuttokäyttäytyminen 'Mig', elinympäristö 'Hab', paino 'logMass' tai prevalenssi 'Prev') ennustustarkkuuteen. Analyysissä pitäisi huomioida fylogenia eli, että lajit voivat olla ominaisuuksiltaan samankaltaisia (ja siten omata myös samanlaiset ennustustarkkuudet) läheisen sukulaisuussuhteen takia. Mukana nyt myös ominaisuuksien mahdolliset yhdysvaikutukset metodin ja poolauksen kanssa.
 
 ### 4.4.1 Pa-aineisto
 
-Luodaan kaikki mahdolliset mallivaihtoehdot, 16 kpl.
+Luodaan mallivaihtoehdot.
 
-```{r error=T}
-#luodaan eri mallivaihtoehtoja
-malli0 <- gls(accuracy ~ 1, data = resPA,correlation=bm.birds,method="ML") #pa-aineistolle bm.birds
-malli1 <- gls(accuracy ~ Mig, data = resPA,correlation=bm.birds,method="ML")
-malli2 <- gls(accuracy ~ Hab, data = resPA,correlation=bm.birds,method="ML")
-malli3 <- gls(accuracy ~ log(Mass), data = resPA,correlation=bm.birds,method="ML")
-malli4 <- gls(accuracy ~ Prev, data = resPA,correlation=bm.birds,method="ML")
-malli5 <- gls(accuracy ~ Mig + Hab, data = resPA,correlation=bm.birds,method="ML")
-malli6 <- gls(accuracy ~ Hab + log(Mass), data = resPA,correlation=bm.birds,method="ML")
-malli7 <- gls(accuracy ~ Mig + log(Mass), data = resPA,correlation=bm.birds,method="ML")
-malli8 <- gls(accuracy ~ log(Mass)+Prev, data = resPA,correlation=bm.birds,method="ML")
-malli9 <- gls(accuracy ~ Mig +Prev, data = resPA,correlation=bm.birds,method="ML")
-malli10 <- gls(accuracy ~ Hab+Prev, data = resPA,correlation=bm.birds,method="ML")
-malli11 <- gls(accuracy ~ Mig + Hab + log(Mass), data = resPA,correlation=bm.birds,method="ML")
-malli12 <- gls(accuracy ~ Mig + Hab + Prev, data = resPA,correlation=bm.birds,method="ML")
-malli13 <- gls(accuracy ~ Mig + Prev + log(Mass), data = resPA,correlation=bm.birds,method="ML")
-malli14 <- gls(accuracy ~ Prev + Hab + log(Mass), data = resPA,correlation=bm.birds,method="ML")
-malli15 <- gls(accuracy ~ Mig + Hab + log(Mass)+Prev, data = resPA,correlation=bm.birds,method="ML")
+```{r echo=TRUE, message=FALSE, cache=T}
+#priori
+prior<-list(R=list(V=1, nu=0.00), G=list(G1=list(V=1, nu=0.00))) #mutta tämä ei nyt ole malleissa mukana (?)
 
-#mallin valintaa MuMin paketin avulla
-output1<-model.sel(malli0,malli1,malli2,malli3,malli4,malli5,malli6,malli7,malli8,malli9,malli10,malli11,malli12,malli13,malli14,malli15) 
+m1<- MCMCglmm(accuracy ~ Hab*method*pool + PrevS*method*pool + Mig*method*pool + logmass*method*pool, random=~species, data = resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-# AICc Table
-output1
+m2<- MCMCglmm(accuracy ~ Hab*method + Hab*pool +PrevS*method + PrevS*pool + Mig*method + Mig*pool + logmass*method + logmass*pool, random=~ species, data = resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+m3<- MCMCglmm(accuracy~ Hab*method +PrevS*method + Mig*method + logmass*method + pool, random=~species, data = resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+m4<- MCMCglmm(accuracy ~ Hab*pool +PrevS*pool + Mig*pool + logmass*pool + method, random=~species, data = resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+m5<- MCMCglmm(accuracy ~ Hab + PrevS + Mig + logmass + method + pool, random=~species, data = resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+m6<- MCMCglmm(accuracy ~ Hab*method +PrevS*method + Mig*method + logmass*method + pool, random=~species, data = resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+m7<- MCMCglmm(accuracy ~ Hab*method +PrevS*method + Mig*method  + pool, random=~species, data = resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+m8<- MCMCglmm(accuracy ~ Hab*method +PrevS*method  + logmass*method + pool, random=~species, data = resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+m9<- MCMCglmm(accuracy ~ Hab*method + Mig*method + logmass*method + pool, random=~species, data = resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+m10<- MCMCglmm(accuracy ~ Prev*method + Mig*method + logmass*method + pool, random=~species, data = resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+m11<- MCMCglmm(accuracy ~ Hab*method +PrevS*method + pool, random=~species, data = resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+m12<- MCMCglmm(accuracy ~ Hab*method + Mig*method  + pool, random=~species, data = 
+resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+m13<- MCMCglmm(accuracy ~ Hab*method + logmass*method + pool, random=~species, data=      resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+m14<- MCMCglmm(accuracy ~ PrevS*method + Mig*method  + pool, random=~species, data = resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+m15<- MCMCglmm(accuracy ~ PrevS*method +  logmass*method + pool, random=~species, data = resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+m16<- MCMCglmm(accuracy ~ Mig*method + logmass*method + pool, random=~species, data = resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+m17<- MCMCglmm(accuracy ~ Hab*method + pool, random=~species, data = resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+m18<- MCMCglmm(accuracy ~ PrevS*method + pool, random=~species, data = resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=103000, burnin=300, thin=100)
+
+m19<- MCMCglmm(accuracy ~ Mig*method  + pool, random=~species, data = resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=103000, burnin=300, thin=100)
+
+m20<- MCMCglmm(accuracy ~ logmass*method + pool, random=~species, data = resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=103000, burnin=300, thin=100)
 ```
 
 
 
+```{r}
+#mallin valintaa MuMin paketin avulla
+output1<-model.sel(m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11,m12,m13,m14,m15,m16,m17,m18,m19,m20) 
+output1
+```
+
+Malli 12, accuracy ~ Hab x method + Mig x method  + pool, on näistä paras. Seuraavaksi paras malli sisältää myös painon ja metodin interaktion.
+
+Malli 12 näyttää tältä:
+
+```{r}
+summary(m12)
+#plot(m12$Sol, auto.layout=F)
+```
+
+Mutta koska aiempi simppelimpi analyysi vihjasi ettei poolauksella ole merkitystä ennustustarkkuuksiin pa-aineistolla, kokeilen vielä mallia, jossa jätän poolauksen pois ja vertaan sitä parhaaseen malliin.
+
+```{r echo = T, results = 'hide', cache=T}
+#mitä jos tiputtaisi vielä poolauksen?
+m21<- MCMCglmm(accuracy ~ Hab*method + Mig*method , random=~species, data = 
+resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+```
+
+```{r}
+output2=model.sel(m12,m21)
+output2
+```
+
+Uusi malli on hitusen parempi, se on simppelimpi (vähemmän parametreja) ja sillä on alempi AICc. 
+
+```{r}
+summary(m21)
+#plot(m21$Sol, auto.layout=F)
+```
+
+Interaktiot metodin kanssa ovat merkitseviä vain C ja D metodeilla. Mitäs jos tiputtaa vielä interaktiot pois?
+
+```{r echo=TRUE, message=FALSE, cache=T}
+#mitä jos tiputtaisi vielä poolauksen?
+m22<- MCMCglmm(accuracy ~ Hab*method + Mig , random=~species, data = 
+resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+m23<- MCMCglmm(accuracy ~ Hab + method*Mig , random=~species, data = 
+resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+```
+
+```{r}
+output3=model.sel(m21,m22,m23)
+output3
+```
+
+Poolauksen voisi siis tiputtaa pois mutta ei interaktioita metodin kanssa. Tuloksia tulkitsisin niin, että muuttokäyttäytymisen suhteen kaikenlaiset linnut ovat vaikeampia ennustaa jos käytämme metodia C tai D.  
 
 
 Mallinvalinnasta AIC-arvojen avulla voi lukea [täältä](http://webhome.auburn.edu/~tds0009/PDFs/arnold%20et%20al.%202010.pdf). Tosin tämän artikkelin mukaan olisin ehkä ennemmin vertaillut weights-arvoja. Lainaus: "If the primary objective of modeling is to evaluate the relative importance of many potential predictor variables, such as in many habitat selection
 studies, then summing Akaike model weights across all models that include that variable can be a useful approach."
 
-```{r error=T}
-#tehdään model averaging
-topmodels = get.models(output1,subset=delta<4)
-summary(model.avg(topmodels, revised.var = TRUE))
-```
-
-
-
-```{r error=T}
-# sovitetaan malli uudestaan REML asetuksilla
-malli0 <- gls(pool_pa_change ~ 1, data = results,correlation=bm.birds,method="REML")
-
-summary(malli0)
-
-op<-par(mfrow=c(2,3),mar=c(5,4,1,2))
-plot(malli0,add.smooth = F,which =1)
-E<-resid(malli0)
-hist(E, xlab = "residuals",main = "")
-plot(results$Prev,E,xlab = "prevalence",ylab="residuals")
-plot(results$Hab,E,xlab = "habitat",ylab="residuals")
-plot(results$Mig,E,xlab = "migration",ylab="residuals")
-plot(results$logmass,E,xlab = "logMass",ylab="residuals")
-par(op)
-```
-
-
-
-
-
-**Huom!** Otson koodissa fylogenia rakennetaan "corPagel" asetuksilla. Tällä ei kai käytännössä kuitenkaan ole suurta eroa corBrownian-asetukseen.
-
-**Huom!** Mallien sovittaminen REML-asetuksilla ei aiheuta muutosta tuloksiin. Nollamalli oli entistä selvemmällä erolla parhain malli. Päädyttiin siihen, että mallin valinta tulisi tehdä kuitenkin ML-asetuksella.
-
-
-
 ### 4.4.2 Abu-aineistolle
 
-Abu-aineistossa on muutama NA-havainto, joka monimutkaistaa koodaamista. Gls-mallit toimivat kyllä NA-havaintojenkin kanssa (na.action="na.omit", huom: "na.exclude" ei toimi tässä) mutta fylogenia puu sisältää kaksi lajia liikaa (pohjansirkku ja pyy). Fylogenia puuta on siis muokattava. Edit: Tein tämän jo koodin alussa. Näissä malleissa käytetään siis fylogeniana 'bm.birds2'-fylogeniaa, jossa vain 118 lajia.
+Vaihdetaan aineistoa. Sama fylogeniarakenne toimii tässäkin vaikka abu-aineistossa C ja D metodeilla on vain 118 havaintoa, eli fylogeniapuussa on pari ylimääräistä oksaa. Aiemmin gls-funktiolla tämä haittasi mallin sovittamista, tässä ilmeisesti ei haittaa.
 
+```{r echo=TRUE, message=FALSE, cache=T}
+m1A<- MCMCglmm(accuracy ~ Hab*method*pool + PrevS*method*pool + Mig*method*pool + logmass*method*pool, random=~species, data = resABU,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-```{r error=T}
-#luodaan eri mallivaihtoehtoja
-malli0 <- gls(accuracy ~ 1, data = resABU,correlation=bm.birds2,method="ML",na.action="na.omit")
-malli1 <- gls(accuracy ~ Mig, data = resABU,correlation=bm.birds2,method="ML",na.action="na.omit")
-malli2 <- gls(accuracy ~ Hab, data = resABU,correlation=bm.birds2,method="ML",na.action="na.omit")
-malli3 <- gls(accuracy ~ logmass, data = resABU,correlation=bm.birds2,method="ML",na.action="na.omit")
-malli4 <- gls(accuracy ~ Prev, data = resABU,correlation=bm.birds2,method="ML",na.action="na.omit")
-malli5 <- gls(accuracy ~ Mig + Hab, data = resABU,correlation=bm.birds2,method="ML",na.action="na.omit")
-malli6 <- gls(accuracy ~ Hab + logmass, data = resABU,correlation=bm.birds2,method="ML",na.action="na.omit")
-malli7 <- gls(accuracy ~ Mig + logmass, data = resABU,correlation=bm.birds2,method="ML",na.action="na.omit")
-malli8 <- gls(accuracy ~ logmass + Prev, data = resABU,correlation=bm.birds2,method="ML",na.action="na.omit")
-malli9 <- gls(accuracy ~ Mig + Prev, data = resABU,correlation=bm.birds2,method="ML",na.action="na.omit")
-malli10 <- gls(accuracy ~ Hab + Prev, data = resABU,correlation=bm.birds2,method="ML",na.action="na.omit")
-malli11 <- gls(accuracy ~ Mig + Hab + logmass, data = resABU,correlation=bm.birds2,method="ML",na.action="na.omit")
-malli12 <- gls(accuracy ~ Mig + Hab + Prev, data = resABU,correlation=bm.birds2,method="ML",na.action="na.omit")
-malli13 <- gls(accuracy ~ Mig + Prev + logmass, data = resABU,correlation=bm.birds2,method="ML",na.action="na.omit")
-malli14 <- gls(accuracy ~ Prev + Hab + logmass, data = resABU,correlation=bm.birds2,method="ML",na.action="na.omit")
-malli15 <- gls(accuracy ~ Mig + Hab + logmass+Prev, data = resABU,correlation=bm.birds2,method="ML",na.action="na.omit")
+m2A<- MCMCglmm(accuracy ~ Hab*method + Hab*pool +PrevS*method + PrevS*pool + Mig*method + Mig*pool + logmass*method + logmass*pool, random=~ species, data = resABU,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
+m3A<- MCMCglmm(accuracy~ Hab*method +PrevS*method + Mig*method + logmass*method + pool, random=~species, data = resABU,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+m4A<- MCMCglmm(accuracy ~ Hab*pool +PrevS*pool + Mig*pool + logmass*pool + method, random=~species, data = resABU,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+m5A<- MCMCglmm(accuracy ~ Hab + PrevS + Mig + logmass + method + pool, random=~species, data = resABU,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+m6A<- MCMCglmm(accuracy ~ Hab*method +PrevS*method + Mig*method + logmass*method + pool, random=~species, data = resABU,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+m7A<- MCMCglmm(accuracy ~ Hab*method +PrevS*method + Mig*method  + pool, random=~species, data = resABU,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+m8A<- MCMCglmm(accuracy ~ Hab*method +PrevS*method  + logmass*method + pool, random=~species, data = resABU,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+m9A<- MCMCglmm(accuracy ~ Hab*method + Mig*method + logmass*method + pool, random=~species, data = resABU,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+m10A<- MCMCglmm(accuracy ~ Prev*method + Mig*method + logmass*method + pool, random=~species, data = resABU,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+m11A<- MCMCglmm(accuracy ~ Hab*method +PrevS*method + pool, random=~species, data = resABU,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+m12A<- MCMCglmm(accuracy ~ Hab*method + Mig*method  + pool, random=~species, data = 
+resABU,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+m13A<- MCMCglmm(accuracy ~ Hab*method + logmass*method + pool, random=~species, data=      resABU,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+m14A<- MCMCglmm(accuracy ~ PrevS*method + Mig*method  + pool, random=~species, data = resABU,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+m15A<- MCMCglmm(accuracy ~ PrevS*method +  logmass*method + pool, random=~species, data = resABU,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+m16A<- MCMCglmm(accuracy ~ Mig*method + logmass*method + pool, random=~species, data = resABU,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+m17A<- MCMCglmm(accuracy ~ Hab*method + pool, random=~species, data = resABU,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+m18A<- MCMCglmm(accuracy ~ PrevS*method + pool, random=~species, data = resABU,family="gaussian",ginverse=list(species=bm.birds),nitt=103000, burnin=300, thin=100)
+
+m19A<- MCMCglmm(accuracy ~ Mig*method  + pool, random=~species, data = resABU,family="gaussian",ginverse=list(species=bm.birds),nitt=103000, burnin=300, thin=100)
+
+m20A<- MCMCglmm(accuracy ~ logmass*method + pool, random=~species, data = resABU,family="gaussian",ginverse=list(species=bm.birds),nitt=103000, burnin=300, thin=100)
+```
+
+```{r}
 #mallin valintaa MuMin paketin avulla
-output1<-model.sel(malli0,malli1,malli2,malli3,malli4,malli5,malli6,malli7,malli8,malli9,malli10,malli11,malli12,malli13,malli14,malli15) 
+output4<-model.sel(m1A,m2A,m3A,m4A,m5A,m6A,m7A,m8A,m9A,m10A,m11A,m12A,m13A,m14A,m15A,m16A,m17A,m18A,m19A,m20A) 
+output4
+```
 
-# AICc Table
-output1
+Malli 10, accuracy ~ Prev x method + Mig x method + logmass x method + pool, on paras. 
+
+Toiseksi paras malli, 14 accuracy ~ PrevS x method + Mig x method  + pool, ei sisällä painoa selittävänä tekijänä.
+
+```{r}
+summary(m10A)
+#plot(m10A$Sol, auto.layout=F)
+```
+
+Kokeilen huvikseen mallia ilman poolausta:
+
+```{r}
+m21A<- MCMCglmm(accuracy ~ Prev*method + Mig*method + logmass*method + pool, random=~species, data = resABU,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 ```
 
 
-
-```{r error=T}
-#tehdään model averaging
-topmodels = get.models(output1,subset=delta<4)
-summary(model.avg(topmodels, revised.var = TRUE))
+```{r}
+output5=model.sel(m10A,m21A)
+output5
 ```
 
 
-
-```{r error=T}
-#sovitetaan malli uudestaan REML asetuksilla
-malli_final <- gls(accuracy ~ Prev, data = resABU,correlation=bm.birds2,method="REML",na.action="na.omit")
-summary(malli_final)
-```
-
-Mitäpä tästä mallista nyt sanoisi? Selittääkö se mitään vai ei?
-
-Mallin validointi:
-
-```{r error=T}
-#plottaus ei toimi jos aineistoissa on eri määrä havaintoja
-results2=subset(results,species!="Emberiza_rustica" & species!="Bonasa_bonasia")
-
-#seuraavaksi mallin validointia kuvaajista
-op<-par(mfrow=c(2,3),mar=c(5,4,1,2))
-plot(malli_final)
-E<-resid(malli_final)
-hist(E, xlab = "residuals",main = "")
-plot(results2$Prev,E,xlab = "prevalence",ylab="residuals")
-plot(results2$Hab,E,xlab = "habitat",ylab="residuals")
-plot(results2$Mig,E,xlab = "migration",ylab="residuals")
-plot(results2$logmass,E,xlab = "logMass",ylab="residuals")
-par(op)
-
-qqnorm(E)
-qqline(E)
-```
-
-
-
-Residuaalien ja sovitettujen arvojen tulkinnasta lisää [täällä](https://online.stat.psu.edu/stat462/node/120/).
 
 
 
