@@ -39,3 +39,6 @@ Formula
 Hmisc
 coda
 MCMCglmm
+bayesplot
+Rcpp
+rstanarm

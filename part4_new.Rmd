@@ -8,19 +8,19 @@ output: html_document
 # 4. Traits analyysi
 
 Selvitetään ovatko tietyt lajiominaisuudet kytköksissä ennustustarkkuuteen.  
-Analysoin pa ja abu-aineistot erillään. Edellisissä analyyseissahan aineistot on analysoitu yhdessä (metodin ja aineistotyypin (pa/abu) interaktio). Meneekö tämä siis oikein?
+Analysoin pa ja abu-aineistot erillään.
 
 ```{r, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
 getwd()
-paketit<-c("visreg","nlme","readr","tidyr","plyr","dplyr","magrittr","purrr","ggplot2","ape","geiger","MuMIn","psych","Hmisc","MCMCglmm")
+paketit<-c("visreg","nlme","readr","tidyr","plyr","dplyr","magrittr","purrr","ggplot2","ape","geiger","MuMIn","psych","Hmisc","MCMCglmm","bayesplot","rstanarm")
 lapply(paketit,library,character.only=T)
 ```
 
 ## 4.1 Aineisto sisään ja taulukoiden kokoaminen
 
-Valitsen tarkasteluun vain poolatut ennustustarkkuudet. Järjestelen aineiston eri tavalla (vanhaan koodiin sopivaksi).
+Log-muunnetaan prevalenssi ja massa.
 
 ```{r }
 #aineiston valinta, leväyttäminen ja uudelleen nimeäminen
@@ -52,16 +52,17 @@ results$PrevS=log(results$Prev)
 
 ## 4.2 Aineiston tarkastelu
 
-Tarkastellaan aineistoa kuvaajista.
-
-Poolattu 50 x 50 km aineisto, pa ja abu, habitat:
+Tarkastellaan aineistoa kuvaajista. Jaetaan aineisto ensin pa ja abu-aineistoihin.
 
 ```{r }
 #jaetaan aineisto pa ja abu aineistoihin
 resPA=subset(results,pa=="pa")
 resABU=subset(results,pa=="abu")
+```
 
-#pa aineisto
+*Habitat*
+
+```{r }
 ggplot(resPA, aes(x=Hab, y=accuracy)) + 
   geom_boxplot(aes(fill=method)) + facet_grid(. ~pool ) +
   ggtitle("occurrence data")
@@ -71,7 +72,7 @@ ggplot(resABU, aes(x=Hab, y=accuracy)) +
   ggtitle("abundance data")
 ```
 
-Migration
+*Migration*
 
 ```{r }
 #pa aineisto
@@ -84,7 +85,7 @@ ggplot(resABU, aes(x=Mig, y=accuracy)) +
   ggtitle("abundance data")
 ```
 
-Prevalence
+*Prevalence*
 
 ```{r }
 #pa aineisto
@@ -101,7 +102,7 @@ ggplot(resABU, aes(x=PrevS, y=accuracy,color=method)) +
   ggtitle("abundance data")
 ```
 
-Mass
+*Mass*
 
 ```{r }
 #pa aineisto
@@ -125,7 +126,7 @@ pairs(results[8:9])
 cor(results$logmass,results$PrevS)
 ```
 
-Massa ja yleisyys eivät näytä korreloivan. 
+Massa ja yleisyys eivät näytä korreloivan suuresti. 
 
 
 ## 4.3 Fylogenia
@@ -157,7 +158,7 @@ Selvitetään, vaikuttavatko lajien ominaisuudet (muuttokäyttäytyminen 'Mig', 
 
 Luodaan mallivaihtoehdot.
 
-```{r echo=TRUE, message=FALSE, cache=T}
+```{r echo=TRUE, results='hide', cache=T}
 #priori
 prior<-list(R=list(V=1, nu=0.00), G=list(G1=list(V=1, nu=0.00))) #mutta tämä ei nyt ole malleissa mukana (?)
 
@@ -203,7 +204,7 @@ m19<- MCMCglmm(accuracy ~ Mig*method  + pool, random=~species, data = resPA,fami
 m20<- MCMCglmm(accuracy ~ logmass*method + pool, random=~species, data = resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=103000, burnin=300, thin=100)
 ```
 
-
+Mumin-paketin model.sel näyttää toimivan myös MCMCglmm-tuotoksen kanssa.
 
 ```{r}
 #mallin valintaa MuMin paketin avulla
@@ -217,12 +218,19 @@ Malli 12 näyttää tältä:
 
 ```{r}
 summary(m12)
-#plot(m12$Sol, auto.layout=F)
+#plot(m12$Sol, auto.layout=F) #printit vie ihan hirveästi tilaa tällä koodilla
+
+#posterior <- as.matrix(m20)
+
+#plot_title <- ggtitle("Posterior distributions","with medians and 80% intervals")
+#mcmc_areas(posterior,
+           #pars = c("logmass", "method", "pool","species"),
+           #prob = 0.8) + plot_title
 ```
 
-Mutta koska aiempi simppelimpi analyysi vihjasi ettei poolauksella ole merkitystä ennustustarkkuuksiin pa-aineistolla, kokeilen vielä mallia, jossa jätän poolauksen pois ja vertaan sitä parhaaseen malliin.
+Koska aiempi simppelimpi analyysi vihjasi ettei poolauksella ole merkitystä ennustustarkkuuksiin pa-aineistolla, kokeilen vielä mallia, jossa jätän poolauksen pois ja vertaan sitä parhaaseen malliin.
 
-```{r echo = T, results = 'hide', cache=T}
+```{r echo=TRUE, results='hide', cache=T}
 #mitä jos tiputtaisi vielä poolauksen?
 m21<- MCMCglmm(accuracy ~ Hab*method + Mig*method , random=~species, data = 
 resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
@@ -242,7 +250,7 @@ summary(m21)
 
 Interaktiot metodin kanssa ovat merkitseviä vain C ja D metodeilla. Mitäs jos tiputtaa vielä interaktiot pois?
 
-```{r echo=TRUE, message=FALSE, cache=T}
+```{r echo=TRUE, results='hide', cache=T}
 #mitä jos tiputtaisi vielä poolauksen?
 m22<- MCMCglmm(accuracy ~ Hab*method + Mig , random=~species, data = 
 resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
@@ -266,7 +274,7 @@ studies, then summing Akaike model weights across all models that include that v
 
 Vaihdetaan aineistoa. Sama fylogeniarakenne toimii tässäkin vaikka abu-aineistossa C ja D metodeilla on vain 118 havaintoa, eli fylogeniapuussa on pari ylimääräistä oksaa. Aiemmin gls-funktiolla tämä haittasi mallin sovittamista, tässä ilmeisesti ei haittaa.
 
-```{r echo=TRUE, message=FALSE, cache=T}
+```{r echo=TRUE, results='hide', cache=T}
 m1A<- MCMCglmm(accuracy ~ Hab*method*pool + PrevS*method*pool + Mig*method*pool + logmass*method*pool, random=~species, data = resABU,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
 m2A<- MCMCglmm(accuracy ~ Hab*method + Hab*pool +PrevS*method + PrevS*pool + Mig*method + Mig*pool + logmass*method + logmass*pool, random=~ species, data = resABU,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
@@ -326,7 +334,7 @@ summary(m10A)
 
 Kokeilen huvikseen mallia ilman poolausta:
 
-```{r}
+```{r echo=TRUE, results='hide', cache=T}
 m21A<- MCMCglmm(accuracy ~ Prev*method + Mig*method + logmass*method + pool, random=~species, data = resABU,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 ```
 
