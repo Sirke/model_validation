@@ -158,7 +158,7 @@ Selvitetään, vaikuttavatko lajien ominaisuudet (muuttokäyttäytyminen 'Mig', 
 
 Luodaan mallivaihtoehdot.
 
-```{r echo=TRUE, results='hide', cache=T}
+```{r echo=TRUE, results='hide', cache=TRUE}
 #priori
 prior<-list(R=list(V=1, nu=0.00), G=list(G1=list(V=1, nu=0.00))) #mutta tämä ei nyt ole malleissa mukana (?)
 
@@ -197,11 +197,11 @@ m16<- MCMCglmm(accuracy ~ Mig*method + logmass*method + pool, random=~species, d
 
 m17<- MCMCglmm(accuracy ~ Hab*method + pool, random=~species, data = resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-m18<- MCMCglmm(accuracy ~ PrevS*method + pool, random=~species, data = resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=103000, burnin=300, thin=100)
+m18<- MCMCglmm(accuracy ~ PrevS*method + pool, random=~species, data = resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-m19<- MCMCglmm(accuracy ~ Mig*method  + pool, random=~species, data = resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=103000, burnin=300, thin=100)
+m19<- MCMCglmm(accuracy ~ Mig*method  + pool, random=~species, data = resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-m20<- MCMCglmm(accuracy ~ logmass*method + pool, random=~species, data = resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=103000, burnin=300, thin=100)
+m20<- MCMCglmm(accuracy ~ logmass*method + pool, random=~species, data = resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 ```
 
 Mumin-paketin model.sel näyttää toimivan myös MCMCglmm-tuotoksen kanssa.
@@ -230,7 +230,7 @@ summary(m12)
 
 Koska aiempi simppelimpi analyysi vihjasi ettei poolauksella ole merkitystä ennustustarkkuuksiin pa-aineistolla, kokeilen vielä mallia, jossa jätän poolauksen pois ja vertaan sitä parhaaseen malliin.
 
-```{r echo=TRUE, results='hide', cache=T}
+```{r echo=TRUE, results='hide', cache=TRUE}
 #mitä jos tiputtaisi vielä poolauksen?
 m21<- MCMCglmm(accuracy ~ Hab*method + Mig*method , random=~species, data = 
 resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
@@ -248,10 +248,10 @@ summary(m21)
 #plot(m21$Sol, auto.layout=F)
 ```
 
-Interaktiot metodin kanssa ovat merkitseviä vain C ja D metodeilla. Mitäs jos tiputtaa vielä interaktiot pois?
+Interaktiot metodin kanssa ovat merkitseviä vain C ja D metodeilla. Mitäs jos tiputtaa vielä jomman kumman interaktion pois?
 
-```{r echo=TRUE, results='hide', cache=T}
-#mitä jos tiputtaisi vielä poolauksen?
+```{r echo=TRUE, results='hide', cache=TRUE}
+#mitä jos tiputtaisi vielä interaktiot?
 m22<- MCMCglmm(accuracy ~ Hab*method + Mig , random=~species, data = 
 resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
@@ -259,12 +259,21 @@ m23<- MCMCglmm(accuracy ~ Hab + method*Mig , random=~species, data =
 resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 ```
 
+Mitä jos method on päävaikutuksena?
+
 ```{r}
-output3=model.sel(m21,m22,m23)
+m24<- MCMCglmm(accuracy ~ Hab + method + Mig , random=~species, data = 
+resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+```
+
+mallien vertailu
+
+```{r}
+output3=model.sel(m21,m22,m23,m24)
 output3
 ```
 
-Poolauksen voisi siis tiputtaa pois mutta ei interaktioita metodin kanssa. Tuloksia tulkitsisin niin, että muuttokäyttäytymisen suhteen kaikenlaiset linnut ovat vaikeampia ennustaa jos käytämme metodia C tai D.  
+Poolauksen voisi siis tiputtaa pois mutta ei interaktioita metodin kanssa. Tuloksia tulkitsisin niin, että muuttokäyttäytymisen suhteen kaikenlaiset linnut ovat vaikeampia ennustaa jos käytämme metodia C tai D. Habitaatissa tapahtuu kaikenlaista jännää.
 
 
 Mallinvalinnasta AIC-arvojen avulla voi lukea [täältä](http://webhome.auburn.edu/~tds0009/PDFs/arnold%20et%20al.%202010.pdf). Tosin tämän artikkelin mukaan olisin ehkä ennemmin vertaillut weights-arvoja. Lainaus: "If the primary objective of modeling is to evaluate the relative importance of many potential predictor variables, such as in many habitat selection
@@ -274,7 +283,7 @@ studies, then summing Akaike model weights across all models that include that v
 
 Vaihdetaan aineistoa. Sama fylogeniarakenne toimii tässäkin vaikka abu-aineistossa C ja D metodeilla on vain 118 havaintoa, eli fylogeniapuussa on pari ylimääräistä oksaa. Aiemmin gls-funktiolla tämä haittasi mallin sovittamista, tässä ilmeisesti ei haittaa.
 
-```{r echo=TRUE, results='hide', cache=T}
+```{r echo=TRUE, results='hide', cache=TRUE}
 m1A<- MCMCglmm(accuracy ~ Hab*method*pool + PrevS*method*pool + Mig*method*pool + logmass*method*pool, random=~species, data = resABU,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
 m2A<- MCMCglmm(accuracy ~ Hab*method + Hab*pool +PrevS*method + PrevS*pool + Mig*method + Mig*pool + logmass*method + logmass*pool, random=~ species, data = resABU,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
@@ -310,11 +319,11 @@ m16A<- MCMCglmm(accuracy ~ Mig*method + logmass*method + pool, random=~species, 
 
 m17A<- MCMCglmm(accuracy ~ Hab*method + pool, random=~species, data = resABU,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-m18A<- MCMCglmm(accuracy ~ PrevS*method + pool, random=~species, data = resABU,family="gaussian",ginverse=list(species=bm.birds),nitt=103000, burnin=300, thin=100)
+m18A<- MCMCglmm(accuracy ~ PrevS*method + pool, random=~species, data = resABU,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-m19A<- MCMCglmm(accuracy ~ Mig*method  + pool, random=~species, data = resABU,family="gaussian",ginverse=list(species=bm.birds),nitt=103000, burnin=300, thin=100)
+m19A<- MCMCglmm(accuracy ~ Mig*method  + pool, random=~species, data = resABU,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-m20A<- MCMCglmm(accuracy ~ logmass*method + pool, random=~species, data = resABU,family="gaussian",ginverse=list(species=bm.birds),nitt=103000, burnin=300, thin=100)
+m20A<- MCMCglmm(accuracy ~ logmass*method + pool, random=~species, data = resABU,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 ```
 
 ```{r}
@@ -334,7 +343,7 @@ summary(m10A)
 
 Kokeilen huvikseen mallia ilman poolausta:
 
-```{r echo=TRUE, results='hide', cache=T}
+```{r echo=TRUE, results='hide', cache=TRUE}
 m21A<- MCMCglmm(accuracy ~ Prev*method + Mig*method + logmass*method + pool, random=~species, data = resABU,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 ```
 
