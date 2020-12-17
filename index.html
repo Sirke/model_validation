@@ -3411,57 +3411,35 @@ write.csv(poolres, &quot;poolres.csv&quot;,row.names = F)</code></pre>
 <h4>Pa-aineisto:</h4>
 <pre class="r"><code>#jaetaan aineisto pa ja abu aineistoihin
 poolresPA=subset(poolres,pa==&quot;pa&quot;)
-poolresABU=subset(poolres,pa==&quot;abu&quot;)
+poolresABU=subset(poolres,pa==&quot;abu&quot;)</code></pre>
+<pre class="r"><code>#luetaan aineisto sisään, Multiphylo eli monta puuta
+linnut &lt;- read.nexus(&quot;output.nex&quot;)
+#valitaan vain yksi puu, mikä tahansa sadasta
+linnut2&lt;-linnut[[99]]
+#tehdään puusta malliin sopiva fylogeniarakenne
+bm.birds&lt;-inverseA(linnut2)$Ainv</code></pre>
+<pre class="r"><code>M1&lt;- MCMCglmm(accuracy ~ method * pool, random=~species, data = poolresPA,family=&quot;gaussian&quot;,  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-#fixed osan vertailua, PA aineisto:
+M2&lt;- MCMCglmm(accuracy ~ method + pool, random=~species, data = poolresPA,family=&quot;gaussian&quot;,  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+M3&lt;- MCMCglmm(accuracy ~ method, random=~species, data = poolresPA,family=&quot;gaussian&quot;,  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+M4&lt;- MCMCglmm(accuracy ~ pool, random=~species, data = poolresPA,family=&quot;gaussian&quot;,  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+output1=model.sel(M1,M2,M3,M4)
+output1
+
+#vanhalla tyylillä ilman fylogeniaa
 A1=lme(accuracy~method*pool,data=poolresPA,random=~1|species,method=&quot;ML&quot;,na.action=&quot;na.exclude&quot;)
 A2=lme(accuracy~method+pool,data=poolresPA,random=~1|species,method=&quot;ML&quot;,na.action=&quot;na.exclude&quot;)
 A3=lme(accuracy~method,data=poolresPA,random=~1|species,method=&quot;ML&quot;,na.action=&quot;na.exclude&quot;)
 A4=lme(accuracy~pool,data=poolresPA,random=~1|species,method=&quot;ML&quot;,na.action=&quot;na.exclude&quot;)
 
-anova(A1,A2)</code></pre>
-<pre><code>##    Model df       AIC       BIC   logLik   Test   L.Ratio p-value
-## A1     1 10 -1000.457 -951.7875 510.2284                         
-## A2     2  7 -1005.674 -971.6052 509.8369 1 vs 2 0.7831145  0.8535</code></pre>
-<pre class="r"><code>AIC(A1,A2,A3,A4)</code></pre>
-<pre><code>##    df        AIC
-## A1 10 -1000.4569
-## A2  7 -1005.6737
-## A3  6 -1005.4586
-## A4  4   504.8985</code></pre>
-<pre class="r"><code>summary(A3)</code></pre>
-<pre><code>## Linear mixed-effects model fit by maximum likelihood
-##  Data: poolresPA 
-##         AIC      BIC   logLik
-##   -1005.459 -976.257 508.7293
-## 
-## Random effects:
-##  Formula: ~1 | species
-##         (Intercept)  Residual
-## StdDev:   0.1153815 0.1252899
-## 
-## Fixed effects: accuracy ~ method 
-##                  Value  Std.Error  DF   t-value p-value
-## (Intercept)  0.5748204 0.01330734 837  43.19575   0.000
-## methodB     -0.0315642 0.01146126 837  -2.75399   0.006
-## methodC     -0.5441671 0.01146126 837 -47.47884   0.000
-## methodD     -0.5419361 0.01146126 837 -47.28418   0.000
-##  Correlation: 
-##         (Intr) methdB methdC
-## methodB -0.431              
-## methodC -0.431  0.500       
-## methodD -0.431  0.500  0.500
-## 
-## Standardized Within-Group Residuals:
-##         Min          Q1         Med          Q3         Max 
-## -3.10056557 -0.61373098  0.06172161  0.62588292  3.41229002 
-## 
-## Number of Observations: 960
-## Number of Groups: 120</code></pre>
-<pre class="r"><code>anova(A3)</code></pre>
-<pre><code>##             numDF denDF   F-value p-value
-## (Intercept)     1   837  682.6771  &lt;.0001
-## method          3   837 1413.4844  &lt;.0001</code></pre>
+anova(A1,A2)
+AIC(A1,A2,A3,A4)
+
+summary(A3)
+anova(A3)</code></pre>
 <pre class="r"><code>#lopullinen malli
 mfinal=lme(accuracy~method,data=poolresPA,random=~1|species,method=&quot;REML&quot;,na.action=&quot;na.exclude&quot;)
 summary(mfinal)</code></pre>
@@ -3513,65 +3491,28 @@ abline(h=0,lty=2)</code></pre>
 </div>
 <div id="abu-aineisto" class="section level4">
 <h4>Abu-aineisto:</h4>
-<pre class="r"><code>#fixed osan vertailua, abu aineisto:
+<pre class="r"><code>N1&lt;- MCMCglmm(accuracy ~ method * pool, random=~species, data = poolresABU,family=&quot;gaussian&quot;,  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+N2&lt;- MCMCglmm(accuracy ~ method + pool, random=~species, data = poolresABU,family=&quot;gaussian&quot;,  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+N3&lt;- MCMCglmm(accuracy ~ method, random=~species, data = poolresABU,family=&quot;gaussian&quot;,  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+N4&lt;- MCMCglmm(accuracy ~ pool, random=~species, data = poolresABU,family=&quot;gaussian&quot;,  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+output2=model.sel(N1,N2,N3,N4)
+output2
+
+#fixed osan vertailua, abu aineisto:
 A1=lme(accuracy~method*pool,data=poolresABU,random=~1|species,method=&quot;ML&quot;,na.action=&quot;na.exclude&quot;)
 A2=lme(accuracy~method+pool,data=poolresABU,random=~1|species,method=&quot;ML&quot;,na.action=&quot;na.exclude&quot;)
 A3=lme(accuracy~method,data=poolresABU,random=~1|species,method=&quot;ML&quot;,na.action=&quot;na.exclude&quot;)
 A4=lme(accuracy~pool,data=poolresABU,random=~1|species,method=&quot;ML&quot;,na.action=&quot;na.exclude&quot;)
 
-anova(A1,A2)</code></pre>
-<pre><code>##    Model df       AIC       BIC   logLik   Test  L.Ratio p-value
-## A1     1 10 -671.1029 -622.5172 345.5514                        
-## A2     2  7 -661.0587 -627.0487 337.5293 1 vs 2 16.04419  0.0011</code></pre>
-<pre class="r"><code>AIC(A1,A2,A3,A4)</code></pre>
-<pre><code>##    df        AIC
-## A1 10 -671.10286
-## A2  7 -661.05868
-## A3  6 -649.81738
-## A4  4   10.07426</code></pre>
-<pre class="r"><code>summary(A1)</code></pre>
-<pre><code>## Linear mixed-effects model fit by maximum likelihood
-##  Data: poolresABU 
-##         AIC       BIC   logLik
-##   -671.1029 -622.5172 345.5514
-## 
-## Random effects:
-##  Formula: ~1 | species
-##         (Intercept)  Residual
-## StdDev:   0.1155263 0.1509358
-## 
-## Fixed effects: accuracy ~ method * pool 
-##                     Value  Std.Error  DF    t-value p-value
-## (Intercept)     0.4054711 0.01742462 825  23.270009  0.0000
-## methodB        -0.0926735 0.01956812 825  -4.735945  0.0000
-## methodC        -0.3949418 0.01966532 825 -20.083161  0.0000
-## methodD        -0.4042327 0.01966532 825 -20.555610  0.0000
-## poolPo         -0.0164656 0.01956812 825  -0.841449  0.4003
-## methodB:poolPo  0.0311646 0.02767350 825   1.126154  0.2604
-## methodC:poolPo  0.0813997 0.02779051 825   2.929046  0.0035
-## methodD:poolPo  0.0989141 0.02779051 825   3.559278  0.0004
-##  Correlation: 
-##                (Intr) methdB methdC methdD poolPo mthB:P mthC:P
-## methodB        -0.562                                          
-## methodC        -0.559  0.498                                   
-## methodD        -0.559  0.498  0.497                            
-## poolPo         -0.562  0.500  0.498  0.498                     
-## methodB:poolPo  0.397 -0.707 -0.352 -0.352 -0.707              
-## methodC:poolPo  0.395 -0.352 -0.707 -0.350 -0.704  0.498       
-## methodD:poolPo  0.395 -0.352 -0.350 -0.707 -0.704  0.498  0.496
-## 
-## Standardized Within-Group Residuals:
-##         Min          Q1         Med          Q3         Max 
-## -3.72376831 -0.60598997 -0.02468816  0.65012422  4.05501422 
-## 
-## Number of Observations: 952
-## Number of Groups: 120</code></pre>
-<pre class="r"><code>anova(A1)</code></pre>
-<pre><code>##             numDF denDF  F-value p-value
-## (Intercept)     1   825 301.9128  &lt;.0001
-## method          3   825 353.0350  &lt;.0001
-## pool            1   825  13.4933  0.0003
-## method:pool     3   825   5.3547  0.0012</code></pre>
+anova(A1,A2)
+AIC(A1,A2,A3,A4)
+
+summary(A1)
+anova(A1)</code></pre>
 <p>Mutta abu aineistolla sekä metodilla että poolauksella yhdessä on vaikutusta?</p>
 <pre class="r"><code>#lopullinen malli
 mfinal=lme(accuracy~method*pool,data=poolresABU,random=~1|species,method=&quot;REML&quot;,na.action=&quot;na.exclude&quot;)
@@ -4031,8 +3972,8 @@ linnut2&lt;-linnut[[99]]
 #tehdään puusta malliin sopiva fylogeniarakenne
 bm.birds&lt;-inverseA(linnut2)$Ainv</code></pre>
 </div>
-<div id="analyysit-1" class="section level2">
-<h2>4.4 Analyysit</h2>
+<div id="analyysit-mcmcglmm" class="section level2">
+<h2>4.4 Analyysit MCMCglmm</h2>
 <p>Selvitetään, vaikuttavatko lajien ominaisuudet (muuttokäyttäytyminen ‘Mig’, elinympäristö ‘Hab’, paino ‘logMass’ tai prevalenssi ‘Prev’) ennustustarkkuuteen. Analyysissä pitäisi huomioida fylogenia eli, että lajit voivat olla ominaisuuksiltaan samankaltaisia (ja siten omata myös samanlaiset ennustustarkkuudet) läheisen sukulaisuussuhteen takia. Mukana nyt myös ominaisuuksien mahdolliset yhdysvaikutukset metodin ja poolauksen kanssa.</p>
 <div id="pa-aineisto-1" class="section level3">
 <h3>4.4.1 Pa-aineisto</h3>
@@ -4086,33 +4027,33 @@ output1&lt;-model.sel(m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11,m12,m13,m14,m15,m16,m17
 output1</code></pre>
 <pre><code>## Model selection table 
 ##      (Int) Hab        lgm mth Mig pol     PrS Hab:mth Hab:pol lgm:mth
-## m12 0.5769   +              +   +   +               +                
-## m9  0.5677   + -0.0010180   +   +   +               +               +
-## m17 0.6308   +              +       +               +                
-## m7  0.6235   +              +   +   + 0.03027       +                
-## m6  0.5879   +  0.0035510   +   +   + 0.03096       +               +
-## m3  0.5960   +  0.0023230   +   +   + 0.03071       +               +
-## m11 0.6677   +              +       + 0.02804       +                
-## m13 0.5993   +  0.0062210   +       +               +               +
-## m8  0.6073   +  0.0098600   +       + 0.02894       +               +
-## m2  0.5940   +  0.0042830   +   +   + 0.03358       +       +       +
-## m16 0.5082     -0.0061480   +   +   +                               +
-## m19 0.4856                  +   +   +                                
-## m10 0.4787     -0.0042860   +   +   +                               +
-## m14 0.5219                  +   +   + 0.02235                        
-## m20 0.5256     -0.0029790   +       +                               +
-## m18 0.5543                  +       + 0.02402                        
-## m5  0.5507   +  0.0084680   +   +   + 0.02059                        
-## m15 0.5347      0.0005898   +       + 0.02126                       +
-## m4  0.5480   +  0.0102200   +   +   + 0.02543               +        
-## m1  0.6356   +  0.0036560   +   +   + 0.04539       +       +       +
+## m12 0.5776   +              +   +   +               +                
+## m9  0.5745   + -0.0011710   +   +   +               +               +
+## m17 0.6328   +              +       +               +                
+## m7  0.6121   +              +   +   + 0.03056       +                
+## m3  0.5969   +  0.0024910   +   +   + 0.03065       +               +
+## m6  0.5804   +  0.0042780   +   +   + 0.03065       +               +
+## m11 0.6686   +              +       + 0.02873       +                
+## m13 0.5899   +  0.0066170   +       +               +               +
+## m8  0.6074   +  0.0104100   +       + 0.02913       +               +
+## m2  0.5948   +  0.0040210   +   +   + 0.03497       +       +       +
+## m16 0.5077     -0.0064730   +   +   +                               +
+## m19 0.4962                  +   +   +                                
+## m10 0.4739     -0.0039510   +   +   +                               +
+## m14 0.5246                  +   +   + 0.02322                        
+## m20 0.5288     -0.0027300   +       +                               +
+## m18 0.5568                  +       + 0.02445                        
+## m5  0.5558   +  0.0074330   +   +   + 0.02134                        
+## m15 0.5431      0.0001773   +       + 0.02129                       +
+## m4  0.5524   +  0.0101300   +   +   + 0.02597               +        
+## m1  0.6330   +  0.0035070   +   +   + 0.04605       +       +       +
 ##     lgm:pol mth:Mig mth:pol mth:PrS Mig:pol pol:PrS Hab:mth:pol
 ## m12               +                                            
 ## m9                +                                            
 ## m17                                                            
 ## m7                +               +                            
-## m6                +               +                            
 ## m3                +               +                            
+## m6                +               +                            
 ## m11                               +                            
 ## m13                                                            
 ## m8                                +                            
@@ -4128,47 +4069,47 @@ output1</code></pre>
 ## m4        +                               +       +            
 ## m1        +       +       +       +       +       +           +
 ##     lgm:mth:pol mth:Mig:pol mth:pol:PrS     Prv mth:Prv df  logLik    AICc
-## m12                                                     27 669.505 -1283.4
-## m9                                                      31 670.799 -1277.5
-## m17                                                     19 657.686 -1276.6
-## m7                                                      31 669.181 -1274.2
-## m6                                                      35 670.544 -1268.4
-## m3                                                      35 670.049 -1267.4
-## m11                                                     23 656.282 -1265.4
-## m13                                                     23 655.114 -1263.0
-## m8                                                      27 654.539 -1253.5
-## m2                                                      42 669.528 -1251.1
-## m16                                                     19 642.457 -1246.1
-## m19                                                     15 635.496 -1240.5
-## m10                                     0.06675       + 23 641.935 -1236.7
-## m14                                                     19 635.583 -1232.4
-## m20                                                     11 622.901 -1223.5
-## m18                                                     11 620.231 -1218.2
-## m5                                                      14 621.184 -1213.9
-## m15                                                     15 621.960 -1213.4
-## m4                                                      21 620.248 -1197.5
-## m1            +           +           +                 66 663.406 -1184.9
+## m12                                                     27 669.339 -1283.1
+## m9                                                      31 671.075 -1278.0
+## m17                                                     19 656.752 -1274.7
+## m7                                                      31 668.646 -1273.2
+## m3                                                      35 670.421 -1268.1
+## m6                                                      35 670.279 -1267.8
+## m11                                                     23 656.300 -1265.4
+## m13                                                     23 655.558 -1263.9
+## m8                                                      27 654.839 -1254.1
+## m2                                                      42 669.397 -1250.9
+## m16                                                     19 642.362 -1245.9
+## m19                                                     15 635.630 -1240.8
+## m10                                     0.06461       + 23 641.577 -1236.0
+## m14                                                     19 634.884 -1231.0
+## m20                                                     11 623.454 -1224.6
+## m18                                                     11 621.397 -1220.5
+## m5                                                      14 621.128 -1213.8
+## m15                                                     15 622.039 -1213.6
+## m4                                                      21 620.253 -1197.5
+## m1            +           +           +                 66 663.387 -1184.9
 ##     delta weight
-## m12  0.00  0.913
-## m9   5.93  0.047
-## m17  6.82  0.030
-## m7   9.17  0.009
-## m6  15.03  0.000
-## m3  16.02  0.000
-## m11 18.00  0.000
-## m13 20.34  0.000
-## m8  29.93  0.000
-## m2  32.27  0.000
-## m16 37.28  0.000
-## m19 42.91  0.000
-## m10 46.70  0.000
-## m14 51.03  0.000
-## m20 59.87  0.000
-## m18 65.21  0.000
-## m5  69.47  0.000
-## m15 69.98  0.000
-## m4  85.88  0.000
-## m1  98.48  0.000
+## m12  0.00  0.906
+## m9   5.04  0.073
+## m17  8.36  0.014
+## m7   9.90  0.006
+## m3  14.94  0.001
+## m6  15.22  0.000
+## m11 17.64  0.000
+## m13 19.12  0.000
+## m8  29.00  0.000
+## m2  32.20  0.000
+## m16 37.14  0.000
+## m19 42.30  0.000
+## m10 47.08  0.000
+## m14 52.10  0.000
+## m20 58.43  0.000
+## m18 62.54  0.000
+## m5  69.24  0.000
+## m15 69.49  0.000
+## m4  85.53  0.000
+## m1  98.19  0.000
 ## Models ranked by AICc(x) 
 ## Random terms (all models): 
 ## '~species'</code></pre>
@@ -4180,46 +4121,46 @@ output1</code></pre>
 ##  Thinning interval  = 1000
 ##  Sample size  = 1000 
 ## 
-##  DIC: -1220.315 
+##  DIC: -1220.232 
 ## 
 ##  G-structure:  ~species
 ## 
 ##         post.mean l-95% CI u-95% CI eff.samp
-## species   0.05534  0.03694  0.07389     1000
+## species   0.05555  0.03652  0.07589     1186
 ## 
 ##  R-structure:  ~units
 ## 
 ##       post.mean l-95% CI u-95% CI eff.samp
-## units   0.01454  0.01313  0.01593     1000
+## units   0.01451  0.01327  0.01606     1000
 ## 
 ##  Location effects: accuracy ~ Hab * method + Mig * method + pool 
 ## 
 ##               post.mean  l-95% CI  u-95% CI eff.samp  pMCMC    
-## (Intercept)    0.576868  0.355000  0.771311    907.8 &lt;0.001 ***
-## HabFO         -0.096726 -0.161025 -0.036255   1000.0  0.004 ** 
-## HabMM          0.059622 -0.039730  0.153604   1000.0  0.218    
-## HabWE         -0.217794 -0.319124 -0.123756   1000.0 &lt;0.001 ***
-## methodB       -0.017595 -0.084223  0.040437   1000.0  0.556    
-## methodC       -0.568556 -0.629699 -0.505856   1000.0 &lt;0.001 ***
-## methodD       -0.568862 -0.629365 -0.507959   1000.0 &lt;0.001 ***
-## MigR           0.044758 -0.041833  0.141419   1000.0  0.332    
-## MigS           0.081565 -0.001961  0.145740   1209.1  0.032 *  
-## poolPo         0.011939 -0.003612  0.026823   1000.0  0.120    
-## HabFO:methodB -0.022291 -0.080332  0.032112   1000.0  0.440    
-## HabMM:methodB -0.012455 -0.101881  0.083015   1000.0  0.798    
-## HabWE:methodB -0.018012 -0.091035  0.048390   1000.0  0.618    
-## HabFO:methodC  0.101929  0.050253  0.168864   1000.0 &lt;0.001 ***
-## HabMM:methodC -0.021253 -0.107571  0.067923   1000.0  0.680    
-## HabWE:methodC  0.173323  0.100707  0.235051    897.4 &lt;0.001 ***
-## HabFO:methodD  0.086744  0.031383  0.143449   1000.0 &lt;0.001 ***
-## HabMM:methodD -0.017525 -0.111043  0.074279   1000.0  0.718    
-## HabWE:methodD  0.159634  0.090459  0.226333   1000.0 &lt;0.001 ***
-## methodB:MigR   0.005186 -0.052397  0.071714   1093.2  0.898    
-## methodC:MigR  -0.116723 -0.178702 -0.061196   1000.0 &lt;0.001 ***
-## methodD:MigR  -0.091891 -0.149066 -0.032396   1000.0  0.002 ** 
-## methodB:MigS   0.001855 -0.048661  0.056313   1184.4  0.966    
-## methodC:MigS  -0.079081 -0.130642 -0.025511   1000.0  0.006 ** 
-## methodD:MigS  -0.065759 -0.118304 -0.016278   1000.0  0.020 *  
+## (Intercept)    0.577594  0.390215  0.793350   1000.0 &lt;0.001 ***
+## HabFO         -0.096329 -0.157022 -0.027842    959.0 &lt;0.001 ***
+## HabMM          0.059356 -0.033918  0.154742   1000.0  0.194    
+## HabWE         -0.214382 -0.311226 -0.127157   1000.0 &lt;0.001 ***
+## methodB       -0.018842 -0.084171  0.037653   1000.0  0.548    
+## methodC       -0.568639 -0.623968 -0.507234   1066.2 &lt;0.001 ***
+## methodD       -0.567345 -0.628318 -0.501235    899.1 &lt;0.001 ***
+## MigR           0.043383 -0.064977  0.120568   1000.0  0.344    
+## MigS           0.080821  0.002752  0.151688   1110.2  0.038 *  
+## poolPo         0.011955 -0.001990  0.028214   1286.0  0.118    
+## HabFO:methodB -0.022877 -0.080593  0.034345    903.4  0.442    
+## HabMM:methodB -0.012248 -0.107227  0.077384   1000.0  0.786    
+## HabWE:methodB -0.018415 -0.085856  0.047122   1000.0  0.582    
+## HabFO:methodC  0.101136  0.046788  0.158684   1000.0 &lt;0.001 ***
+## HabMM:methodC -0.020813 -0.110190  0.068119   1000.0  0.642    
+## HabWE:methodC  0.173880  0.107786  0.236742   1466.2 &lt;0.001 ***
+## HabFO:methodD  0.085458  0.026170  0.147731   1000.0  0.008 ** 
+## HabMM:methodD -0.019645 -0.110269  0.070477   1000.0  0.700    
+## HabWE:methodD  0.157354  0.080410  0.221159   1000.0 &lt;0.001 ***
+## methodB:MigR   0.006501 -0.054034  0.065011    958.3  0.818    
+## methodC:MigR  -0.115168 -0.178949 -0.060094   1000.0 &lt;0.001 ***
+## methodD:MigR  -0.091244 -0.146626 -0.029341   1000.0 &lt;0.001 ***
+## methodB:MigS   0.004542 -0.043928  0.065489    897.7  0.888    
+## methodC:MigS  -0.078639 -0.141760 -0.028534   1102.7  0.006 ** 
+## methodD:MigS  -0.065300 -0.120761 -0.017362   1000.0  0.014 *  
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 <pre class="r"><code>#plot(m12$Sol, auto.layout=F) #printit vie ihan hirveästi tilaa tällä koodilla
@@ -4238,8 +4179,8 @@ resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, 
 output2</code></pre>
 <pre><code>## Model selection table 
 ##      (Int) Hab mth Mig pol Hab:mth mth:Mig df  logLik    AICc delta weight
-## m21 0.5880   +   +   +           +       + 26 668.700 -1283.9  0.00  0.563
-## m12 0.5769   +   +   +   +       +       + 27 669.505 -1283.4  0.51  0.437
+## m21 0.5861   +   +   +           +       + 26 668.664 -1283.8  0.00  0.595
+## m12 0.5776   +   +   +   +       +       + 27 669.339 -1283.1  0.77  0.405
 ## Models ranked by AICc(x) 
 ## Random terms (all models): 
 ## '~species'</code></pre>
@@ -4250,45 +4191,45 @@ output2</code></pre>
 ##  Thinning interval  = 1000
 ##  Sample size  = 1000 
 ## 
-##  DIC: -1219.632 
+##  DIC: -1219.619 
 ## 
 ##  G-structure:  ~species
 ## 
 ##         post.mean l-95% CI u-95% CI eff.samp
-## species    0.0558  0.03729  0.07528     1000
+## species   0.05559  0.03652  0.07459     1000
 ## 
 ##  R-structure:  ~units
 ## 
 ##       post.mean l-95% CI u-95% CI eff.samp
-## units   0.01457  0.01323  0.01607     1000
+## units   0.01457  0.01328  0.01605     1000
 ## 
 ##  Location effects: accuracy ~ Hab * method + Mig * method 
 ## 
-##                post.mean   l-95% CI   u-95% CI eff.samp  pMCMC    
-## (Intercept)    0.5879701  0.3925612  0.7915955   1000.2 &lt;0.001 ***
-## HabFO         -0.0969104 -0.1670207 -0.0333959   1000.0  0.008 ** 
-## HabMM          0.0598852 -0.0268740  0.1555846    865.2  0.216    
-## HabWE         -0.2179156 -0.3067291 -0.1080515   1000.0 &lt;0.001 ***
-## methodB       -0.0176435 -0.0783123  0.0469801   1000.0  0.600    
-## methodC       -0.5684732 -0.6276667 -0.5143575    846.2 &lt;0.001 ***
-## methodD       -0.5680480 -0.6243004 -0.5088627   1000.0 &lt;0.001 ***
-## MigR           0.0427279 -0.0537009  0.1298144   1000.0  0.364    
-## MigS           0.0811577  0.0206671  0.1555352   1000.0  0.016 *  
-## HabFO:methodB -0.0225110 -0.0862617  0.0364534   1000.0  0.456    
-## HabMM:methodB -0.0132069 -0.0985290  0.0912608   1000.0  0.766    
-## HabWE:methodB -0.0181044 -0.0803593  0.0555288   1000.0  0.620    
-## HabFO:methodC  0.1014676  0.0423400  0.1595234   1000.0 &lt;0.001 ***
-## HabMM:methodC -0.0217941 -0.1060125  0.0694413   1000.0  0.614    
-## HabWE:methodC  0.1745362  0.1101549  0.2530321   1000.0 &lt;0.001 ***
-## HabFO:methodD  0.0860944  0.0307352  0.1441295   1000.0  0.004 ** 
-## HabMM:methodD -0.0172710 -0.1034111  0.0704374   1000.0  0.718    
-## HabWE:methodD  0.1581437  0.0875521  0.2232748   1000.0 &lt;0.001 ***
-## methodB:MigR   0.0069577 -0.0504520  0.0696635    815.8  0.824    
-## methodC:MigR  -0.1148998 -0.1765070 -0.0597938   1000.0 &lt;0.001 ***
-## methodD:MigR  -0.0896303 -0.1457931 -0.0281046   1201.7  0.004 ** 
-## methodB:MigS   0.0009627 -0.0525977  0.0544708    869.8  0.988    
-## methodC:MigS  -0.0805721 -0.1349698 -0.0277276   1000.0 &lt;0.001 ***
-## methodD:MigS  -0.0664988 -0.1213182 -0.0116066    827.3  0.020 *  
+##               post.mean  l-95% CI  u-95% CI eff.samp  pMCMC    
+## (Intercept)    0.586144  0.363201  0.791297   1000.0 &lt;0.001 ***
+## HabFO         -0.096917 -0.169174 -0.030792   1000.0  0.004 ** 
+## HabMM          0.060019 -0.031758  0.152561   1158.0  0.204    
+## HabWE         -0.215554 -0.319441 -0.120526   1000.0 &lt;0.001 ***
+## methodB       -0.017468 -0.083521  0.045967   1000.0  0.608    
+## methodC       -0.570153 -0.629131 -0.507576   1016.0 &lt;0.001 ***
+## methodD       -0.568752 -0.629044 -0.506608   1000.0 &lt;0.001 ***
+## MigR           0.042973 -0.040857  0.135712   1000.0  0.364    
+## MigS           0.081582  0.005118  0.150807    980.0  0.028 *  
+## HabFO:methodB -0.022691 -0.080406  0.041277   1000.0  0.444    
+## HabMM:methodB -0.013374 -0.109888  0.070716   1000.0  0.792    
+## HabWE:methodB -0.019793 -0.083698  0.044912   1000.0  0.582    
+## HabFO:methodC  0.102329  0.045095  0.160773   1170.4 &lt;0.001 ***
+## HabMM:methodC -0.018572 -0.117175  0.064875   1176.3  0.678    
+## HabWE:methodC  0.172389  0.106515  0.240285    914.2 &lt;0.001 ***
+## HabFO:methodD  0.087110  0.032892  0.157691   1000.0  0.006 ** 
+## HabMM:methodD -0.017559 -0.105100  0.083778   1348.4  0.718    
+## HabWE:methodD  0.157493  0.088092  0.224675   1000.0 &lt;0.001 ***
+## methodB:MigR   0.006809 -0.049643  0.073862   1000.0  0.836    
+## methodC:MigR  -0.113414 -0.178046 -0.059007   1000.0 &lt;0.001 ***
+## methodD:MigR  -0.090160 -0.150085 -0.027711   1099.6 &lt;0.001 ***
+## methodB:MigS   0.002143 -0.048686  0.062373   1000.0  0.962    
+## methodC:MigS  -0.078592 -0.132121 -0.024297    912.5  0.006 ** 
+## methodD:MigS  -0.065028 -0.120642 -0.013386   1000.0  0.016 *  
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 <pre class="r"><code>#plot(m21$Sol, auto.layout=F)</code></pre>
@@ -4302,2023 +4243,15 @@ resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, 
 <p>Mitä jos method on päävaikutuksena?</p>
 <pre class="r"><code>m24&lt;- MCMCglmm(accuracy ~ Hab + method + Mig , random=~species, data = 
 resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)</code></pre>
-<pre><code>## 
-##                        MCMC iteration = 0
-## 
-##                        MCMC iteration = 1000
-## 
-##                        MCMC iteration = 2000
-## 
-##                        MCMC iteration = 3000
-## 
-##                        MCMC iteration = 4000
-## 
-##                        MCMC iteration = 5000
-## 
-##                        MCMC iteration = 6000
-## 
-##                        MCMC iteration = 7000
-## 
-##                        MCMC iteration = 8000
-## 
-##                        MCMC iteration = 9000
-## 
-##                        MCMC iteration = 10000
-## 
-##                        MCMC iteration = 11000
-## 
-##                        MCMC iteration = 12000
-## 
-##                        MCMC iteration = 13000
-## 
-##                        MCMC iteration = 14000
-## 
-##                        MCMC iteration = 15000
-## 
-##                        MCMC iteration = 16000
-## 
-##                        MCMC iteration = 17000
-## 
-##                        MCMC iteration = 18000
-## 
-##                        MCMC iteration = 19000
-## 
-##                        MCMC iteration = 20000
-## 
-##                        MCMC iteration = 21000
-## 
-##                        MCMC iteration = 22000
-## 
-##                        MCMC iteration = 23000
-## 
-##                        MCMC iteration = 24000
-## 
-##                        MCMC iteration = 25000
-## 
-##                        MCMC iteration = 26000
-## 
-##                        MCMC iteration = 27000
-## 
-##                        MCMC iteration = 28000
-## 
-##                        MCMC iteration = 29000
-## 
-##                        MCMC iteration = 30000
-## 
-##                        MCMC iteration = 31000
-## 
-##                        MCMC iteration = 32000
-## 
-##                        MCMC iteration = 33000
-## 
-##                        MCMC iteration = 34000
-## 
-##                        MCMC iteration = 35000
-## 
-##                        MCMC iteration = 36000
-## 
-##                        MCMC iteration = 37000
-## 
-##                        MCMC iteration = 38000
-## 
-##                        MCMC iteration = 39000
-## 
-##                        MCMC iteration = 40000
-## 
-##                        MCMC iteration = 41000
-## 
-##                        MCMC iteration = 42000
-## 
-##                        MCMC iteration = 43000
-## 
-##                        MCMC iteration = 44000
-## 
-##                        MCMC iteration = 45000
-## 
-##                        MCMC iteration = 46000
-## 
-##                        MCMC iteration = 47000
-## 
-##                        MCMC iteration = 48000
-## 
-##                        MCMC iteration = 49000
-## 
-##                        MCMC iteration = 50000
-## 
-##                        MCMC iteration = 51000
-## 
-##                        MCMC iteration = 52000
-## 
-##                        MCMC iteration = 53000
-## 
-##                        MCMC iteration = 54000
-## 
-##                        MCMC iteration = 55000
-## 
-##                        MCMC iteration = 56000
-## 
-##                        MCMC iteration = 57000
-## 
-##                        MCMC iteration = 58000
-## 
-##                        MCMC iteration = 59000
-## 
-##                        MCMC iteration = 60000
-## 
-##                        MCMC iteration = 61000
-## 
-##                        MCMC iteration = 62000
-## 
-##                        MCMC iteration = 63000
-## 
-##                        MCMC iteration = 64000
-## 
-##                        MCMC iteration = 65000
-## 
-##                        MCMC iteration = 66000
-## 
-##                        MCMC iteration = 67000
-## 
-##                        MCMC iteration = 68000
-## 
-##                        MCMC iteration = 69000
-## 
-##                        MCMC iteration = 70000
-## 
-##                        MCMC iteration = 71000
-## 
-##                        MCMC iteration = 72000
-## 
-##                        MCMC iteration = 73000
-## 
-##                        MCMC iteration = 74000
-## 
-##                        MCMC iteration = 75000
-## 
-##                        MCMC iteration = 76000
-## 
-##                        MCMC iteration = 77000
-## 
-##                        MCMC iteration = 78000
-## 
-##                        MCMC iteration = 79000
-## 
-##                        MCMC iteration = 80000
-## 
-##                        MCMC iteration = 81000
-## 
-##                        MCMC iteration = 82000
-## 
-##                        MCMC iteration = 83000
-## 
-##                        MCMC iteration = 84000
-## 
-##                        MCMC iteration = 85000
-## 
-##                        MCMC iteration = 86000
-## 
-##                        MCMC iteration = 87000
-## 
-##                        MCMC iteration = 88000
-## 
-##                        MCMC iteration = 89000
-## 
-##                        MCMC iteration = 90000
-## 
-##                        MCMC iteration = 91000
-## 
-##                        MCMC iteration = 92000
-## 
-##                        MCMC iteration = 93000
-## 
-##                        MCMC iteration = 94000
-## 
-##                        MCMC iteration = 95000
-## 
-##                        MCMC iteration = 96000
-## 
-##                        MCMC iteration = 97000
-## 
-##                        MCMC iteration = 98000
-## 
-##                        MCMC iteration = 99000
-## 
-##                        MCMC iteration = 100000
-## 
-##                        MCMC iteration = 101000
-## 
-##                        MCMC iteration = 102000
-## 
-##                        MCMC iteration = 103000
-## 
-##                        MCMC iteration = 104000
-## 
-##                        MCMC iteration = 105000
-## 
-##                        MCMC iteration = 106000
-## 
-##                        MCMC iteration = 107000
-## 
-##                        MCMC iteration = 108000
-## 
-##                        MCMC iteration = 109000
-## 
-##                        MCMC iteration = 110000
-## 
-##                        MCMC iteration = 111000
-## 
-##                        MCMC iteration = 112000
-## 
-##                        MCMC iteration = 113000
-## 
-##                        MCMC iteration = 114000
-## 
-##                        MCMC iteration = 115000
-## 
-##                        MCMC iteration = 116000
-## 
-##                        MCMC iteration = 117000
-## 
-##                        MCMC iteration = 118000
-## 
-##                        MCMC iteration = 119000
-## 
-##                        MCMC iteration = 120000
-## 
-##                        MCMC iteration = 121000
-## 
-##                        MCMC iteration = 122000
-## 
-##                        MCMC iteration = 123000
-## 
-##                        MCMC iteration = 124000
-## 
-##                        MCMC iteration = 125000
-## 
-##                        MCMC iteration = 126000
-## 
-##                        MCMC iteration = 127000
-## 
-##                        MCMC iteration = 128000
-## 
-##                        MCMC iteration = 129000
-## 
-##                        MCMC iteration = 130000
-## 
-##                        MCMC iteration = 131000
-## 
-##                        MCMC iteration = 132000
-## 
-##                        MCMC iteration = 133000
-## 
-##                        MCMC iteration = 134000
-## 
-##                        MCMC iteration = 135000
-## 
-##                        MCMC iteration = 136000
-## 
-##                        MCMC iteration = 137000
-## 
-##                        MCMC iteration = 138000
-## 
-##                        MCMC iteration = 139000
-## 
-##                        MCMC iteration = 140000
-## 
-##                        MCMC iteration = 141000
-## 
-##                        MCMC iteration = 142000
-## 
-##                        MCMC iteration = 143000
-## 
-##                        MCMC iteration = 144000
-## 
-##                        MCMC iteration = 145000
-## 
-##                        MCMC iteration = 146000
-## 
-##                        MCMC iteration = 147000
-## 
-##                        MCMC iteration = 148000
-## 
-##                        MCMC iteration = 149000
-## 
-##                        MCMC iteration = 150000
-## 
-##                        MCMC iteration = 151000
-## 
-##                        MCMC iteration = 152000
-## 
-##                        MCMC iteration = 153000
-## 
-##                        MCMC iteration = 154000
-## 
-##                        MCMC iteration = 155000
-## 
-##                        MCMC iteration = 156000
-## 
-##                        MCMC iteration = 157000
-## 
-##                        MCMC iteration = 158000
-## 
-##                        MCMC iteration = 159000
-## 
-##                        MCMC iteration = 160000
-## 
-##                        MCMC iteration = 161000
-## 
-##                        MCMC iteration = 162000
-## 
-##                        MCMC iteration = 163000
-## 
-##                        MCMC iteration = 164000
-## 
-##                        MCMC iteration = 165000
-## 
-##                        MCMC iteration = 166000
-## 
-##                        MCMC iteration = 167000
-## 
-##                        MCMC iteration = 168000
-## 
-##                        MCMC iteration = 169000
-## 
-##                        MCMC iteration = 170000
-## 
-##                        MCMC iteration = 171000
-## 
-##                        MCMC iteration = 172000
-## 
-##                        MCMC iteration = 173000
-## 
-##                        MCMC iteration = 174000
-## 
-##                        MCMC iteration = 175000
-## 
-##                        MCMC iteration = 176000
-## 
-##                        MCMC iteration = 177000
-## 
-##                        MCMC iteration = 178000
-## 
-##                        MCMC iteration = 179000
-## 
-##                        MCMC iteration = 180000
-## 
-##                        MCMC iteration = 181000
-## 
-##                        MCMC iteration = 182000
-## 
-##                        MCMC iteration = 183000
-## 
-##                        MCMC iteration = 184000
-## 
-##                        MCMC iteration = 185000
-## 
-##                        MCMC iteration = 186000
-## 
-##                        MCMC iteration = 187000
-## 
-##                        MCMC iteration = 188000
-## 
-##                        MCMC iteration = 189000
-## 
-##                        MCMC iteration = 190000
-## 
-##                        MCMC iteration = 191000
-## 
-##                        MCMC iteration = 192000
-## 
-##                        MCMC iteration = 193000
-## 
-##                        MCMC iteration = 194000
-## 
-##                        MCMC iteration = 195000
-## 
-##                        MCMC iteration = 196000
-## 
-##                        MCMC iteration = 197000
-## 
-##                        MCMC iteration = 198000
-## 
-##                        MCMC iteration = 199000
-## 
-##                        MCMC iteration = 200000
-## 
-##                        MCMC iteration = 201000
-## 
-##                        MCMC iteration = 202000
-## 
-##                        MCMC iteration = 203000
-## 
-##                        MCMC iteration = 204000
-## 
-##                        MCMC iteration = 205000
-## 
-##                        MCMC iteration = 206000
-## 
-##                        MCMC iteration = 207000
-## 
-##                        MCMC iteration = 208000
-## 
-##                        MCMC iteration = 209000
-## 
-##                        MCMC iteration = 210000
-## 
-##                        MCMC iteration = 211000
-## 
-##                        MCMC iteration = 212000
-## 
-##                        MCMC iteration = 213000
-## 
-##                        MCMC iteration = 214000
-## 
-##                        MCMC iteration = 215000
-## 
-##                        MCMC iteration = 216000
-## 
-##                        MCMC iteration = 217000
-## 
-##                        MCMC iteration = 218000
-## 
-##                        MCMC iteration = 219000
-## 
-##                        MCMC iteration = 220000
-## 
-##                        MCMC iteration = 221000
-## 
-##                        MCMC iteration = 222000
-## 
-##                        MCMC iteration = 223000
-## 
-##                        MCMC iteration = 224000
-## 
-##                        MCMC iteration = 225000
-## 
-##                        MCMC iteration = 226000
-## 
-##                        MCMC iteration = 227000
-## 
-##                        MCMC iteration = 228000
-## 
-##                        MCMC iteration = 229000
-## 
-##                        MCMC iteration = 230000
-## 
-##                        MCMC iteration = 231000
-## 
-##                        MCMC iteration = 232000
-## 
-##                        MCMC iteration = 233000
-## 
-##                        MCMC iteration = 234000
-## 
-##                        MCMC iteration = 235000
-## 
-##                        MCMC iteration = 236000
-## 
-##                        MCMC iteration = 237000
-## 
-##                        MCMC iteration = 238000
-## 
-##                        MCMC iteration = 239000
-## 
-##                        MCMC iteration = 240000
-## 
-##                        MCMC iteration = 241000
-## 
-##                        MCMC iteration = 242000
-## 
-##                        MCMC iteration = 243000
-## 
-##                        MCMC iteration = 244000
-## 
-##                        MCMC iteration = 245000
-## 
-##                        MCMC iteration = 246000
-## 
-##                        MCMC iteration = 247000
-## 
-##                        MCMC iteration = 248000
-## 
-##                        MCMC iteration = 249000
-## 
-##                        MCMC iteration = 250000
-## 
-##                        MCMC iteration = 251000
-## 
-##                        MCMC iteration = 252000
-## 
-##                        MCMC iteration = 253000
-## 
-##                        MCMC iteration = 254000
-## 
-##                        MCMC iteration = 255000
-## 
-##                        MCMC iteration = 256000
-## 
-##                        MCMC iteration = 257000
-## 
-##                        MCMC iteration = 258000
-## 
-##                        MCMC iteration = 259000
-## 
-##                        MCMC iteration = 260000
-## 
-##                        MCMC iteration = 261000
-## 
-##                        MCMC iteration = 262000
-## 
-##                        MCMC iteration = 263000
-## 
-##                        MCMC iteration = 264000
-## 
-##                        MCMC iteration = 265000
-## 
-##                        MCMC iteration = 266000
-## 
-##                        MCMC iteration = 267000
-## 
-##                        MCMC iteration = 268000
-## 
-##                        MCMC iteration = 269000
-## 
-##                        MCMC iteration = 270000
-## 
-##                        MCMC iteration = 271000
-## 
-##                        MCMC iteration = 272000
-## 
-##                        MCMC iteration = 273000
-## 
-##                        MCMC iteration = 274000
-## 
-##                        MCMC iteration = 275000
-## 
-##                        MCMC iteration = 276000
-## 
-##                        MCMC iteration = 277000
-## 
-##                        MCMC iteration = 278000
-## 
-##                        MCMC iteration = 279000
-## 
-##                        MCMC iteration = 280000
-## 
-##                        MCMC iteration = 281000
-## 
-##                        MCMC iteration = 282000
-## 
-##                        MCMC iteration = 283000
-## 
-##                        MCMC iteration = 284000
-## 
-##                        MCMC iteration = 285000
-## 
-##                        MCMC iteration = 286000
-## 
-##                        MCMC iteration = 287000
-## 
-##                        MCMC iteration = 288000
-## 
-##                        MCMC iteration = 289000
-## 
-##                        MCMC iteration = 290000
-## 
-##                        MCMC iteration = 291000
-## 
-##                        MCMC iteration = 292000
-## 
-##                        MCMC iteration = 293000
-## 
-##                        MCMC iteration = 294000
-## 
-##                        MCMC iteration = 295000
-## 
-##                        MCMC iteration = 296000
-## 
-##                        MCMC iteration = 297000
-## 
-##                        MCMC iteration = 298000
-## 
-##                        MCMC iteration = 299000
-## 
-##                        MCMC iteration = 300000
-## 
-##                        MCMC iteration = 301000
-## 
-##                        MCMC iteration = 302000
-## 
-##                        MCMC iteration = 303000
-## 
-##                        MCMC iteration = 304000
-## 
-##                        MCMC iteration = 305000
-## 
-##                        MCMC iteration = 306000
-## 
-##                        MCMC iteration = 307000
-## 
-##                        MCMC iteration = 308000
-## 
-##                        MCMC iteration = 309000
-## 
-##                        MCMC iteration = 310000
-## 
-##                        MCMC iteration = 311000
-## 
-##                        MCMC iteration = 312000
-## 
-##                        MCMC iteration = 313000
-## 
-##                        MCMC iteration = 314000
-## 
-##                        MCMC iteration = 315000
-## 
-##                        MCMC iteration = 316000
-## 
-##                        MCMC iteration = 317000
-## 
-##                        MCMC iteration = 318000
-## 
-##                        MCMC iteration = 319000
-## 
-##                        MCMC iteration = 320000
-## 
-##                        MCMC iteration = 321000
-## 
-##                        MCMC iteration = 322000
-## 
-##                        MCMC iteration = 323000
-## 
-##                        MCMC iteration = 324000
-## 
-##                        MCMC iteration = 325000
-## 
-##                        MCMC iteration = 326000
-## 
-##                        MCMC iteration = 327000
-## 
-##                        MCMC iteration = 328000
-## 
-##                        MCMC iteration = 329000
-## 
-##                        MCMC iteration = 330000
-## 
-##                        MCMC iteration = 331000
-## 
-##                        MCMC iteration = 332000
-## 
-##                        MCMC iteration = 333000
-## 
-##                        MCMC iteration = 334000
-## 
-##                        MCMC iteration = 335000
-## 
-##                        MCMC iteration = 336000
-## 
-##                        MCMC iteration = 337000
-## 
-##                        MCMC iteration = 338000
-## 
-##                        MCMC iteration = 339000
-## 
-##                        MCMC iteration = 340000
-## 
-##                        MCMC iteration = 341000
-## 
-##                        MCMC iteration = 342000
-## 
-##                        MCMC iteration = 343000
-## 
-##                        MCMC iteration = 344000
-## 
-##                        MCMC iteration = 345000
-## 
-##                        MCMC iteration = 346000
-## 
-##                        MCMC iteration = 347000
-## 
-##                        MCMC iteration = 348000
-## 
-##                        MCMC iteration = 349000
-## 
-##                        MCMC iteration = 350000
-## 
-##                        MCMC iteration = 351000
-## 
-##                        MCMC iteration = 352000
-## 
-##                        MCMC iteration = 353000
-## 
-##                        MCMC iteration = 354000
-## 
-##                        MCMC iteration = 355000
-## 
-##                        MCMC iteration = 356000
-## 
-##                        MCMC iteration = 357000
-## 
-##                        MCMC iteration = 358000
-## 
-##                        MCMC iteration = 359000
-## 
-##                        MCMC iteration = 360000
-## 
-##                        MCMC iteration = 361000
-## 
-##                        MCMC iteration = 362000
-## 
-##                        MCMC iteration = 363000
-## 
-##                        MCMC iteration = 364000
-## 
-##                        MCMC iteration = 365000
-## 
-##                        MCMC iteration = 366000
-## 
-##                        MCMC iteration = 367000
-## 
-##                        MCMC iteration = 368000
-## 
-##                        MCMC iteration = 369000
-## 
-##                        MCMC iteration = 370000
-## 
-##                        MCMC iteration = 371000
-## 
-##                        MCMC iteration = 372000
-## 
-##                        MCMC iteration = 373000
-## 
-##                        MCMC iteration = 374000
-## 
-##                        MCMC iteration = 375000
-## 
-##                        MCMC iteration = 376000
-## 
-##                        MCMC iteration = 377000
-## 
-##                        MCMC iteration = 378000
-## 
-##                        MCMC iteration = 379000
-## 
-##                        MCMC iteration = 380000
-## 
-##                        MCMC iteration = 381000
-## 
-##                        MCMC iteration = 382000
-## 
-##                        MCMC iteration = 383000
-## 
-##                        MCMC iteration = 384000
-## 
-##                        MCMC iteration = 385000
-## 
-##                        MCMC iteration = 386000
-## 
-##                        MCMC iteration = 387000
-## 
-##                        MCMC iteration = 388000
-## 
-##                        MCMC iteration = 389000
-## 
-##                        MCMC iteration = 390000
-## 
-##                        MCMC iteration = 391000
-## 
-##                        MCMC iteration = 392000
-## 
-##                        MCMC iteration = 393000
-## 
-##                        MCMC iteration = 394000
-## 
-##                        MCMC iteration = 395000
-## 
-##                        MCMC iteration = 396000
-## 
-##                        MCMC iteration = 397000
-## 
-##                        MCMC iteration = 398000
-## 
-##                        MCMC iteration = 399000
-## 
-##                        MCMC iteration = 400000
-## 
-##                        MCMC iteration = 401000
-## 
-##                        MCMC iteration = 402000
-## 
-##                        MCMC iteration = 403000
-## 
-##                        MCMC iteration = 404000
-## 
-##                        MCMC iteration = 405000
-## 
-##                        MCMC iteration = 406000
-## 
-##                        MCMC iteration = 407000
-## 
-##                        MCMC iteration = 408000
-## 
-##                        MCMC iteration = 409000
-## 
-##                        MCMC iteration = 410000
-## 
-##                        MCMC iteration = 411000
-## 
-##                        MCMC iteration = 412000
-## 
-##                        MCMC iteration = 413000
-## 
-##                        MCMC iteration = 414000
-## 
-##                        MCMC iteration = 415000
-## 
-##                        MCMC iteration = 416000
-## 
-##                        MCMC iteration = 417000
-## 
-##                        MCMC iteration = 418000
-## 
-##                        MCMC iteration = 419000
-## 
-##                        MCMC iteration = 420000
-## 
-##                        MCMC iteration = 421000
-## 
-##                        MCMC iteration = 422000
-## 
-##                        MCMC iteration = 423000
-## 
-##                        MCMC iteration = 424000
-## 
-##                        MCMC iteration = 425000
-## 
-##                        MCMC iteration = 426000
-## 
-##                        MCMC iteration = 427000
-## 
-##                        MCMC iteration = 428000
-## 
-##                        MCMC iteration = 429000
-## 
-##                        MCMC iteration = 430000
-## 
-##                        MCMC iteration = 431000
-## 
-##                        MCMC iteration = 432000
-## 
-##                        MCMC iteration = 433000
-## 
-##                        MCMC iteration = 434000
-## 
-##                        MCMC iteration = 435000
-## 
-##                        MCMC iteration = 436000
-## 
-##                        MCMC iteration = 437000
-## 
-##                        MCMC iteration = 438000
-## 
-##                        MCMC iteration = 439000
-## 
-##                        MCMC iteration = 440000
-## 
-##                        MCMC iteration = 441000
-## 
-##                        MCMC iteration = 442000
-## 
-##                        MCMC iteration = 443000
-## 
-##                        MCMC iteration = 444000
-## 
-##                        MCMC iteration = 445000
-## 
-##                        MCMC iteration = 446000
-## 
-##                        MCMC iteration = 447000
-## 
-##                        MCMC iteration = 448000
-## 
-##                        MCMC iteration = 449000
-## 
-##                        MCMC iteration = 450000
-## 
-##                        MCMC iteration = 451000
-## 
-##                        MCMC iteration = 452000
-## 
-##                        MCMC iteration = 453000
-## 
-##                        MCMC iteration = 454000
-## 
-##                        MCMC iteration = 455000
-## 
-##                        MCMC iteration = 456000
-## 
-##                        MCMC iteration = 457000
-## 
-##                        MCMC iteration = 458000
-## 
-##                        MCMC iteration = 459000
-## 
-##                        MCMC iteration = 460000
-## 
-##                        MCMC iteration = 461000
-## 
-##                        MCMC iteration = 462000
-## 
-##                        MCMC iteration = 463000
-## 
-##                        MCMC iteration = 464000
-## 
-##                        MCMC iteration = 465000
-## 
-##                        MCMC iteration = 466000
-## 
-##                        MCMC iteration = 467000
-## 
-##                        MCMC iteration = 468000
-## 
-##                        MCMC iteration = 469000
-## 
-##                        MCMC iteration = 470000
-## 
-##                        MCMC iteration = 471000
-## 
-##                        MCMC iteration = 472000
-## 
-##                        MCMC iteration = 473000
-## 
-##                        MCMC iteration = 474000
-## 
-##                        MCMC iteration = 475000
-## 
-##                        MCMC iteration = 476000
-## 
-##                        MCMC iteration = 477000
-## 
-##                        MCMC iteration = 478000
-## 
-##                        MCMC iteration = 479000
-## 
-##                        MCMC iteration = 480000
-## 
-##                        MCMC iteration = 481000
-## 
-##                        MCMC iteration = 482000
-## 
-##                        MCMC iteration = 483000
-## 
-##                        MCMC iteration = 484000
-## 
-##                        MCMC iteration = 485000
-## 
-##                        MCMC iteration = 486000
-## 
-##                        MCMC iteration = 487000
-## 
-##                        MCMC iteration = 488000
-## 
-##                        MCMC iteration = 489000
-## 
-##                        MCMC iteration = 490000
-## 
-##                        MCMC iteration = 491000
-## 
-##                        MCMC iteration = 492000
-## 
-##                        MCMC iteration = 493000
-## 
-##                        MCMC iteration = 494000
-## 
-##                        MCMC iteration = 495000
-## 
-##                        MCMC iteration = 496000
-## 
-##                        MCMC iteration = 497000
-## 
-##                        MCMC iteration = 498000
-## 
-##                        MCMC iteration = 499000
-## 
-##                        MCMC iteration = 500000
-## 
-##                        MCMC iteration = 501000
-## 
-##                        MCMC iteration = 502000
-## 
-##                        MCMC iteration = 503000
-## 
-##                        MCMC iteration = 504000
-## 
-##                        MCMC iteration = 505000
-## 
-##                        MCMC iteration = 506000
-## 
-##                        MCMC iteration = 507000
-## 
-##                        MCMC iteration = 508000
-## 
-##                        MCMC iteration = 509000
-## 
-##                        MCMC iteration = 510000
-## 
-##                        MCMC iteration = 511000
-## 
-##                        MCMC iteration = 512000
-## 
-##                        MCMC iteration = 513000
-## 
-##                        MCMC iteration = 514000
-## 
-##                        MCMC iteration = 515000
-## 
-##                        MCMC iteration = 516000
-## 
-##                        MCMC iteration = 517000
-## 
-##                        MCMC iteration = 518000
-## 
-##                        MCMC iteration = 519000
-## 
-##                        MCMC iteration = 520000
-## 
-##                        MCMC iteration = 521000
-## 
-##                        MCMC iteration = 522000
-## 
-##                        MCMC iteration = 523000
-## 
-##                        MCMC iteration = 524000
-## 
-##                        MCMC iteration = 525000
-## 
-##                        MCMC iteration = 526000
-## 
-##                        MCMC iteration = 527000
-## 
-##                        MCMC iteration = 528000
-## 
-##                        MCMC iteration = 529000
-## 
-##                        MCMC iteration = 530000
-## 
-##                        MCMC iteration = 531000
-## 
-##                        MCMC iteration = 532000
-## 
-##                        MCMC iteration = 533000
-## 
-##                        MCMC iteration = 534000
-## 
-##                        MCMC iteration = 535000
-## 
-##                        MCMC iteration = 536000
-## 
-##                        MCMC iteration = 537000
-## 
-##                        MCMC iteration = 538000
-## 
-##                        MCMC iteration = 539000
-## 
-##                        MCMC iteration = 540000
-## 
-##                        MCMC iteration = 541000
-## 
-##                        MCMC iteration = 542000
-## 
-##                        MCMC iteration = 543000
-## 
-##                        MCMC iteration = 544000
-## 
-##                        MCMC iteration = 545000
-## 
-##                        MCMC iteration = 546000
-## 
-##                        MCMC iteration = 547000
-## 
-##                        MCMC iteration = 548000
-## 
-##                        MCMC iteration = 549000
-## 
-##                        MCMC iteration = 550000
-## 
-##                        MCMC iteration = 551000
-## 
-##                        MCMC iteration = 552000
-## 
-##                        MCMC iteration = 553000
-## 
-##                        MCMC iteration = 554000
-## 
-##                        MCMC iteration = 555000
-## 
-##                        MCMC iteration = 556000
-## 
-##                        MCMC iteration = 557000
-## 
-##                        MCMC iteration = 558000
-## 
-##                        MCMC iteration = 559000
-## 
-##                        MCMC iteration = 560000
-## 
-##                        MCMC iteration = 561000
-## 
-##                        MCMC iteration = 562000
-## 
-##                        MCMC iteration = 563000
-## 
-##                        MCMC iteration = 564000
-## 
-##                        MCMC iteration = 565000
-## 
-##                        MCMC iteration = 566000
-## 
-##                        MCMC iteration = 567000
-## 
-##                        MCMC iteration = 568000
-## 
-##                        MCMC iteration = 569000
-## 
-##                        MCMC iteration = 570000
-## 
-##                        MCMC iteration = 571000
-## 
-##                        MCMC iteration = 572000
-## 
-##                        MCMC iteration = 573000
-## 
-##                        MCMC iteration = 574000
-## 
-##                        MCMC iteration = 575000
-## 
-##                        MCMC iteration = 576000
-## 
-##                        MCMC iteration = 577000
-## 
-##                        MCMC iteration = 578000
-## 
-##                        MCMC iteration = 579000
-## 
-##                        MCMC iteration = 580000
-## 
-##                        MCMC iteration = 581000
-## 
-##                        MCMC iteration = 582000
-## 
-##                        MCMC iteration = 583000
-## 
-##                        MCMC iteration = 584000
-## 
-##                        MCMC iteration = 585000
-## 
-##                        MCMC iteration = 586000
-## 
-##                        MCMC iteration = 587000
-## 
-##                        MCMC iteration = 588000
-## 
-##                        MCMC iteration = 589000
-## 
-##                        MCMC iteration = 590000
-## 
-##                        MCMC iteration = 591000
-## 
-##                        MCMC iteration = 592000
-## 
-##                        MCMC iteration = 593000
-## 
-##                        MCMC iteration = 594000
-## 
-##                        MCMC iteration = 595000
-## 
-##                        MCMC iteration = 596000
-## 
-##                        MCMC iteration = 597000
-## 
-##                        MCMC iteration = 598000
-## 
-##                        MCMC iteration = 599000
-## 
-##                        MCMC iteration = 600000
-## 
-##                        MCMC iteration = 601000
-## 
-##                        MCMC iteration = 602000
-## 
-##                        MCMC iteration = 603000
-## 
-##                        MCMC iteration = 604000
-## 
-##                        MCMC iteration = 605000
-## 
-##                        MCMC iteration = 606000
-## 
-##                        MCMC iteration = 607000
-## 
-##                        MCMC iteration = 608000
-## 
-##                        MCMC iteration = 609000
-## 
-##                        MCMC iteration = 610000
-## 
-##                        MCMC iteration = 611000
-## 
-##                        MCMC iteration = 612000
-## 
-##                        MCMC iteration = 613000
-## 
-##                        MCMC iteration = 614000
-## 
-##                        MCMC iteration = 615000
-## 
-##                        MCMC iteration = 616000
-## 
-##                        MCMC iteration = 617000
-## 
-##                        MCMC iteration = 618000
-## 
-##                        MCMC iteration = 619000
-## 
-##                        MCMC iteration = 620000
-## 
-##                        MCMC iteration = 621000
-## 
-##                        MCMC iteration = 622000
-## 
-##                        MCMC iteration = 623000
-## 
-##                        MCMC iteration = 624000
-## 
-##                        MCMC iteration = 625000
-## 
-##                        MCMC iteration = 626000
-## 
-##                        MCMC iteration = 627000
-## 
-##                        MCMC iteration = 628000
-## 
-##                        MCMC iteration = 629000
-## 
-##                        MCMC iteration = 630000
-## 
-##                        MCMC iteration = 631000
-## 
-##                        MCMC iteration = 632000
-## 
-##                        MCMC iteration = 633000
-## 
-##                        MCMC iteration = 634000
-## 
-##                        MCMC iteration = 635000
-## 
-##                        MCMC iteration = 636000
-## 
-##                        MCMC iteration = 637000
-## 
-##                        MCMC iteration = 638000
-## 
-##                        MCMC iteration = 639000
-## 
-##                        MCMC iteration = 640000
-## 
-##                        MCMC iteration = 641000
-## 
-##                        MCMC iteration = 642000
-## 
-##                        MCMC iteration = 643000
-## 
-##                        MCMC iteration = 644000
-## 
-##                        MCMC iteration = 645000
-## 
-##                        MCMC iteration = 646000
-## 
-##                        MCMC iteration = 647000
-## 
-##                        MCMC iteration = 648000
-## 
-##                        MCMC iteration = 649000
-## 
-##                        MCMC iteration = 650000
-## 
-##                        MCMC iteration = 651000
-## 
-##                        MCMC iteration = 652000
-## 
-##                        MCMC iteration = 653000
-## 
-##                        MCMC iteration = 654000
-## 
-##                        MCMC iteration = 655000
-## 
-##                        MCMC iteration = 656000
-## 
-##                        MCMC iteration = 657000
-## 
-##                        MCMC iteration = 658000
-## 
-##                        MCMC iteration = 659000
-## 
-##                        MCMC iteration = 660000
-## 
-##                        MCMC iteration = 661000
-## 
-##                        MCMC iteration = 662000
-## 
-##                        MCMC iteration = 663000
-## 
-##                        MCMC iteration = 664000
-## 
-##                        MCMC iteration = 665000
-## 
-##                        MCMC iteration = 666000
-## 
-##                        MCMC iteration = 667000
-## 
-##                        MCMC iteration = 668000
-## 
-##                        MCMC iteration = 669000
-## 
-##                        MCMC iteration = 670000
-## 
-##                        MCMC iteration = 671000
-## 
-##                        MCMC iteration = 672000
-## 
-##                        MCMC iteration = 673000
-## 
-##                        MCMC iteration = 674000
-## 
-##                        MCMC iteration = 675000
-## 
-##                        MCMC iteration = 676000
-## 
-##                        MCMC iteration = 677000
-## 
-##                        MCMC iteration = 678000
-## 
-##                        MCMC iteration = 679000
-## 
-##                        MCMC iteration = 680000
-## 
-##                        MCMC iteration = 681000
-## 
-##                        MCMC iteration = 682000
-## 
-##                        MCMC iteration = 683000
-## 
-##                        MCMC iteration = 684000
-## 
-##                        MCMC iteration = 685000
-## 
-##                        MCMC iteration = 686000
-## 
-##                        MCMC iteration = 687000
-## 
-##                        MCMC iteration = 688000
-## 
-##                        MCMC iteration = 689000
-## 
-##                        MCMC iteration = 690000
-## 
-##                        MCMC iteration = 691000
-## 
-##                        MCMC iteration = 692000
-## 
-##                        MCMC iteration = 693000
-## 
-##                        MCMC iteration = 694000
-## 
-##                        MCMC iteration = 695000
-## 
-##                        MCMC iteration = 696000
-## 
-##                        MCMC iteration = 697000
-## 
-##                        MCMC iteration = 698000
-## 
-##                        MCMC iteration = 699000
-## 
-##                        MCMC iteration = 700000
-## 
-##                        MCMC iteration = 701000
-## 
-##                        MCMC iteration = 702000
-## 
-##                        MCMC iteration = 703000
-## 
-##                        MCMC iteration = 704000
-## 
-##                        MCMC iteration = 705000
-## 
-##                        MCMC iteration = 706000
-## 
-##                        MCMC iteration = 707000
-## 
-##                        MCMC iteration = 708000
-## 
-##                        MCMC iteration = 709000
-## 
-##                        MCMC iteration = 710000
-## 
-##                        MCMC iteration = 711000
-## 
-##                        MCMC iteration = 712000
-## 
-##                        MCMC iteration = 713000
-## 
-##                        MCMC iteration = 714000
-## 
-##                        MCMC iteration = 715000
-## 
-##                        MCMC iteration = 716000
-## 
-##                        MCMC iteration = 717000
-## 
-##                        MCMC iteration = 718000
-## 
-##                        MCMC iteration = 719000
-## 
-##                        MCMC iteration = 720000
-## 
-##                        MCMC iteration = 721000
-## 
-##                        MCMC iteration = 722000
-## 
-##                        MCMC iteration = 723000
-## 
-##                        MCMC iteration = 724000
-## 
-##                        MCMC iteration = 725000
-## 
-##                        MCMC iteration = 726000
-## 
-##                        MCMC iteration = 727000
-## 
-##                        MCMC iteration = 728000
-## 
-##                        MCMC iteration = 729000
-## 
-##                        MCMC iteration = 730000
-## 
-##                        MCMC iteration = 731000
-## 
-##                        MCMC iteration = 732000
-## 
-##                        MCMC iteration = 733000
-## 
-##                        MCMC iteration = 734000
-## 
-##                        MCMC iteration = 735000
-## 
-##                        MCMC iteration = 736000
-## 
-##                        MCMC iteration = 737000
-## 
-##                        MCMC iteration = 738000
-## 
-##                        MCMC iteration = 739000
-## 
-##                        MCMC iteration = 740000
-## 
-##                        MCMC iteration = 741000
-## 
-##                        MCMC iteration = 742000
-## 
-##                        MCMC iteration = 743000
-## 
-##                        MCMC iteration = 744000
-## 
-##                        MCMC iteration = 745000
-## 
-##                        MCMC iteration = 746000
-## 
-##                        MCMC iteration = 747000
-## 
-##                        MCMC iteration = 748000
-## 
-##                        MCMC iteration = 749000
-## 
-##                        MCMC iteration = 750000
-## 
-##                        MCMC iteration = 751000
-## 
-##                        MCMC iteration = 752000
-## 
-##                        MCMC iteration = 753000
-## 
-##                        MCMC iteration = 754000
-## 
-##                        MCMC iteration = 755000
-## 
-##                        MCMC iteration = 756000
-## 
-##                        MCMC iteration = 757000
-## 
-##                        MCMC iteration = 758000
-## 
-##                        MCMC iteration = 759000
-## 
-##                        MCMC iteration = 760000
-## 
-##                        MCMC iteration = 761000
-## 
-##                        MCMC iteration = 762000
-## 
-##                        MCMC iteration = 763000
-## 
-##                        MCMC iteration = 764000
-## 
-##                        MCMC iteration = 765000
-## 
-##                        MCMC iteration = 766000
-## 
-##                        MCMC iteration = 767000
-## 
-##                        MCMC iteration = 768000
-## 
-##                        MCMC iteration = 769000
-## 
-##                        MCMC iteration = 770000
-## 
-##                        MCMC iteration = 771000
-## 
-##                        MCMC iteration = 772000
-## 
-##                        MCMC iteration = 773000
-## 
-##                        MCMC iteration = 774000
-## 
-##                        MCMC iteration = 775000
-## 
-##                        MCMC iteration = 776000
-## 
-##                        MCMC iteration = 777000
-## 
-##                        MCMC iteration = 778000
-## 
-##                        MCMC iteration = 779000
-## 
-##                        MCMC iteration = 780000
-## 
-##                        MCMC iteration = 781000
-## 
-##                        MCMC iteration = 782000
-## 
-##                        MCMC iteration = 783000
-## 
-##                        MCMC iteration = 784000
-## 
-##                        MCMC iteration = 785000
-## 
-##                        MCMC iteration = 786000
-## 
-##                        MCMC iteration = 787000
-## 
-##                        MCMC iteration = 788000
-## 
-##                        MCMC iteration = 789000
-## 
-##                        MCMC iteration = 790000
-## 
-##                        MCMC iteration = 791000
-## 
-##                        MCMC iteration = 792000
-## 
-##                        MCMC iteration = 793000
-## 
-##                        MCMC iteration = 794000
-## 
-##                        MCMC iteration = 795000
-## 
-##                        MCMC iteration = 796000
-## 
-##                        MCMC iteration = 797000
-## 
-##                        MCMC iteration = 798000
-## 
-##                        MCMC iteration = 799000
-## 
-##                        MCMC iteration = 800000
-## 
-##                        MCMC iteration = 801000
-## 
-##                        MCMC iteration = 802000
-## 
-##                        MCMC iteration = 803000
-## 
-##                        MCMC iteration = 804000
-## 
-##                        MCMC iteration = 805000
-## 
-##                        MCMC iteration = 806000
-## 
-##                        MCMC iteration = 807000
-## 
-##                        MCMC iteration = 808000
-## 
-##                        MCMC iteration = 809000
-## 
-##                        MCMC iteration = 810000
-## 
-##                        MCMC iteration = 811000
-## 
-##                        MCMC iteration = 812000
-## 
-##                        MCMC iteration = 813000
-## 
-##                        MCMC iteration = 814000
-## 
-##                        MCMC iteration = 815000
-## 
-##                        MCMC iteration = 816000
-## 
-##                        MCMC iteration = 817000
-## 
-##                        MCMC iteration = 818000
-## 
-##                        MCMC iteration = 819000
-## 
-##                        MCMC iteration = 820000
-## 
-##                        MCMC iteration = 821000
-## 
-##                        MCMC iteration = 822000
-## 
-##                        MCMC iteration = 823000
-## 
-##                        MCMC iteration = 824000
-## 
-##                        MCMC iteration = 825000
-## 
-##                        MCMC iteration = 826000
-## 
-##                        MCMC iteration = 827000
-## 
-##                        MCMC iteration = 828000
-## 
-##                        MCMC iteration = 829000
-## 
-##                        MCMC iteration = 830000
-## 
-##                        MCMC iteration = 831000
-## 
-##                        MCMC iteration = 832000
-## 
-##                        MCMC iteration = 833000
-## 
-##                        MCMC iteration = 834000
-## 
-##                        MCMC iteration = 835000
-## 
-##                        MCMC iteration = 836000
-## 
-##                        MCMC iteration = 837000
-## 
-##                        MCMC iteration = 838000
-## 
-##                        MCMC iteration = 839000
-## 
-##                        MCMC iteration = 840000
-## 
-##                        MCMC iteration = 841000
-## 
-##                        MCMC iteration = 842000
-## 
-##                        MCMC iteration = 843000
-## 
-##                        MCMC iteration = 844000
-## 
-##                        MCMC iteration = 845000
-## 
-##                        MCMC iteration = 846000
-## 
-##                        MCMC iteration = 847000
-## 
-##                        MCMC iteration = 848000
-## 
-##                        MCMC iteration = 849000
-## 
-##                        MCMC iteration = 850000
-## 
-##                        MCMC iteration = 851000
-## 
-##                        MCMC iteration = 852000
-## 
-##                        MCMC iteration = 853000
-## 
-##                        MCMC iteration = 854000
-## 
-##                        MCMC iteration = 855000
-## 
-##                        MCMC iteration = 856000
-## 
-##                        MCMC iteration = 857000
-## 
-##                        MCMC iteration = 858000
-## 
-##                        MCMC iteration = 859000
-## 
-##                        MCMC iteration = 860000
-## 
-##                        MCMC iteration = 861000
-## 
-##                        MCMC iteration = 862000
-## 
-##                        MCMC iteration = 863000
-## 
-##                        MCMC iteration = 864000
-## 
-##                        MCMC iteration = 865000
-## 
-##                        MCMC iteration = 866000
-## 
-##                        MCMC iteration = 867000
-## 
-##                        MCMC iteration = 868000
-## 
-##                        MCMC iteration = 869000
-## 
-##                        MCMC iteration = 870000
-## 
-##                        MCMC iteration = 871000
-## 
-##                        MCMC iteration = 872000
-## 
-##                        MCMC iteration = 873000
-## 
-##                        MCMC iteration = 874000
-## 
-##                        MCMC iteration = 875000
-## 
-##                        MCMC iteration = 876000
-## 
-##                        MCMC iteration = 877000
-## 
-##                        MCMC iteration = 878000
-## 
-##                        MCMC iteration = 879000
-## 
-##                        MCMC iteration = 880000
-## 
-##                        MCMC iteration = 881000
-## 
-##                        MCMC iteration = 882000
-## 
-##                        MCMC iteration = 883000
-## 
-##                        MCMC iteration = 884000
-## 
-##                        MCMC iteration = 885000
-## 
-##                        MCMC iteration = 886000
-## 
-##                        MCMC iteration = 887000
-## 
-##                        MCMC iteration = 888000
-## 
-##                        MCMC iteration = 889000
-## 
-##                        MCMC iteration = 890000
-## 
-##                        MCMC iteration = 891000
-## 
-##                        MCMC iteration = 892000
-## 
-##                        MCMC iteration = 893000
-## 
-##                        MCMC iteration = 894000
-## 
-##                        MCMC iteration = 895000
-## 
-##                        MCMC iteration = 896000
-## 
-##                        MCMC iteration = 897000
-## 
-##                        MCMC iteration = 898000
-## 
-##                        MCMC iteration = 899000
-## 
-##                        MCMC iteration = 900000
-## 
-##                        MCMC iteration = 901000
-## 
-##                        MCMC iteration = 902000
-## 
-##                        MCMC iteration = 903000
-## 
-##                        MCMC iteration = 904000
-## 
-##                        MCMC iteration = 905000
-## 
-##                        MCMC iteration = 906000
-## 
-##                        MCMC iteration = 907000
-## 
-##                        MCMC iteration = 908000
-## 
-##                        MCMC iteration = 909000
-## 
-##                        MCMC iteration = 910000
-## 
-##                        MCMC iteration = 911000
-## 
-##                        MCMC iteration = 912000
-## 
-##                        MCMC iteration = 913000
-## 
-##                        MCMC iteration = 914000
-## 
-##                        MCMC iteration = 915000
-## 
-##                        MCMC iteration = 916000
-## 
-##                        MCMC iteration = 917000
-## 
-##                        MCMC iteration = 918000
-## 
-##                        MCMC iteration = 919000
-## 
-##                        MCMC iteration = 920000
-## 
-##                        MCMC iteration = 921000
-## 
-##                        MCMC iteration = 922000
-## 
-##                        MCMC iteration = 923000
-## 
-##                        MCMC iteration = 924000
-## 
-##                        MCMC iteration = 925000
-## 
-##                        MCMC iteration = 926000
-## 
-##                        MCMC iteration = 927000
-## 
-##                        MCMC iteration = 928000
-## 
-##                        MCMC iteration = 929000
-## 
-##                        MCMC iteration = 930000
-## 
-##                        MCMC iteration = 931000
-## 
-##                        MCMC iteration = 932000
-## 
-##                        MCMC iteration = 933000
-## 
-##                        MCMC iteration = 934000
-## 
-##                        MCMC iteration = 935000
-## 
-##                        MCMC iteration = 936000
-## 
-##                        MCMC iteration = 937000
-## 
-##                        MCMC iteration = 938000
-## 
-##                        MCMC iteration = 939000
-## 
-##                        MCMC iteration = 940000
-## 
-##                        MCMC iteration = 941000
-## 
-##                        MCMC iteration = 942000
-## 
-##                        MCMC iteration = 943000
-## 
-##                        MCMC iteration = 944000
-## 
-##                        MCMC iteration = 945000
-## 
-##                        MCMC iteration = 946000
-## 
-##                        MCMC iteration = 947000
-## 
-##                        MCMC iteration = 948000
-## 
-##                        MCMC iteration = 949000
-## 
-##                        MCMC iteration = 950000
-## 
-##                        MCMC iteration = 951000
-## 
-##                        MCMC iteration = 952000
-## 
-##                        MCMC iteration = 953000
-## 
-##                        MCMC iteration = 954000
-## 
-##                        MCMC iteration = 955000
-## 
-##                        MCMC iteration = 956000
-## 
-##                        MCMC iteration = 957000
-## 
-##                        MCMC iteration = 958000
-## 
-##                        MCMC iteration = 959000
-## 
-##                        MCMC iteration = 960000
-## 
-##                        MCMC iteration = 961000
-## 
-##                        MCMC iteration = 962000
-## 
-##                        MCMC iteration = 963000
-## 
-##                        MCMC iteration = 964000
-## 
-##                        MCMC iteration = 965000
-## 
-##                        MCMC iteration = 966000
-## 
-##                        MCMC iteration = 967000
-## 
-##                        MCMC iteration = 968000
-## 
-##                        MCMC iteration = 969000
-## 
-##                        MCMC iteration = 970000
-## 
-##                        MCMC iteration = 971000
-## 
-##                        MCMC iteration = 972000
-## 
-##                        MCMC iteration = 973000
-## 
-##                        MCMC iteration = 974000
-## 
-##                        MCMC iteration = 975000
-## 
-##                        MCMC iteration = 976000
-## 
-##                        MCMC iteration = 977000
-## 
-##                        MCMC iteration = 978000
-## 
-##                        MCMC iteration = 979000
-## 
-##                        MCMC iteration = 980000
-## 
-##                        MCMC iteration = 981000
-## 
-##                        MCMC iteration = 982000
-## 
-##                        MCMC iteration = 983000
-## 
-##                        MCMC iteration = 984000
-## 
-##                        MCMC iteration = 985000
-## 
-##                        MCMC iteration = 986000
-## 
-##                        MCMC iteration = 987000
-## 
-##                        MCMC iteration = 988000
-## 
-##                        MCMC iteration = 989000
-## 
-##                        MCMC iteration = 990000
-## 
-##                        MCMC iteration = 991000
-## 
-##                        MCMC iteration = 992000
-## 
-##                        MCMC iteration = 993000
-## 
-##                        MCMC iteration = 994000
-## 
-##                        MCMC iteration = 995000
-## 
-##                        MCMC iteration = 996000
-## 
-##                        MCMC iteration = 997000
-## 
-##                        MCMC iteration = 998000
-## 
-##                        MCMC iteration = 999000
-## 
-##                        MCMC iteration = 1000000
-## 
-##                        MCMC iteration = 1001000
-## 
-##                        MCMC iteration = 1002000
-## 
-##                        MCMC iteration = 1003000</code></pre>
 <p>mallien vertailu</p>
 <pre class="r"><code>output3=model.sel(m21,m22,m23,m24)
 output3</code></pre>
 <pre><code>## Model selection table 
 ##      (Int) Hab mth Mig Hab:mth mth:Mig df  logLik    AICc delta weight
-## m21 0.5880   +   +   +       +       + 26 668.700 -1283.9  0.00  0.996
-## m22 0.6183   +   +   +       +         20 656.903 -1272.9 10.98  0.004
-## m23 0.5474   +   +   +               + 17 635.081 -1235.5 48.38  0.000
-## m24 0.5746   +   +   +                 11 619.896 -1217.5 66.38  0.000
+## m21 0.5861   +   +   +       +       + 26 668.664 -1283.8  0.00  0.997
+## m22 0.6154   +   +   +       +         20 656.608 -1272.3 11.50  0.003
+## m23 0.5490   +   +   +               + 17 635.113 -1235.6 48.25  0.000
+## m24 0.5695   +   +   +                 11 620.279 -1218.3 65.54  0.000
 ## Models ranked by AICc(x) 
 ## Random terms (all models): 
 ## '~species'</code></pre>
@@ -6373,38 +4306,38 @@ output4&lt;-model.sel(m1A,m2A,m3A,m4A,m5A,m6A,m7A,m8A,m9A,m10A,m11A,m12A,m13A,m1
 output4</code></pre>
 <pre><code>## Model selection table 
 ##        (Int) Hab     lgm mth Mig pol     PrS Hab:mth Hab:pol lgm:mth
-## m10A 0.07091     0.03327   +   +   +                               +
-## m14A 0.41680               +   +   + 0.05811                        
-## m6A  0.34780   + 0.03191   +   +   + 0.06798       +               +
-## m3A  0.35000   + 0.03148   +   +   + 0.06894       +               +
-## m18A 0.43080               +       + 0.05436                        
-## m16A 0.17070     0.02409   +   +   +                               +
-## m7A  0.53880   +           +   +   + 0.06563       +                
-## m15A 0.20320     0.03625   +       + 0.05658                       +
-## m8A  0.34030   + 0.03297   +       + 0.06994       +               +
-## m11A 0.54580   +           +       + 0.06752       +                
-## m19A 0.33190               +   +   +                                
-## m20A 0.14890     0.03147   +       +                               +
-## m2A  0.35520   + 0.03253   +   +   + 0.07488       +       +       +
-## m9A  0.27740   + 0.02673   +   +   +               +               +
-## m5A  0.28280   + 0.03838   +   +   + 0.04159                        
-## m12A 0.45110   +           +   +   +               +                
-## m17A 0.45910   +           +       +               +                
-## m13A 0.27630   + 0.02727   +       +               +               +
-## m4A  0.27860   + 0.04011   +   +   + 0.04823               +        
-## m1A  0.39300   + 0.03104   +   +   + 0.08257       +       +       +
+## m10A 0.07752     0.03307   +   +   +                               +
+## m14A 0.41530               +   +   + 0.05880                        
+## m6A  0.34220   + 0.03229   +   +   + 0.06845       +               +
+## m3A  0.34820   + 0.03161   +   +   + 0.06875       +               +
+## m16A 0.16780     0.02478   +   +   +                               +
+## m18A 0.42640               +       + 0.05376                        
+## m7A  0.53650   +           +   +   + 0.06549       +                
+## m15A 0.19880     0.03702   +       + 0.05607                       +
+## m11A 0.54480   +           +       + 0.06647       +                
+## m19A 0.32730               +   +   +                                
+## m8A  0.33920   + 0.03224   +       + 0.06956       +               +
+## m20A 0.15440     0.03042   +       +                               +
+## m2A  0.34650   + 0.03296   +   +   + 0.07386       +       +       +
+## m9A  0.28280   + 0.02531   +   +   +               +               +
+## m5A  0.28010   + 0.03804   +   +   + 0.04188                        
+## m12A 0.45200   +           +   +   +               +                
+## m17A 0.45820   +           +       +               +                
+## m13A 0.28200   + 0.02657   +       +               +               +
+## m4A  0.28590   + 0.03933   +   +   + 0.04837               +        
+## m1A  0.39390   + 0.03198   +   +   + 0.08360       +       +       +
 ##      lgm:pol mth:Mig mth:pol mth:PrS Mig:pol pol:PrS Hab:mth:pol
 ## m10A               +                                            
 ## m14A               +               +                            
 ## m6A                +               +                            
 ## m3A                +               +                            
-## m18A                               +                            
 ## m16A               +                                            
+## m18A                               +                            
 ## m7A                +               +                            
 ## m15A                               +                            
-## m8A                                +                            
 ## m11A                               +                            
 ## m19A               +                                            
+## m8A                                +                            
 ## m20A                                                            
 ## m2A        +       +               +       +       +            
 ## m9A                +                                            
@@ -6415,47 +4348,47 @@ output4</code></pre>
 ## m4A        +                               +       +            
 ## m1A        +       +       +       +       +       +           +
 ##      lgm:mth:pol mth:Mig:pol mth:pol:PrS    Prv mth:Prv df  logLik   AICc
-## m10A                                     0.2095       + 23 445.420 -843.7
-## m14A                                                    19 436.174 -833.5
-## m6A                                                     35 450.588 -828.4
-## m3A                                                     35 449.981 -827.2
-## m18A                                                    11 424.367 -826.5
-## m16A                                                    19 432.264 -825.7
-## m7A                                                     31 444.279 -824.4
-## m15A                                                    15 426.585 -822.7
-## m8A                                                     27 437.457 -819.3
-## m11A                                                    23 433.130 -819.1
-## m19A                                                    15 424.654 -818.8
-## m20A                                                    11 420.206 -818.1
-## m2A                                                     42 450.282 -812.6
-## m9A                                                     31 436.942 -809.7
-## m5A                                                     14 418.229 -808.0
-## m12A                                                    27 430.303 -805.0
-## m17A                                                    19 418.371 -797.9
-## m13A                                                    23 422.189 -797.2
-## m4A                                                     21 419.099 -795.2
-## m1A            +           +           +                66 455.837 -769.8
+## m10A                                     0.2162       + 23 444.780 -842.4
+## m14A                                                    19 436.714 -834.6
+## m6A                                                     35 450.268 -827.8
+## m3A                                                     35 449.890 -827.1
+## m16A                                                    19 432.471 -826.1
+## m18A                                                    11 423.824 -825.4
+## m7A                                                     31 444.490 -824.8
+## m15A                                                    15 426.711 -822.9
+## m11A                                                    23 433.288 -819.4
+## m19A                                                    15 424.816 -819.1
+## m8A                                                     27 436.922 -818.2
+## m20A                                                    11 419.450 -816.6
+## m2A                                                     42 450.504 -813.1
+## m9A                                                     31 435.972 -807.8
+## m5A                                                     14 417.950 -807.5
+## m12A                                                    27 430.370 -805.1
+## m17A                                                    19 418.543 -798.3
+## m13A                                                    23 422.650 -798.1
+## m4A                                                     21 418.501 -794.0
+## m1A            +           +           +                66 455.102 -768.3
 ##      delta weight
-## m10A  0.00  0.993
-## m14A 10.12  0.006
-## m6A  15.21  0.000
-## m3A  16.43  0.000
-## m18A 17.20  0.000
-## m16A 17.94  0.000
-## m7A  19.24  0.000
-## m15A 21.00  0.000
-## m8A  24.37  0.000
-## m11A 24.58  0.000
-## m19A 24.86  0.000
-## m20A 25.53  0.000
-## m2A  31.03  0.000
-## m9A  33.91  0.000
-## m5A  35.65  0.000
-## m12A 38.68  0.000
-## m17A 45.73  0.000
-## m13A 46.46  0.000
-## m4A  48.45  0.000
-## m1A  73.89  0.000
+## m10A  0.00  0.978
+## m14A  7.76  0.020
+## m6A  14.57  0.001
+## m3A  15.33  0.000
+## m16A 16.25  0.000
+## m18A 17.01  0.000
+## m7A  17.54  0.000
+## m15A 19.47  0.000
+## m11A 22.98  0.000
+## m19A 23.26  0.000
+## m8A  24.16  0.000
+## m20A 25.76  0.000
+## m2A  29.31  0.000
+## m9A  34.57  0.000
+## m5A  34.93  0.000
+## m12A 37.26  0.000
+## m17A 44.10  0.000
+## m13A 44.26  0.000
+## m4A  48.36  0.000
+## m1A  74.08  0.000
 ## Models ranked by AICc(x) 
 ## Random terms (all models): 
 ## '~species'</code></pre>
@@ -6467,42 +4400,42 @@ output4</code></pre>
 ##  Thinning interval  = 1000
 ##  Sample size  = 1000 
 ## 
-##  DIC: -780.751 
+##  DIC: -780.691 
 ## 
 ##  G-structure:  ~species
 ## 
 ##         post.mean l-95% CI u-95% CI eff.samp
-## species   0.05461   0.0332  0.07942    904.9
+## species   0.05438   0.0344   0.0793     1000
 ## 
 ##  R-structure:  ~units
 ## 
 ##       post.mean l-95% CI u-95% CI eff.samp
-## units   0.02294  0.02073   0.0254     1000
+## units   0.02301  0.02078  0.02531     1000
 ## 
 ##  Location effects: accuracy ~ Prev * method + Mig * method + logmass * method + pool 
 ## 
 ##                  post.mean   l-95% CI   u-95% CI eff.samp  pMCMC    
-## (Intercept)      0.0709066 -0.2161676  0.3262730   1000.0  0.584    
-## Prev             0.2094576  0.0828265  0.3131501    830.6 &lt;0.001 ***
-## methodB         -0.0984687 -0.1951404  0.0086019   1000.0  0.064 .  
-## methodC         -0.3575116 -0.4518378 -0.2577549    892.2 &lt;0.001 ***
-## methodD         -0.3230244 -0.4124681 -0.2238050    941.4 &lt;0.001 ***
-## MigR            -0.0484844 -0.1404976  0.0455719   1000.0  0.324    
-## MigS             0.0375463 -0.0393306  0.1252288   1000.0  0.362    
-## logmass          0.0332734  0.0003217  0.0653264   1170.9  0.040 *  
-## poolPo           0.0357469  0.0177994  0.0552714   1000.0 &lt;0.001 ***
-## Prev:methodB     0.0444123 -0.0838207  0.1624554   1202.9  0.506    
-## Prev:methodC    -0.1707886 -0.2849481 -0.0406150   1000.0  0.010 ** 
-## Prev:methodD    -0.1825320 -0.2889829 -0.0403887   1000.0  0.006 ** 
-## methodB:MigR     0.0041143 -0.0656087  0.0716807   1000.0  0.906    
-## methodC:MigR     0.0911310  0.0132373  0.1603581   1204.0  0.022 *  
-## methodD:MigR     0.0920955  0.0191915  0.1694331   1000.0  0.022 *  
-## methodB:MigS     0.0113850 -0.0621959  0.0759681   1000.0  0.788    
-## methodC:MigS    -0.0628258 -0.1419572  0.0037273   1218.0  0.092 .  
-## methodD:MigS    -0.0176892 -0.0877552  0.0545678   1000.0  0.646    
-## methodB:logmass -0.0001444 -0.0173551  0.0168142   1000.0  0.946    
-## methodC:logmass  0.0155187 -0.0014372  0.0324831    881.5  0.082 .  
-## methodD:logmass  0.0039915 -0.0134881  0.0200863   1000.0  0.622    
+## (Intercept)      0.0775157 -0.1928429  0.3402066   1000.0  0.556    
+## Prev             0.2162433  0.1034600  0.3358142   1000.0 &lt;0.001 ***
+## methodB         -0.0917977 -0.1906011  0.0195737   1000.0  0.096 .  
+## methodC         -0.3548906 -0.4512191 -0.2579856   1000.0 &lt;0.001 ***
+## methodD         -0.3157782 -0.4208355 -0.2138913   1000.0 &lt;0.001 ***
+## MigR            -0.0511914 -0.1398348  0.0451565   1000.0  0.300    
+## MigS             0.0349285 -0.0551791  0.1071140    847.9  0.376    
+## logmass          0.0330677  0.0007924  0.0635655   1000.0  0.034 *  
+## poolPo           0.0357606  0.0164570  0.0551639   1000.0 &lt;0.001 ***
+## Prev:methodB     0.0344636 -0.1058382  0.1495635   1000.0  0.598    
+## Prev:methodC    -0.1777240 -0.3023965 -0.0440951   1000.0  0.008 ** 
+## Prev:methodD    -0.1893548 -0.3230998 -0.0695021   1000.0  0.002 ** 
+## methodB:MigR     0.0045427 -0.0648960  0.0826619   1000.0  0.890    
+## methodC:MigR     0.0909370  0.0202465  0.1610383   1000.0  0.016 *  
+## methodD:MigR     0.0896635  0.0160933  0.1614997   1000.0  0.018 *  
+## methodB:MigS     0.0130988 -0.0546434  0.0884613   1259.2  0.696    
+## methodC:MigS    -0.0629767 -0.1318689  0.0097558   1000.0  0.098 .  
+## methodD:MigS    -0.0179868 -0.0897865  0.0571657   1101.8  0.588    
+## methodB:logmass -0.0010019 -0.0184669  0.0158860   1000.0  0.916    
+## methodC:logmass  0.0154818 -0.0007532  0.0340951    958.0  0.080 .  
+## methodD:logmass  0.0031738 -0.0136646  0.0196412   1000.0  0.692    
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 <pre class="r"><code>#plot(m10A$Sol, auto.layout=F)</code></pre>
@@ -6512,14 +4445,75 @@ output4</code></pre>
 output5</code></pre>
 <pre><code>## Model selection table 
 ##        (Int)     lgm mth Mig pol    Prv lgm:mth mth:Mig mth:Prv df  logLik
-## m10A 0.07091 0.03327   +   +   + 0.2095       +       +       + 23 445.420
-## m21A 0.06417 0.03438   +   +   + 0.2130       +       +       + 23 445.239
+## m10A 0.07752 0.03307   +   +   + 0.2162       +       +       + 23 444.780
+## m21A 0.06789 0.03288   +   +   + 0.2142       +       +       + 23 444.623
 ##        AICc delta weight
-## m10A -843.7  0.00  0.545
-## m21A -843.3  0.36  0.455
+## m10A -842.4  0.00  0.539
+## m21A -842.1  0.31  0.461
 ## Models ranked by AICc(x) 
 ## Random terms (all models): 
 ## '~species'</code></pre>
+</div>
+</div>
+<div id="analyysit-lmer-ilman-fylogeniaa" class="section level2">
+<h2>4.5 Analyysit lmer ilman fylogeniaa</h2>
+<div id="pa-aineisto-2" class="section level3">
+<h3>pa-aineisto</h3>
+<pre class="r"><code>#luodaan eri mallivaihtoehtoja
+m1B&lt;- lmer(accuracy ~ Hab*method*pool + PrevS*method*pool + Mig*method*pool + logmass*method*pool + (1|species),data= resPA, REML = F)
+m2B&lt;- lmer(accuracy ~ Hab*method + Hab*pool +PrevS*method + PrevS*pool + Mig*method + Mig*pool + logmass*method + logmass*pool + (1|species),data= resPA, REML = F)
+m3B&lt;- lmer(accuracy~ Hab*method +PrevS*method + Mig*method + logmass*method + pool + (1|species),data= resPA, REML = F)
+m4B&lt;- lmer(accuracy ~ Hab*pool + PrevS*pool +  Mig*pool + logmass*pool + method + (1|species),data= resPA, REML = F)
+m5B&lt;- lmer(accuracy ~ Hab + PrevS + Mig + logmass + method + pool + (1|species), data=resPA, REML = F)
+m6B&lt;- lmer(accuracy ~ Hab*method + PrevS*method + Mig*method + logmass*method + pool + (1|species),data= resPA, REML = F)
+m7B&lt;- lmer(accuracy ~ Hab*method + PrevS*method + Mig*method + pool + (1|species),data= resPA, REML = F)
+m8B&lt;- lmer(accuracy ~ Hab*method + PrevS*method + logmass*method + pool + (1|species),data= resPA, REML = F)
+m9B&lt;- lmer(accuracy ~ Hab*method + Mig*method + logmass*method + pool + (1|species),data= resPA, REML = F)
+m10B&lt;- lmer(accuracy ~ PrevS*method + Mig*method + logmass*method + pool + (1|species),data= resPA, REML = F)
+m11B&lt;- lmer(accuracy ~ Hab*method + PrevS*method + pool + (1|species),data= resPA, REML = F)
+m12B&lt;- lmer(accuracy ~ Hab*method +  Mig*method +  pool + (1|species),data= resPA, REML = F)
+m13B&lt;- lmer(accuracy ~ Hab*method + logmass*method + pool + (1|species),data= resPA, REML = F)
+m14B&lt;- lmer(accuracy ~ PrevS*method + Mig*method + pool + (1|species),data= resPA, REML = F)
+m15B&lt;- lmer(accuracy ~ PrevS*method + logmass*method + pool + (1|species),data= resPA, REML = F)
+m16B&lt;- lmer(accuracy ~ Mig*method + logmass*method + pool + (1|species),data= resPA, REML = F)
+m17B&lt;- lmer(accuracy ~ Hab*method + pool + (1|species),data= resPA, REML = F)
+m18B&lt;- lmer(accuracy ~ PrevS*method + pool + (1|species),data= resPA, REML = F)
+m19B&lt;- lmer(accuracy ~ Mig*method +  pool + (1|species),data= resPA, REML = F)
+m20B&lt;- lmer(accuracy ~ logmass*method + pool + (1|species),data= resPA, REML = F)
+
+#mallin valintaa MuMin paketin avulla
+output5&lt;-model.sel(m1B,m2B,m3B,m4B,m5B,m6B,m7B,m8B,m9B,m10B,m11B,m12B,m13B,m14B,m15B,m16B,m17B,m18B,m19B,m20B) 
+output5 </code></pre>
+<p>Pa-aineistolla tulokset pysyvät samoina. Valittaisiin edelleen malli 12, nyt tosin seuraavaksi paras malli on vain 1.08 AIC-yksikön päässä parhaasta. Ei niin vakuuttava ero seuraavaksi parhaaseen malliin.</p>
+</div>
+<div id="abu-aineisto-1" class="section level3">
+<h3>abu-aineisto</h3>
+<pre class="r"><code>#luodaan eri mallivaihtoehtoja
+m1B&lt;- lmer(accuracy ~ Hab*method*pool + PrevS*method*pool + Mig*method*pool + logmass*method*pool + (1|species),data= resABU, REML = F)
+m2B&lt;- lmer(accuracy ~ Hab*method + Hab*pool +PrevS*method + PrevS*pool + Mig*method + Mig*pool + logmass*method + logmass*pool + (1|species),data= resABU, REML = F)
+m3B&lt;- lmer(accuracy~ Hab*method +PrevS*method + Mig*method + logmass*method + pool + (1|species),data= resABU, REML = F)
+m4B&lt;- lmer(accuracy ~ Hab*pool + PrevS*pool +  Mig*pool + logmass*pool + method + (1|species),data= resABU, REML = F)
+m5B&lt;- lmer(accuracy ~ Hab + PrevS + Mig + logmass + method + pool + (1|species), data=resABU, REML = F)
+m6B&lt;- lmer(accuracy ~ Hab*method + PrevS*method + Mig*method + logmass*method + pool + (1|species),data= resABU, REML = F)
+m7B&lt;- lmer(accuracy ~ Hab*method + PrevS*method + Mig*method + pool + (1|species),data= resABU, REML = F)
+m8B&lt;- lmer(accuracy ~ Hab*method + PrevS*method + logmass*method + pool + (1|species),data= resABU, REML = F)
+m9B&lt;- lmer(accuracy ~ Hab*method + Mig*method + logmass*method + pool + (1|species),data= resABU, REML = F)
+m10B&lt;- lmer(accuracy ~ PrevS*method + Mig*method + logmass*method + pool + (1|species),data= resABU, REML = F)
+m11B&lt;- lmer(accuracy ~ Hab*method + PrevS*method + pool + (1|species),data= resABU, REML = F)
+m12B&lt;- lmer(accuracy ~ Hab*method +  Mig*method +  pool + (1|species),data= resABU, REML = F)
+m13B&lt;- lmer(accuracy ~ Hab*method + logmass*method + pool + (1|species),data= resABU, REML = F)
+m14B&lt;- lmer(accuracy ~ PrevS*method + Mig*method + pool + (1|species),data= resABU, REML = F)
+m15B&lt;- lmer(accuracy ~ PrevS*method + logmass*method + pool + (1|species),data= resABU, REML = F)
+m16B&lt;- lmer(accuracy ~ Mig*method + logmass*method + pool + (1|species),data= resABU, REML = F)
+m17B&lt;- lmer(accuracy ~ Hab*method + pool + (1|species),data= resABU, REML = F)
+m18B&lt;- lmer(accuracy ~ PrevS*method + pool + (1|species),data= resABU, REML = F)
+m19B&lt;- lmer(accuracy ~ Mig*method +  pool + (1|species),data= resABU, REML = F)
+m20B&lt;- lmer(accuracy ~ logmass*method + pool + (1|species),data= resABU, REML = F)
+
+#mallin valintaa MuMin paketin avulla
+output6&lt;-model.sel(m1B,m2B,m3B,m4B,m5B,m6B,m7B,m8B,m9B,m10B,m11B,m12B,m13B,m14B,m15B,m16B,m17B,m18B,m19B,m20B) 
+output6 </code></pre>
+<p>Abu-aineistolla tulokset muuttuvat. Nyt parhaaksi malliksi valikoituukin malli 7, joka sisältääkin habitaatin, prevalenssin ja migraation (vs. prev, mig ja mass, jotka valikoituivat kun fylogenia huomioitiin). Eros seuraavaan malliin vain 1.88 (malli3 (tai 6), joka sisältää kaikki traitit).</p>
 <hr />
 </div>
 </div>

@@ -10,7 +10,7 @@ output: html_document
 ```{r, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-paketit<-c("readr","tidyr","plyr","dplyr","magrittr","purrr","data.table","plotrix","jtools","sp","GISTools","rgdal","sf","spatialEco","ggplot2","lme4","nlme","ggpubr","rstatix","Rmisc","gdata")
+paketit<-c("readr","tidyr","plyr","dplyr","magrittr","purrr","data.table","plotrix","jtools","sp","GISTools","rgdal","sf","spatialEco","ggplot2","lme4","nlme","ggpubr","rstatix","Rmisc","gdata","MCMCglmm","MuMIn")
 lapply(paketit,library,character.only=T)
 ```
 
@@ -1069,8 +1069,32 @@ Analysoidaan pa ja abu datasetit erillään:
 #jaetaan aineisto pa ja abu aineistoihin
 poolresPA=subset(poolres,pa=="pa")
 poolresABU=subset(poolres,pa=="abu")
+```
 
-#fixed osan vertailua, PA aineisto:
+
+```{r}
+#luetaan aineisto sisään, Multiphylo eli monta puuta
+linnut <- read.nexus("output.nex")
+#valitaan vain yksi puu, mikä tahansa sadasta
+linnut2<-linnut[[99]]
+#tehdään puusta malliin sopiva fylogeniarakenne
+bm.birds<-inverseA(linnut2)$Ainv
+```
+
+
+```{r echo=TRUE, results='hide', cache=TRUE}
+M1<- MCMCglmm(accuracy ~ method * pool, random=~species, data = poolresPA,family="gaussian",  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+M2<- MCMCglmm(accuracy ~ method + pool, random=~species, data = poolresPA,family="gaussian",  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+M3<- MCMCglmm(accuracy ~ method, random=~species, data = poolresPA,family="gaussian",  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+M4<- MCMCglmm(accuracy ~ pool, random=~species, data = poolresPA,family="gaussian",  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+output1=model.sel(M1,M2,M3,M4)
+output1
+
+#vanhalla tyylillä ilman fylogeniaa
 A1=lme(accuracy~method*pool,data=poolresPA,random=~1|species,method="ML",na.action="na.exclude")
 A2=lme(accuracy~method+pool,data=poolresPA,random=~1|species,method="ML",na.action="na.exclude")
 A3=lme(accuracy~method,data=poolresPA,random=~1|species,method="ML",na.action="na.exclude")
@@ -1110,7 +1134,18 @@ Eli pa-aineistolla vain metodilla on väliä, ei niinkään poolauksella?
 
 #### Abu-aineisto:
 
-```{r}
+```{r echo=TRUE, results='hide', cache=TRUE}
+N1<- MCMCglmm(accuracy ~ method * pool, random=~species, data = poolresABU,family="gaussian",  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+N2<- MCMCglmm(accuracy ~ method + pool, random=~species, data = poolresABU,family="gaussian",  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+N3<- MCMCglmm(accuracy ~ method, random=~species, data = poolresABU,family="gaussian",  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+N4<- MCMCglmm(accuracy ~ pool, random=~species, data = poolresABU,family="gaussian",  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+output2=model.sel(N1,N2,N3,N4)
+output2
+
 #fixed osan vertailua, abu aineisto:
 A1=lme(accuracy~method*pool,data=poolresABU,random=~1|species,method="ML",na.action="na.exclude")
 A2=lme(accuracy~method+pool,data=poolresABU,random=~1|species,method="ML",na.action="na.exclude")

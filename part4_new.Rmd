@@ -14,7 +14,7 @@ Analysoin pa ja abu-aineistot erillään.
 knitr::opts_chunk$set(echo = TRUE)
 
 getwd()
-paketit<-c("visreg","nlme","readr","tidyr","plyr","dplyr","magrittr","purrr","ggplot2","ape","geiger","MuMIn","psych","Hmisc","MCMCglmm","bayesplot","rstanarm")
+paketit<-c("lme4","visreg","nlme","readr","tidyr","plyr","dplyr","magrittr","purrr","ggplot2","ape","geiger","MuMIn","psych","Hmisc","MCMCglmm","bayesplot","rstanarm")
 lapply(paketit,library,character.only=T)
 ```
 
@@ -150,7 +150,7 @@ bm.birds<-inverseA(linnut2)$Ainv
 ```
 
 
-## 4.4 Analyysit
+## 4.4 Analyysit MCMCglmm
 
 Selvitetään, vaikuttavatko lajien ominaisuudet (muuttokäyttäytyminen 'Mig', elinympäristö 'Hab', paino 'logMass' tai prevalenssi 'Prev') ennustustarkkuuteen. Analyysissä pitäisi huomioida fylogenia eli, että lajit voivat olla ominaisuuksiltaan samankaltaisia (ja siten omata myös samanlaiset ennustustarkkuudet) läheisen sukulaisuussuhteen takia. Mukana nyt myös ominaisuuksien mahdolliset yhdysvaikutukset metodin ja poolauksen kanssa.
 
@@ -261,7 +261,7 @@ resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=300
 
 Mitä jos method on päävaikutuksena?
 
-```{r}
+```{r echo=TRUE, results='hide', cache=TRUE}
 m24<- MCMCglmm(accuracy ~ Hab + method + Mig , random=~species, data = 
 resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 ```
@@ -354,7 +354,70 @@ output5
 ```
 
 
+## 4.5 Analyysit lmer ilman fylogeniaa
 
 
+### pa-aineisto
 
+```{r echo=TRUE, results='hide', cache=TRUE }
+#luodaan eri mallivaihtoehtoja
+m1B<- lmer(accuracy ~ Hab*method*pool + PrevS*method*pool + Mig*method*pool + logmass*method*pool + (1|species),data= resPA, REML = F)
+m2B<- lmer(accuracy ~ Hab*method + Hab*pool +PrevS*method + PrevS*pool + Mig*method + Mig*pool + logmass*method + logmass*pool + (1|species),data= resPA, REML = F)
+m3B<- lmer(accuracy~ Hab*method +PrevS*method + Mig*method + logmass*method + pool + (1|species),data= resPA, REML = F)
+m4B<- lmer(accuracy ~ Hab*pool + PrevS*pool +  Mig*pool + logmass*pool + method + (1|species),data= resPA, REML = F)
+m5B<- lmer(accuracy ~ Hab + PrevS + Mig + logmass + method + pool + (1|species), data=resPA, REML = F)
+m6B<- lmer(accuracy ~ Hab*method + PrevS*method + Mig*method + logmass*method + pool + (1|species),data= resPA, REML = F)
+m7B<- lmer(accuracy ~ Hab*method + PrevS*method + Mig*method + pool + (1|species),data= resPA, REML = F)
+m8B<- lmer(accuracy ~ Hab*method + PrevS*method + logmass*method + pool + (1|species),data= resPA, REML = F)
+m9B<- lmer(accuracy ~ Hab*method + Mig*method + logmass*method + pool + (1|species),data= resPA, REML = F)
+m10B<- lmer(accuracy ~ PrevS*method + Mig*method + logmass*method + pool + (1|species),data= resPA, REML = F)
+m11B<- lmer(accuracy ~ Hab*method + PrevS*method + pool + (1|species),data= resPA, REML = F)
+m12B<- lmer(accuracy ~ Hab*method +  Mig*method +  pool + (1|species),data= resPA, REML = F)
+m13B<- lmer(accuracy ~ Hab*method + logmass*method + pool + (1|species),data= resPA, REML = F)
+m14B<- lmer(accuracy ~ PrevS*method + Mig*method + pool + (1|species),data= resPA, REML = F)
+m15B<- lmer(accuracy ~ PrevS*method + logmass*method + pool + (1|species),data= resPA, REML = F)
+m16B<- lmer(accuracy ~ Mig*method + logmass*method + pool + (1|species),data= resPA, REML = F)
+m17B<- lmer(accuracy ~ Hab*method + pool + (1|species),data= resPA, REML = F)
+m18B<- lmer(accuracy ~ PrevS*method + pool + (1|species),data= resPA, REML = F)
+m19B<- lmer(accuracy ~ Mig*method +  pool + (1|species),data= resPA, REML = F)
+m20B<- lmer(accuracy ~ logmass*method + pool + (1|species),data= resPA, REML = F)
+
+#mallin valintaa MuMin paketin avulla
+output5<-model.sel(m1B,m2B,m3B,m4B,m5B,m6B,m7B,m8B,m9B,m10B,m11B,m12B,m13B,m14B,m15B,m16B,m17B,m18B,m19B,m20B) 
+output5 
+```
+
+Pa-aineistolla tulokset pysyvät samoina. Valittaisiin edelleen malli 12, nyt tosin seuraavaksi paras malli on vain 1.08 AIC-yksikön päässä parhaasta. Ei niin vakuuttava ero seuraavaksi parhaaseen malliin. 
+
+### abu-aineisto
+
+```{r echo=TRUE, results='hide', cache=TRUE }
+#luodaan eri mallivaihtoehtoja
+m1B<- lmer(accuracy ~ Hab*method*pool + PrevS*method*pool + Mig*method*pool + logmass*method*pool + (1|species),data= resABU, REML = F)
+m2B<- lmer(accuracy ~ Hab*method + Hab*pool +PrevS*method + PrevS*pool + Mig*method + Mig*pool + logmass*method + logmass*pool + (1|species),data= resABU, REML = F)
+m3B<- lmer(accuracy~ Hab*method +PrevS*method + Mig*method + logmass*method + pool + (1|species),data= resABU, REML = F)
+m4B<- lmer(accuracy ~ Hab*pool + PrevS*pool +  Mig*pool + logmass*pool + method + (1|species),data= resABU, REML = F)
+m5B<- lmer(accuracy ~ Hab + PrevS + Mig + logmass + method + pool + (1|species), data=resABU, REML = F)
+m6B<- lmer(accuracy ~ Hab*method + PrevS*method + Mig*method + logmass*method + pool + (1|species),data= resABU, REML = F)
+m7B<- lmer(accuracy ~ Hab*method + PrevS*method + Mig*method + pool + (1|species),data= resABU, REML = F)
+m8B<- lmer(accuracy ~ Hab*method + PrevS*method + logmass*method + pool + (1|species),data= resABU, REML = F)
+m9B<- lmer(accuracy ~ Hab*method + Mig*method + logmass*method + pool + (1|species),data= resABU, REML = F)
+m10B<- lmer(accuracy ~ PrevS*method + Mig*method + logmass*method + pool + (1|species),data= resABU, REML = F)
+m11B<- lmer(accuracy ~ Hab*method + PrevS*method + pool + (1|species),data= resABU, REML = F)
+m12B<- lmer(accuracy ~ Hab*method +  Mig*method +  pool + (1|species),data= resABU, REML = F)
+m13B<- lmer(accuracy ~ Hab*method + logmass*method + pool + (1|species),data= resABU, REML = F)
+m14B<- lmer(accuracy ~ PrevS*method + Mig*method + pool + (1|species),data= resABU, REML = F)
+m15B<- lmer(accuracy ~ PrevS*method + logmass*method + pool + (1|species),data= resABU, REML = F)
+m16B<- lmer(accuracy ~ Mig*method + logmass*method + pool + (1|species),data= resABU, REML = F)
+m17B<- lmer(accuracy ~ Hab*method + pool + (1|species),data= resABU, REML = F)
+m18B<- lmer(accuracy ~ PrevS*method + pool + (1|species),data= resABU, REML = F)
+m19B<- lmer(accuracy ~ Mig*method +  pool + (1|species),data= resABU, REML = F)
+m20B<- lmer(accuracy ~ logmass*method + pool + (1|species),data= resABU, REML = F)
+
+#mallin valintaa MuMin paketin avulla
+output6<-model.sel(m1B,m2B,m3B,m4B,m5B,m6B,m7B,m8B,m9B,m10B,m11B,m12B,m13B,m14B,m15B,m16B,m17B,m18B,m19B,m20B) 
+output6 
+```
+
+Abu-aineistolla tulokset muuttuvat. Nyt parhaaksi malliksi valikoituukin malli 7, joka sisältääkin habitaatin, prevalenssin ja migraation (vs. prev, mig ja mass, jotka valikoituivat kun fylogenia huomioitiin). Eros seuraavaan malliin vain 1.88 (malli3 (tai 6), joka sisältää kaikki traitit).
 
