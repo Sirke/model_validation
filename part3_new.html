@@ -1356,9 +1356,87 @@ write.csv(poolres, &quot;poolres.csv&quot;,row.names = F)</code></pre>
 <h4>Pa-aineisto:</h4>
 <pre class="r"><code>#jaetaan aineisto pa ja abu aineistoihin
 poolresPA=subset(poolres,pa==&quot;pa&quot;)
-poolresABU=subset(poolres,pa==&quot;abu&quot;)
+poolresABU=subset(poolres,pa==&quot;abu&quot;)</code></pre>
+<pre class="r"><code>#luetaan aineisto sisään, Multiphylo eli monta puuta
+linnut &lt;- read.nexus(&quot;output.nex&quot;)
+#valitaan vain yksi puu, mikä tahansa sadasta
+linnut2&lt;-linnut[[99]]
+#tehdään puusta malliin sopiva fylogeniarakenne
+bm.birds&lt;-inverseA(linnut2)$Ainv</code></pre>
+<pre class="r"><code>M1&lt;- MCMCglmm(accuracy ~ method * pool, random=~species, data = poolresPA,family=&quot;gaussian&quot;,  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-#fixed osan vertailua, PA aineisto:
+M2&lt;- MCMCglmm(accuracy ~ method + pool, random=~species, data = poolresPA,family=&quot;gaussian&quot;,  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+M3&lt;- MCMCglmm(accuracy ~ method, random=~species, data = poolresPA,family=&quot;gaussian&quot;,  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+M4&lt;- MCMCglmm(accuracy ~ pool, random=~species, data = poolresPA,family=&quot;gaussian&quot;,  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)</code></pre>
+<pre class="r"><code>output1=model.sel(M1,M2,M3,M4)
+output1</code></pre>
+<pre><code>## Model selection table 
+##     (Int) mth pol mth:pol df   logLik    AICc   delta weight
+## M3 0.5216   +              6  620.136 -1228.2    0.00  0.607
+## M2 0.5212   +   +          7  620.707 -1227.3    0.89  0.390
+## M1 0.5298   +   +       + 10  619.067 -1217.9   10.28  0.004
+## M4 0.2633       +          4 -241.464   491.0 1719.15  0.000
+## Models ranked by AICc(x) 
+## Random terms (all models): 
+## '~species'</code></pre>
+<pre class="r"><code>summary(M3)</code></pre>
+<pre><code>## 
+##  Iterations = 3001:1002001
+##  Thinning interval  = 1000
+##  Sample size  = 1000 
+## 
+##  DIC: -1137.84 
+## 
+##  G-structure:  ~species
+## 
+##         post.mean l-95% CI u-95% CI eff.samp
+## species   0.06116  0.04182  0.08413    959.6
+## 
+##  R-structure:  ~units
+## 
+##       post.mean l-95% CI u-95% CI eff.samp
+## units    0.0161  0.01458  0.01769     1098
+## 
+##  Location effects: accuracy ~ method 
+## 
+##             post.mean  l-95% CI  u-95% CI eff.samp  pMCMC    
+## (Intercept)  0.521633  0.321132  0.712414     1220 &lt;0.001 ***
+## methodB     -0.031627 -0.051967 -0.005999     1000  0.006 ** 
+## methodC     -0.544243 -0.568750 -0.523876     1000 &lt;0.001 ***
+## methodD     -0.541757 -0.565770 -0.521022     1000 &lt;0.001 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+<pre class="r"><code>summary(M2)</code></pre>
+<pre><code>## 
+##  Iterations = 3001:1002001
+##  Thinning interval  = 1000
+##  Sample size  = 1000 
+## 
+##  DIC: -1138.127 
+## 
+##  G-structure:  ~species
+## 
+##         post.mean l-95% CI u-95% CI eff.samp
+## species   0.06009  0.04054  0.08123     1000
+## 
+##  R-structure:  ~units
+## 
+##       post.mean l-95% CI u-95% CI eff.samp
+## units   0.01607  0.01454  0.01758     1000
+## 
+##  Location effects: accuracy ~ method + pool 
+## 
+##             post.mean  l-95% CI  u-95% CI eff.samp  pMCMC    
+## (Intercept)  0.521173  0.336952  0.702430     1000 &lt;0.001 ***
+## methodB     -0.031848 -0.054145 -0.010582     1000  0.008 ** 
+## methodC     -0.544095 -0.565753 -0.519186     1000 &lt;0.001 ***
+## methodD     -0.542276 -0.565617 -0.520365     1000 &lt;0.001 ***
+## poolPo       0.012141 -0.001388  0.029823     1000  0.116    
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+<pre class="r"><code>#vanhalla tyylillä ilman fylogeniaa
 A1=lme(accuracy~method*pool,data=poolresPA,random=~1|species,method=&quot;ML&quot;,na.action=&quot;na.exclude&quot;)
 A2=lme(accuracy~method+pool,data=poolresPA,random=~1|species,method=&quot;ML&quot;,na.action=&quot;na.exclude&quot;)
 A3=lme(accuracy~method,data=poolresPA,random=~1|species,method=&quot;ML&quot;,na.action=&quot;na.exclude&quot;)
@@ -1374,6 +1452,10 @@ anova(A1,A2)</code></pre>
 ## A2  7 -1005.6737
 ## A3  6 -1005.4586
 ## A4  4   504.8985</code></pre>
+<pre class="r"><code>anova(A2,A3)</code></pre>
+<pre><code>##    Model df       AIC       BIC   logLik   Test  L.Ratio p-value
+## A2     1  7 -1005.674 -971.6052 509.8369                        
+## A3     2  6 -1005.459 -976.2570 508.7293 1 vs 2 2.215102  0.1367</code></pre>
 <pre class="r"><code>summary(A3)</code></pre>
 <pre><code>## Linear mixed-effects model fit by maximum likelihood
 ##  Data: poolresPA 
@@ -1458,6 +1540,55 @@ abline(h=0,lty=2)</code></pre>
 </div>
 <div id="abu-aineisto" class="section level4">
 <h4>Abu-aineisto:</h4>
+<pre class="r"><code>N1&lt;- MCMCglmm(accuracy ~ method * pool, random=~species, data = poolresABU,family=&quot;gaussian&quot;,  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+N2&lt;- MCMCglmm(accuracy ~ method + pool, random=~species, data = poolresABU,family=&quot;gaussian&quot;,  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+N3&lt;- MCMCglmm(accuracy ~ method, random=~species, data = poolresABU,family=&quot;gaussian&quot;,  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+N4&lt;- MCMCglmm(accuracy ~ pool, random=~species, data = poolresABU,family=&quot;gaussian&quot;,  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)</code></pre>
+<pre class="r"><code>output2=model.sel(N1,N2,N3,N4)
+output2</code></pre>
+<pre><code>## Model selection table 
+##     (Int) mth pol mth:pol df  logLik   AICc  delta weight
+## N1 0.3786   +   +       + 10 423.739 -827.2   0.00  0.989
+## N2 0.3515   +   +          7 416.181 -818.2   9.00  0.011
+## N3 0.3696   +              6 409.158 -806.2  21.02  0.000
+## N4 0.1589       +          4  25.751  -43.5 783.79  0.000
+## Models ranked by AICc(x) 
+## Random terms (all models): 
+## '~species'</code></pre>
+<pre class="r"><code>summary(N1)</code></pre>
+<pre><code>## 
+##  Iterations = 3001:1002001
+##  Thinning interval  = 1000
+##  Sample size  = 1000 
+## 
+##  DIC: -749.072 
+## 
+##  G-structure:  ~species
+## 
+##         post.mean l-95% CI u-95% CI eff.samp
+## species   0.05779   0.0349  0.08285     1000
+## 
+##  R-structure:  ~units
+## 
+##       post.mean l-95% CI u-95% CI eff.samp
+## units   0.02398  0.02179  0.02633     1000
+## 
+##  Location effects: accuracy ~ method * pool 
+## 
+##                post.mean l-95% CI u-95% CI eff.samp  pMCMC    
+## (Intercept)      0.37861  0.16949  0.57889     1000  0.002 ** 
+## methodB         -0.09281 -0.12753 -0.05144     1393 &lt;0.001 ***
+## methodC         -0.39536 -0.43292 -0.35835     1181 &lt;0.001 ***
+## methodD         -0.40413 -0.43947 -0.36175     1000 &lt;0.001 ***
+## poolPo          -0.01646 -0.05852  0.02058     1000  0.404    
+## methodB:poolPo   0.03127 -0.02612  0.08682     1000  0.260    
+## methodC:poolPo   0.08281  0.02960  0.13740     1000  0.004 ** 
+## methodD:poolPo   0.09885  0.03968  0.14767     1000 &lt;0.001 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 <pre class="r"><code>#fixed osan vertailua, abu aineisto:
 A1=lme(accuracy~method*pool,data=poolresABU,random=~1|species,method=&quot;ML&quot;,na.action=&quot;na.exclude&quot;)
 A2=lme(accuracy~method+pool,data=poolresABU,random=~1|species,method=&quot;ML&quot;,na.action=&quot;na.exclude&quot;)

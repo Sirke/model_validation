@@ -381,11 +381,18 @@ m17B<- lmer(accuracy ~ Hab*method + pool + (1|species),data= resPA, REML = F)
 m18B<- lmer(accuracy ~ PrevS*method + pool + (1|species),data= resPA, REML = F)
 m19B<- lmer(accuracy ~ Mig*method +  pool + (1|species),data= resPA, REML = F)
 m20B<- lmer(accuracy ~ logmass*method + pool + (1|species),data= resPA, REML = F)
+```
 
+```{r}
 #mallin valintaa MuMin paketin avulla
 output5<-model.sel(m1B,m2B,m3B,m4B,m5B,m6B,m7B,m8B,m9B,m10B,m11B,m12B,m13B,m14B,m15B,m16B,m17B,m18B,m19B,m20B) 
 output5 
 ```
+
+```{r}
+summary(m12B)
+```
+
 
 Pa-aineistolla tulokset pysyvät samoina. Valittaisiin edelleen malli 12, nyt tosin seuraavaksi paras malli on vain 1.08 AIC-yksikön päässä parhaasta. Ei niin vakuuttava ero seuraavaksi parhaaseen malliin. 
 
@@ -413,11 +420,18 @@ m17B<- lmer(accuracy ~ Hab*method + pool + (1|species),data= resABU, REML = F)
 m18B<- lmer(accuracy ~ PrevS*method + pool + (1|species),data= resABU, REML = F)
 m19B<- lmer(accuracy ~ Mig*method +  pool + (1|species),data= resABU, REML = F)
 m20B<- lmer(accuracy ~ logmass*method + pool + (1|species),data= resABU, REML = F)
+```
 
+```{r}
 #mallin valintaa MuMin paketin avulla
 output6<-model.sel(m1B,m2B,m3B,m4B,m5B,m6B,m7B,m8B,m9B,m10B,m11B,m12B,m13B,m14B,m15B,m16B,m17B,m18B,m19B,m20B) 
 output6 
 ```
+
+```{r}
+summary(m7B)
+```
+
 
 Abu-aineistolla tulokset muuttuvat. Nyt parhaaksi malliksi valikoituukin malli 7, joka sisältääkin habitaatin, prevalenssin ja migraation (vs. prev, mig ja mass, jotka valikoituivat kun fylogenia huomioitiin). Eros seuraavaan malliin vain 1.88 (malli3 (tai 6), joka sisältää kaikki traitit).
 

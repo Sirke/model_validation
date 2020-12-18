@@ -3424,22 +3424,126 @@ M2&lt;- MCMCglmm(accuracy ~ method + pool, random=~species, data = poolresPA,fam
 
 M3&lt;- MCMCglmm(accuracy ~ method, random=~species, data = poolresPA,family=&quot;gaussian&quot;,  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-M4&lt;- MCMCglmm(accuracy ~ pool, random=~species, data = poolresPA,family=&quot;gaussian&quot;,  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
-
-output1=model.sel(M1,M2,M3,M4)
-output1
-
-#vanhalla tyylillä ilman fylogeniaa
+M4&lt;- MCMCglmm(accuracy ~ pool, random=~species, data = poolresPA,family=&quot;gaussian&quot;,  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)</code></pre>
+<pre class="r"><code>output1=model.sel(M1,M2,M3,M4)
+output1</code></pre>
+<pre><code>## Model selection table 
+##     (Int) mth pol mth:pol df   logLik    AICc   delta weight
+## M3 0.5275   +              6  619.807 -1227.5    0.00  0.621
+## M2 0.5184   +   +          7  620.301 -1226.5    1.04  0.369
+## M1 0.5295   +   +       + 10  619.684 -1219.1    8.39  0.009
+## M4 0.2698       +          4 -242.997   494.0 1721.56  0.000
+## Models ranked by AICc(x) 
+## Random terms (all models): 
+## '~species'</code></pre>
+<pre class="r"><code>summary(M3)</code></pre>
+<pre><code>## 
+##  Iterations = 3001:1002001
+##  Thinning interval  = 1000
+##  Sample size  = 1000 
+## 
+##  DIC: -1137.791 
+## 
+##  G-structure:  ~species
+## 
+##         post.mean l-95% CI u-95% CI eff.samp
+## species   0.06073  0.04208   0.0831     1000
+## 
+##  R-structure:  ~units
+## 
+##       post.mean l-95% CI u-95% CI eff.samp
+## units   0.01613  0.01459  0.01775    896.3
+## 
+##  Location effects: accuracy ~ method 
+## 
+##             post.mean  l-95% CI  u-95% CI eff.samp  pMCMC    
+## (Intercept)  0.527542  0.351616  0.724315     1000 &lt;0.001 ***
+## methodB     -0.031707 -0.051931 -0.008329     1000  0.004 ** 
+## methodC     -0.544602 -0.568580 -0.523239     1000 &lt;0.001 ***
+## methodD     -0.542449 -0.562876 -0.517498     1000 &lt;0.001 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+<pre class="r"><code>summary(M2)</code></pre>
+<pre><code>## 
+##  Iterations = 3001:1002001
+##  Thinning interval  = 1000
+##  Sample size  = 1000 
+## 
+##  DIC: -1138.174 
+## 
+##  G-structure:  ~species
+## 
+##         post.mean l-95% CI u-95% CI eff.samp
+## species   0.06048  0.04008  0.08417     1000
+## 
+##  R-structure:  ~units
+## 
+##       post.mean l-95% CI u-95% CI eff.samp
+## units    0.0161  0.01476   0.0177     1000
+## 
+##  Location effects: accuracy ~ method + pool 
+## 
+##             post.mean  l-95% CI  u-95% CI eff.samp  pMCMC    
+## (Intercept)  0.518426  0.312324  0.693324     1223 &lt;0.001 ***
+## methodB     -0.032094 -0.054313 -0.009837      983 &lt;0.001 ***
+## methodC     -0.544572 -0.568639 -0.521046     1030 &lt;0.001 ***
+## methodD     -0.542446 -0.566377 -0.519797     1000 &lt;0.001 ***
+## poolPo       0.011500 -0.002781  0.027863     1000   0.16    
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+<pre class="r"><code>#vanhalla tyylillä ilman fylogeniaa
 A1=lme(accuracy~method*pool,data=poolresPA,random=~1|species,method=&quot;ML&quot;,na.action=&quot;na.exclude&quot;)
 A2=lme(accuracy~method+pool,data=poolresPA,random=~1|species,method=&quot;ML&quot;,na.action=&quot;na.exclude&quot;)
 A3=lme(accuracy~method,data=poolresPA,random=~1|species,method=&quot;ML&quot;,na.action=&quot;na.exclude&quot;)
 A4=lme(accuracy~pool,data=poolresPA,random=~1|species,method=&quot;ML&quot;,na.action=&quot;na.exclude&quot;)
 
-anova(A1,A2)
-AIC(A1,A2,A3,A4)
-
-summary(A3)
-anova(A3)</code></pre>
+anova(A1,A2)</code></pre>
+<pre><code>##    Model df       AIC       BIC   logLik   Test   L.Ratio p-value
+## A1     1 10 -1000.457 -951.7875 510.2284                         
+## A2     2  7 -1005.674 -971.6052 509.8369 1 vs 2 0.7831145  0.8535</code></pre>
+<pre class="r"><code>AIC(A1,A2,A3,A4)</code></pre>
+<pre><code>##    df        AIC
+## A1 10 -1000.4569
+## A2  7 -1005.6737
+## A3  6 -1005.4586
+## A4  4   504.8985</code></pre>
+<pre class="r"><code>anova(A2,A3)</code></pre>
+<pre><code>##    Model df       AIC       BIC   logLik   Test  L.Ratio p-value
+## A2     1  7 -1005.674 -971.6052 509.8369                        
+## A3     2  6 -1005.459 -976.2570 508.7293 1 vs 2 2.215102  0.1367</code></pre>
+<pre class="r"><code>summary(A3)</code></pre>
+<pre><code>## Linear mixed-effects model fit by maximum likelihood
+##  Data: poolresPA 
+##         AIC      BIC   logLik
+##   -1005.459 -976.257 508.7293
+## 
+## Random effects:
+##  Formula: ~1 | species
+##         (Intercept)  Residual
+## StdDev:   0.1153815 0.1252899
+## 
+## Fixed effects: accuracy ~ method 
+##                  Value  Std.Error  DF   t-value p-value
+## (Intercept)  0.5748204 0.01330734 837  43.19575   0.000
+## methodB     -0.0315642 0.01146126 837  -2.75399   0.006
+## methodC     -0.5441671 0.01146126 837 -47.47884   0.000
+## methodD     -0.5419361 0.01146126 837 -47.28418   0.000
+##  Correlation: 
+##         (Intr) methdB methdC
+## methodB -0.431              
+## methodC -0.431  0.500       
+## methodD -0.431  0.500  0.500
+## 
+## Standardized Within-Group Residuals:
+##         Min          Q1         Med          Q3         Max 
+## -3.10056557 -0.61373098  0.06172161  0.62588292  3.41229002 
+## 
+## Number of Observations: 960
+## Number of Groups: 120</code></pre>
+<pre class="r"><code>anova(A3)</code></pre>
+<pre><code>##             numDF denDF   F-value p-value
+## (Intercept)     1   837  682.6771  &lt;.0001
+## method          3   837 1413.4844  &lt;.0001</code></pre>
 <pre class="r"><code>#lopullinen malli
 mfinal=lme(accuracy~method,data=poolresPA,random=~1|species,method=&quot;REML&quot;,na.action=&quot;na.exclude&quot;)
 summary(mfinal)</code></pre>
@@ -3497,22 +3601,108 @@ N2&lt;- MCMCglmm(accuracy ~ method + pool, random=~species, data = poolresABU,fa
 
 N3&lt;- MCMCglmm(accuracy ~ method, random=~species, data = poolresABU,family=&quot;gaussian&quot;,  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-N4&lt;- MCMCglmm(accuracy ~ pool, random=~species, data = poolresABU,family=&quot;gaussian&quot;,  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
-
-output2=model.sel(N1,N2,N3,N4)
-output2
-
-#fixed osan vertailua, abu aineisto:
+N4&lt;- MCMCglmm(accuracy ~ pool, random=~species, data = poolresABU,family=&quot;gaussian&quot;,  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)</code></pre>
+<pre class="r"><code>output2=model.sel(N1,N2,N3,N4)
+output2</code></pre>
+<pre><code>## Model selection table 
+##     (Int) mth pol mth:pol df  logLik   AICc  delta weight
+## N1 0.3785   +   +       + 10 423.844 -827.5   0.00  0.994
+## N2 0.3563   +   +          7 415.725 -817.3  10.12  0.006
+## N3 0.3694   +              6 409.272 -806.5  21.00  0.000
+## N4 0.1627       +          4  25.816  -43.6 783.87  0.000
+## Models ranked by AICc(x) 
+## Random terms (all models): 
+## '~species'</code></pre>
+<pre class="r"><code>summary(N1)</code></pre>
+<pre><code>## 
+##  Iterations = 3001:1002001
+##  Thinning interval  = 1000
+##  Sample size  = 1000 
+## 
+##  DIC: -749.082 
+## 
+##  G-structure:  ~species
+## 
+##         post.mean l-95% CI u-95% CI eff.samp
+## species   0.05776  0.03569   0.0821     1000
+## 
+##  R-structure:  ~units
+## 
+##       post.mean l-95% CI u-95% CI eff.samp
+## units   0.02403  0.02172  0.02645     1105
+## 
+##  Location effects: accuracy ~ method * pool 
+## 
+##                post.mean l-95% CI u-95% CI eff.samp  pMCMC    
+## (Intercept)      0.37847  0.18249  0.56680   1000.0  0.002 ** 
+## methodB         -0.09277 -0.13242 -0.05117   1000.0 &lt;0.001 ***
+## methodC         -0.39456 -0.43458 -0.35612   1095.0 &lt;0.001 ***
+## methodD         -0.40509 -0.44258 -0.36582   1000.0 &lt;0.001 ***
+## poolPo          -0.01606 -0.05430  0.02325   1000.0  0.430    
+## methodB:poolPo   0.03096 -0.01985  0.09126    902.7  0.248    
+## methodC:poolPo   0.08123  0.02884  0.14188   1000.0  0.006 ** 
+## methodD:poolPo   0.09915  0.04760  0.15138   1087.4  0.002 ** 
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+<pre class="r"><code>#fixed osan vertailua, abu aineisto:
 A1=lme(accuracy~method*pool,data=poolresABU,random=~1|species,method=&quot;ML&quot;,na.action=&quot;na.exclude&quot;)
 A2=lme(accuracy~method+pool,data=poolresABU,random=~1|species,method=&quot;ML&quot;,na.action=&quot;na.exclude&quot;)
 A3=lme(accuracy~method,data=poolresABU,random=~1|species,method=&quot;ML&quot;,na.action=&quot;na.exclude&quot;)
 A4=lme(accuracy~pool,data=poolresABU,random=~1|species,method=&quot;ML&quot;,na.action=&quot;na.exclude&quot;)
 
-anova(A1,A2)
-AIC(A1,A2,A3,A4)
-
-summary(A1)
-anova(A1)</code></pre>
+anova(A1,A2)</code></pre>
+<pre><code>##    Model df       AIC       BIC   logLik   Test  L.Ratio p-value
+## A1     1 10 -671.1029 -622.5172 345.5514                        
+## A2     2  7 -661.0587 -627.0487 337.5293 1 vs 2 16.04419  0.0011</code></pre>
+<pre class="r"><code>AIC(A1,A2,A3,A4)</code></pre>
+<pre><code>##    df        AIC
+## A1 10 -671.10286
+## A2  7 -661.05868
+## A3  6 -649.81738
+## A4  4   10.07426</code></pre>
+<pre class="r"><code>summary(A1)</code></pre>
+<pre><code>## Linear mixed-effects model fit by maximum likelihood
+##  Data: poolresABU 
+##         AIC       BIC   logLik
+##   -671.1029 -622.5172 345.5514
+## 
+## Random effects:
+##  Formula: ~1 | species
+##         (Intercept)  Residual
+## StdDev:   0.1155263 0.1509358
+## 
+## Fixed effects: accuracy ~ method * pool 
+##                     Value  Std.Error  DF    t-value p-value
+## (Intercept)     0.4054711 0.01742462 825  23.270009  0.0000
+## methodB        -0.0926735 0.01956812 825  -4.735945  0.0000
+## methodC        -0.3949418 0.01966532 825 -20.083161  0.0000
+## methodD        -0.4042327 0.01966532 825 -20.555610  0.0000
+## poolPo         -0.0164656 0.01956812 825  -0.841449  0.4003
+## methodB:poolPo  0.0311646 0.02767350 825   1.126154  0.2604
+## methodC:poolPo  0.0813997 0.02779051 825   2.929046  0.0035
+## methodD:poolPo  0.0989141 0.02779051 825   3.559278  0.0004
+##  Correlation: 
+##                (Intr) methdB methdC methdD poolPo mthB:P mthC:P
+## methodB        -0.562                                          
+## methodC        -0.559  0.498                                   
+## methodD        -0.559  0.498  0.497                            
+## poolPo         -0.562  0.500  0.498  0.498                     
+## methodB:poolPo  0.397 -0.707 -0.352 -0.352 -0.707              
+## methodC:poolPo  0.395 -0.352 -0.707 -0.350 -0.704  0.498       
+## methodD:poolPo  0.395 -0.352 -0.350 -0.707 -0.704  0.498  0.496
+## 
+## Standardized Within-Group Residuals:
+##         Min          Q1         Med          Q3         Max 
+## -3.72376831 -0.60598997 -0.02468816  0.65012422  4.05501422 
+## 
+## Number of Observations: 952
+## Number of Groups: 120</code></pre>
+<pre class="r"><code>anova(A1)</code></pre>
+<pre><code>##             numDF denDF  F-value p-value
+## (Intercept)     1   825 301.9128  &lt;.0001
+## method          3   825 353.0350  &lt;.0001
+## pool            1   825  13.4933  0.0003
+## method:pool     3   825   5.3547  0.0012</code></pre>
 <p>Mutta abu aineistolla sekä metodilla että poolauksella yhdessä on vaikutusta?</p>
 <pre class="r"><code>#lopullinen malli
 mfinal=lme(accuracy~method*pool,data=poolresABU,random=~1|species,method=&quot;REML&quot;,na.action=&quot;na.exclude&quot;)
@@ -4479,11 +4669,126 @@ m16B&lt;- lmer(accuracy ~ Mig*method + logmass*method + pool + (1|species),data=
 m17B&lt;- lmer(accuracy ~ Hab*method + pool + (1|species),data= resPA, REML = F)
 m18B&lt;- lmer(accuracy ~ PrevS*method + pool + (1|species),data= resPA, REML = F)
 m19B&lt;- lmer(accuracy ~ Mig*method +  pool + (1|species),data= resPA, REML = F)
-m20B&lt;- lmer(accuracy ~ logmass*method + pool + (1|species),data= resPA, REML = F)
-
-#mallin valintaa MuMin paketin avulla
+m20B&lt;- lmer(accuracy ~ logmass*method + pool + (1|species),data= resPA, REML = F)</code></pre>
+<pre class="r"><code>#mallin valintaa MuMin paketin avulla
 output5&lt;-model.sel(m1B,m2B,m3B,m4B,m5B,m6B,m7B,m8B,m9B,m10B,m11B,m12B,m13B,m14B,m15B,m16B,m17B,m18B,m19B,m20B) 
 output5 </code></pre>
+<pre><code>## Model selection table 
+##       (Int) Hab       lgm mth Mig pol     PrS Hab:mth Hab:pol lgm:mth
+## m12B 0.5960   +             +   +   +               +                
+## m9B  0.6439   + -0.015950   +   +   +               +               +
+## m7B  0.6427   +             +   +   + 0.04167       +                
+## m3B  0.6822   + -0.014290   +   +   + 0.03854       +               +
+## m6B  0.6822   + -0.014290   +   +   + 0.03854       +               +
+## m17B 0.6448   +             +       +               +                
+## m2B  0.6847   + -0.012660   +   +   + 0.04229       +       +       +
+## m11B 0.6917   +             +       + 0.03882       +                
+## m13B 0.6666   + -0.005189   +       +               +               +
+## m8B  0.7048   + -0.003418   +       + 0.03783       +               +
+## m16B 0.6286     -0.027080   +   +   +                               +
+## m10B 0.6550     -0.022700   +   +   + 0.03465                       +
+## m1B  0.7239   + -0.013480   +   +   + 0.05415       +       +       +
+## m19B 0.5379                 +   +   +                                
+## m14B 0.5978                 +   +   + 0.05059                        
+## m5B  0.6475   + -0.009267   +   +   + 0.02952                        
+## m20B 0.6569     -0.019590   +       +                               +
+## m15B 0.6844     -0.014830   +       + 0.03926                       +
+## m18B 0.6330                 +       + 0.05157                        
+## m4B  0.6501   + -0.007635   +   +   + 0.03327               +        
+##      lgm:pol mth:Mig mth:pol mth:PrS Mig:pol pol:PrS Hab:mth:pol
+## m12B               +                                            
+## m9B                +                                            
+## m7B                +               +                            
+## m3B                +               +                            
+## m6B                +               +                            
+## m17B                                                            
+## m2B        +       +               +       +       +            
+## m11B                               +                            
+## m13B                                                            
+## m8B                                +                            
+## m16B               +                                            
+## m10B               +               +                            
+## m1B        +       +       +       +       +       +           +
+## m19B               +                                            
+## m14B               +               +                            
+## m5B                                                             
+## m20B                                                            
+## m15B                               +                            
+## m18B                               +                            
+## m4B        +                               +       +            
+##      lgm:mth:pol mth:Mig:pol mth:pol:PrS df  logLik    AICc delta weight
+## m12B                                     27 568.739 -1081.9  0.00  0.539
+## m9B                                      31 572.458 -1080.8  1.08  0.315
+## m7B                                      31 571.107 -1078.1  3.78  0.081
+## m3B                                      35 574.462 -1076.2  5.66  0.032
+## m6B                                      35 574.462 -1076.2  5.66  0.032
+## m17B                                     19 553.653 -1068.5 13.36  0.001
+## m2B                                      42 577.267 -1066.6 15.26  0.000
+## m11B                                     23 555.690 -1064.2 17.65  0.000
+## m13B                                     23 554.030 -1060.9 20.98  0.000
+## m8B                                      27 555.928 -1056.2 25.62  0.000
+## m16B                                     19 537.168 -1035.5 46.33  0.000
+## m10B                                     23 538.986 -1030.8 51.06  0.000
+## m1B            +           +           + 66 585.155 -1028.4 53.45  0.000
+## m19B                                     15 525.748 -1021.0 60.87  0.000
+## m14B                                     19 529.782 -1020.8 61.10  0.000
+## m5B                                      14 521.219 -1014.0 67.86  0.000
+## m20B                                     11 516.188 -1010.1 71.76  0.000
+## m15B                                     15 518.367 -1006.2 75.63  0.000
+## m18B                                     11 514.248 -1006.2 75.64  0.000
+## m4B                                      21 523.689 -1004.4 77.46  0.000
+## Models ranked by AICc(x) 
+## Random terms (all models): 
+## '1 | species'</code></pre>
+<pre class="r"><code>summary(m12B)</code></pre>
+<pre><code>## Linear mixed model fit by maximum likelihood  ['lmerMod']
+## Formula: accuracy ~ Hab * method + Mig * method + pool + (1 | species)
+##    Data: resPA
+## 
+##      AIC      BIC   logLik deviance df.resid 
+##  -1083.5   -952.1    568.7  -1137.5      933 
+## 
+## Scaled residuals: 
+##     Min      1Q  Median      3Q     Max 
+## -3.3548 -0.5998  0.0477  0.6104  2.9512 
+## 
+## Random effects:
+##  Groups   Name        Variance Std.Dev.
+##  species  (Intercept) 0.01147  0.1071  
+##  Residual             0.01389  0.1179  
+## Number of obs: 960, groups:  species, 120
+## 
+## Fixed effects:
+##                Estimate Std. Error t value
+## (Intercept)    0.595994   0.036081  16.518
+## HabFO         -0.060776   0.033715  -1.803
+## HabMM          0.055249   0.052720   1.048
+## HabWE         -0.190318   0.039582  -4.808
+## methodB       -0.018140   0.031165  -0.582
+## methodC       -0.568923   0.031165 -18.255
+## methodD       -0.568242   0.031165 -18.233
+## MigR           0.053592   0.034697   1.545
+## MigS           0.071196   0.030929   2.302
+## poolPo         0.012029   0.007609   1.581
+## HabFO:methodB -0.022465   0.029285  -0.767
+## HabMM:methodB -0.012744   0.045793  -0.278
+## HabWE:methodB -0.018013   0.034381  -0.524
+## HabFO:methodC  0.101522   0.029285   3.467
+## HabMM:methodC -0.021056   0.045793  -0.460
+## HabWE:methodC  0.173532   0.034381   5.047
+## HabFO:methodD  0.085917   0.029285   2.934
+## HabMM:methodD -0.018514   0.045793  -0.404
+## HabWE:methodD  0.158017   0.034381   4.596
+## methodB:MigR   0.006669   0.030138   0.221
+## methodC:MigR  -0.115157   0.030138  -3.821
+## methodD:MigR  -0.090484   0.030138  -3.002
+## methodB:MigS   0.002255   0.026865   0.084
+## methodC:MigS  -0.079216   0.026865  -2.949
+## methodD:MigS  -0.065520   0.026865  -2.439</code></pre>
+<pre><code>## 
+## Correlation matrix not shown by default, as p = 25 &gt; 12.
+## Use print(x, correlation=TRUE)  or
+##     vcov(x)        if you need it</code></pre>
 <p>Pa-aineistolla tulokset pysyvät samoina. Valittaisiin edelleen malli 12, nyt tosin seuraavaksi paras malli on vain 1.08 AIC-yksikön päässä parhaasta. Ei niin vakuuttava ero seuraavaksi parhaaseen malliin.</p>
 </div>
 <div id="abu-aineisto-1" class="section level3">
@@ -4508,11 +4813,131 @@ m16B&lt;- lmer(accuracy ~ Mig*method + logmass*method + pool + (1|species),data=
 m17B&lt;- lmer(accuracy ~ Hab*method + pool + (1|species),data= resABU, REML = F)
 m18B&lt;- lmer(accuracy ~ PrevS*method + pool + (1|species),data= resABU, REML = F)
 m19B&lt;- lmer(accuracy ~ Mig*method +  pool + (1|species),data= resABU, REML = F)
-m20B&lt;- lmer(accuracy ~ logmass*method + pool + (1|species),data= resABU, REML = F)
-
-#mallin valintaa MuMin paketin avulla
+m20B&lt;- lmer(accuracy ~ logmass*method + pool + (1|species),data= resABU, REML = F)</code></pre>
+<pre class="r"><code>#mallin valintaa MuMin paketin avulla
 output6&lt;-model.sel(m1B,m2B,m3B,m4B,m5B,m6B,m7B,m8B,m9B,m10B,m11B,m12B,m13B,m14B,m15B,m16B,m17B,m18B,m19B,m20B) 
 output6 </code></pre>
+<pre><code>## Model selection table 
+##       (Int) Hab       lgm mth Mig pol     PrS Hab:mth Hab:pol lgm:mth
+## m7B  0.5379   +             +   +   + 0.07378       +                
+## m3B  0.5810   + -0.015630   +   +   + 0.07035       +               +
+## m6B  0.5810   + -0.015630   +   +   + 0.07035       +               +
+## m2B  0.5836   + -0.014650   +   +   + 0.07657       +       +       +
+## m10B 0.4875     -0.016330   +   +   + 0.05628                       +
+## m14B 0.4463                 +   +   + 0.06775                        
+## m11B 0.5545   +             +       + 0.07672       +                
+## m9B  0.5112   + -0.018660   +   +   +               +               +
+## m8B  0.5875   + -0.008554   +       + 0.07423       +               +
+## m12B 0.4551   +             +   +   +               +                
+## m1B  0.6310   + -0.016310   +   +   + 0.08572       +       +       +
+## m16B 0.4446     -0.023430   +   +   +                               +
+## m5B  0.5188   + -0.009135   +   +   + 0.04300                        
+## m18B 0.4500                 +       + 0.05685                        
+## m19B 0.3661                 +   +   +                                
+## m4B  0.5214   + -0.008152   +   +   + 0.04922               +        
+## m15B 0.4681     -0.005227   +       + 0.05251                       +
+## m17B 0.4619   +             +       +               +                
+## m13B 0.5125   + -0.012030   +       +               +               +
+## m20B 0.4313     -0.011590   +       +                               +
+##      lgm:pol mth:Mig mth:pol mth:PrS Mig:pol pol:PrS Hab:mth:pol
+## m7B                +               +                            
+## m3B                +               +                            
+## m6B                +               +                            
+## m2B        +       +               +       +       +            
+## m10B               +               +                            
+## m14B               +               +                            
+## m11B                               +                            
+## m9B                +                                            
+## m8B                                +                            
+## m12B               +                                            
+## m1B        +       +       +       +       +       +           +
+## m16B               +                                            
+## m5B                                                             
+## m18B                               +                            
+## m19B               +                                            
+## m4B        +                               +       +            
+## m15B                               +                            
+## m17B                                                            
+## m13B                                                            
+## m20B                                                            
+##      lgm:mth:pol mth:Mig:pol mth:pol:PrS df  logLik   AICc delta weight
+## m7B                                      31 389.410 -714.7  0.00  0.558
+## m3B                                      35 392.766 -712.8  1.88  0.218
+## m6B                                      35 392.766 -712.8  1.88  0.218
+## m2B                                      42 396.790 -705.6  9.06  0.006
+## m10B                                     23 372.828 -698.5 16.20  0.000
+## m14B                                     19 368.577 -698.3 16.33  0.000
+## m11B                                     23 369.835 -692.5 22.18  0.000
+## m9B                                      31 376.288 -688.4 26.24  0.000
+## m8B                                      27 371.871 -688.1 26.56  0.000
+## m12B                                     27 371.807 -688.0 26.69  0.000
+## m1B            +           +           + 66 414.297 -686.6 28.06  0.000
+## m16B                                     19 360.976 -683.1 31.53  0.000
+## m5B                                      14 353.654 -678.9 35.80  0.000
+## m18B                                     11 349.286 -676.3 38.37  0.000
+## m19B                                     15 352.121 -673.7 40.93  0.000
+## m4B                                      21 357.318 -671.6 43.02  0.000
+## m15B                                     15 350.311 -670.1 44.55  0.000
+## m17B                                     19 351.182 -663.5 51.11  0.000
+## m13B                                     23 354.452 -661.7 52.95  0.000
+## m20B                                     11 340.730 -659.2 55.48  0.000
+## Models ranked by AICc(x) 
+## Random terms (all models): 
+## '1 | species'</code></pre>
+<pre class="r"><code>summary(m7B)</code></pre>
+<pre><code>## Linear mixed model fit by maximum likelihood  ['lmerMod']
+## Formula: accuracy ~ Hab * method + PrevS * method + Mig * method + pool +  
+##     (1 | species)
+##    Data: resABU
+## 
+##      AIC      BIC   logLik deviance df.resid 
+##   -716.8   -566.2    389.4   -778.8      921 
+## 
+## Scaled residuals: 
+##     Min      1Q  Median      3Q     Max 
+## -4.4606 -0.5731  0.0453  0.6158  4.2042 
+## 
+## Random effects:
+##  Groups   Name        Variance Std.Dev.
+##  species  (Intercept) 0.009803 0.09901 
+##  Residual             0.021289 0.14591 
+## Number of obs: 952, groups:  species, 120
+## 
+## Fixed effects:
+##                Estimate Std. Error t value
+## (Intercept)    0.537852   0.044614  12.056
+## HabFO         -0.122132   0.035961  -3.396
+## HabMM          0.009825   0.056501   0.174
+## HabWE         -0.133765   0.043169  -3.099
+## methodB       -0.022327   0.045266  -0.493
+## methodC       -0.473223   0.045434 -10.416
+## methodD       -0.478198   0.045434 -10.525
+## PrevS          0.073780   0.020686   3.567
+## MigR          -0.052190   0.036706  -1.422
+## MigS           0.085745   0.032616   2.629
+## poolPo         0.036091   0.009458   3.816
+## HabFO:methodB -0.045049   0.036694  -1.228
+## HabMM:methodB -0.054467   0.057652  -0.945
+## HabWE:methodB -0.040707   0.044048  -0.924
+## HabFO:methodC  0.058528   0.036915   1.586
+## HabMM:methodC -0.067268   0.057750  -1.165
+## HabWE:methodC  0.075505   0.044113   1.712
+## HabFO:methodD  0.048776   0.036915   1.321
+## HabMM:methodD -0.110682   0.057750  -1.917
+## HabWE:methodD  0.018457   0.044113   0.418
+## methodB:PrevS  0.017037   0.021108   0.807
+## methodC:PrevS -0.061758   0.021519  -2.870
+## methodD:PrevS -0.080167   0.021519  -3.725
+## methodB:MigR  -0.005011   0.037454  -0.134
+## methodC:MigR   0.099794   0.037910   2.632
+## methodD:MigR   0.074497   0.037910   1.965
+## methodB:MigS   0.008751   0.033280   0.263
+## methodC:MigS  -0.055271   0.033466  -1.652
+## methodD:MigS  -0.029596   0.033466  -0.884</code></pre>
+<pre><code>## 
+## Correlation matrix not shown by default, as p = 29 &gt; 12.
+## Use print(x, correlation=TRUE)  or
+##     vcov(x)        if you need it</code></pre>
 <p>Abu-aineistolla tulokset muuttuvat. Nyt parhaaksi malliksi valikoituukin malli 7, joka sisältääkin habitaatin, prevalenssin ja migraation (vs. prev, mig ja mass, jotka valikoituivat kun fylogenia huomioitiin). Eros seuraavaan malliin vain 1.88 (malli3 (tai 6), joka sisältää kaikki traitit).</p>
 <hr />
 </div>

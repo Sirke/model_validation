@@ -1090,10 +1090,20 @@ M2<- MCMCglmm(accuracy ~ method + pool, random=~species, data = poolresPA,family
 M3<- MCMCglmm(accuracy ~ method, random=~species, data = poolresPA,family="gaussian",  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
 M4<- MCMCglmm(accuracy ~ pool, random=~species, data = poolresPA,family="gaussian",  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+```
 
+```{r}
 output1=model.sel(M1,M2,M3,M4)
 output1
+```
 
+```{r}
+summary(M3)
+summary(M2)
+```
+
+
+```{r}
 #vanhalla tyylillä ilman fylogeniaa
 A1=lme(accuracy~method*pool,data=poolresPA,random=~1|species,method="ML",na.action="na.exclude")
 A2=lme(accuracy~method+pool,data=poolresPA,random=~1|species,method="ML",na.action="na.exclude")
@@ -1103,6 +1113,7 @@ A4=lme(accuracy~pool,data=poolresPA,random=~1|species,method="ML",na.action="na.
 anova(A1,A2)
 AIC(A1,A2,A3,A4)
 
+anova(A2,A3)
 summary(A3)
 anova(A3)
 ```
@@ -1142,10 +1153,19 @@ N2<- MCMCglmm(accuracy ~ method + pool, random=~species, data = poolresABU,famil
 N3<- MCMCglmm(accuracy ~ method, random=~species, data = poolresABU,family="gaussian",  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
 N4<- MCMCglmm(accuracy ~ pool, random=~species, data = poolresABU,family="gaussian",  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+```
 
+```{r}
 output2=model.sel(N1,N2,N3,N4)
 output2
+```
 
+```{r}
+summary(N1)
+```
+
+
+```{r}
 #fixed osan vertailua, abu aineisto:
 A1=lme(accuracy~method*pool,data=poolresABU,random=~1|species,method="ML",na.action="na.exclude")
 A2=lme(accuracy~method+pool,data=poolresABU,random=~1|species,method="ML",na.action="na.exclude")
