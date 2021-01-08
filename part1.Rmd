@@ -77,7 +77,7 @@ PredictionDir = file.path(localDir, "data")
 ```
 
 ```{r include=FALSE}
-paketit<-c("readr","tidyr","plyr","dplyr","magrittr","purrr","data.table","plotrix","jtools","sp","GISTools","rgdal","sf","spatialEco","ggplot2","ggrepel","psych")
+paketit<-c("readr","tidyr","plyr","dplyr","magrittr","purrr","data.table","plotrix","jtools","sp","GISTools","rgdal","sf","spatialEco","ggplot2","ggrepel","psych","matrixStats")
 lapply(paketit,library,character.only=T)
 ```
 
@@ -317,7 +317,56 @@ write.csv(kat,"mean_observed_predicted_changes_pa.csv",row.names = F)
 ```
 Huomaa kuvissa hieman eri skaala. Kun mallintamisessa käytetään vähemmän aineistoa (-1999) ennustetut muutokset ovat joillekin lajeille (yläkulman Sylvia) hieman pienempiä.  
 
-Näitä kuvia täytyy vielä säätää, jos niitä aiotaan käyttää julkaisussa jotenkin. 
+#### tapahtuneen muutoksen ja ennustustarkkuuden suhde
+
+Kuvaaja muutoksen suuruuden ja ennustustarkkuuden suhteesta:
+
+```{r }
+kat2=cbind(kat,pa_results)
+
+ggplot(kat2, aes(x=Ayk, y=pa_D))+ 
+  geom_point()+ geom_hline(yintercept = 0, color = "black")+ 
+  geom_vline(xintercept = 0, color = "black")+ 
+  xlab("Mean observed change")+
+  ylab("Prediction accuracy D")+ 
+  geom_abline(intercept = 0, slope = 1, color="red",linetype="dashed", size=1.5)+
+  geom_text(aes(label=kat),hjust=0, vjust=0)+  geom_smooth() 
+
+ggplot(kat2, aes(x=Ayk, y=pa_D))+ 
+  geom_point()+ geom_hline(yintercept = 0, color = "black")+ 
+  geom_vline(xintercept = 0, color = "black")+ 
+  xlab("Mean observed change")+
+  ylab("Prediction accuracy D")+ 
+  geom_abline(intercept = 0, slope = 1, color="red",linetype="dashed", size=1.5)+  geom_smooth() 
+```
+
+Eli tästä pitäisi voida päätellä, että jos muutosta on tapahtunut, suuntaan tai toiseen, runsastumista ja vähentymistä, ennustustarkkuus pitäisi olla suurempi, kuin jos lajin esiintymisessä ei ole tapahtunut mitään muutosta, jolloin on vaikeampi mallintaa taikka ennustaakaan mitään. Smootherin pitäisi olla lavean U:n muotoinen paraabeli, jonka pohja on origossa tai sen alapuolella?
+
+Näistä kuvaajista on ehkäpä vaikea saada paljoa irti koska ennustustarkkuudet ovat niin huonoja yleisesti. Ehkä myös siksi, että muutos on laskettu koko alueelle. Eli vähentyminen toisaalla ja runsastuminen toisaalla saattavat kumota toisensa.
+
+Lasken varianssin muutoksista jokaisella 264 linjalla, jota ennustustarkkuuden laskemiseen on käytetty.
+
+```{r}
+dat=as.data.frame(t(Ay))
+dat$row_var=rowVars(as.matrix(dat),na.rm = TRUE)
+dat=cbind(dat,pa_results)
+```
+
+Ja plottaan tulokset:
+
+```{r}
+ggplot(dat, aes(x=row_var, y=pa_D))+ 
+  geom_point()+ geom_hline(yintercept = 0, color = "black")+ 
+  geom_vline(xintercept = 0, color = "black")+ 
+  xlab("Observed change, variance")+
+  ylab("Prediction accuracy D")+ 
+  geom_abline(intercept = 0, slope = 1, color="red",linetype="dashed", size=1.5)+  geom_smooth() 
+```
+
+Ei varsinaista selvää suhdetta muutoksen varianssin ja ennustustarkkuuden välillä. Ennemminkin paljon lajeja, joilla on pieniä muutoksia, mutta ennustustarkkuus voi olla mitä tahansa, suht hyväkin vaikka muutokset eivät olisikaan olleet suuria.
+
+Onko tuo varianssi paras tapa mitata sitä, onko muutosta tapahtunut paljon vai vähän? On kai.
+
 
 ## 1.4 Abundance-aineisto
 
@@ -387,6 +436,8 @@ nsr
 plot(A,B,xlim=c(-1,1), ylim=c(-1,1)) + abline(0,1)+ abline(h=0)+ abline(v=0)
 ```
 Molemmat metodit suht hyviä. A:lle ennusteet parempia.
+
+Lasken kuinka monesta havaintoparista ennustustarkkuus kullekin lajille lasketaan.
 
 ```{r}
 P_D = rep(NA,ns)
@@ -554,3 +605,51 @@ write.csv(kat,"mean_observed_predicted_changes_abu.csv",row.names = F)
 Kuvien skaalat eroavat taas hieman. Skaalan säätäminen tehtävä niin, että labeleistä pystyisi lukemaan edes jotain. 
 
 Hmm.. Jos näitä kuvia päädytään käyttämään, pitäisikö pohjansirkku tai peltopyy ottaa pois epätarkkoina? Ehkä ei? Koska havaintoja kyllä riittää mutta ne eivät vain satu samoille reiteille tai samoihin poolaus-ruutuihin.
+
+#### tapahtuneen muutoksen ja ennustustarkkuuden suhde
+
+Kuvaaja muutoksen suuruuden ja ennustustarkkuuden suhteesta:
+
+```{r }
+kat2=cbind(kat,abu_results)
+
+ggplot(kat2, aes(x=Ayk, y=abu_D))+ 
+  geom_point()+ geom_hline(yintercept = 0, color = "black")+ 
+  geom_vline(xintercept = 0, color = "black")+ 
+  xlab("Mean observed change")+
+  ylab("Prediction accuracy D")+ 
+  geom_abline(intercept = 0, slope = 1, color="red",linetype="dashed", size=1.5)+
+  geom_text(aes(label=kat),hjust=0, vjust=0)+  geom_smooth() 
+
+ggplot(kat2, aes(x=Ayk, y=abu_D))+ 
+  geom_point()+ geom_hline(yintercept = 0, color = "black")+ 
+  geom_vline(xintercept = 0, color = "black")+ 
+  xlab("Mean observed change")+
+  ylab("Prediction accuracy D")+ 
+  geom_abline(intercept = 0, slope = 1, color="red",linetype="dashed", size=1.5)+  geom_smooth() 
+```
+
+Näistä kuvaajista on ehkäpä vaikea saada paljoa irti koska ennustustarkkuudet ovat niin huonoja yleisesti. Tässä myös muutos on laskettu koko alueelle. Eli vähentyminen toisaalla ja runsastuminen toisaalla saattavat kumota toisensa.
+
+Lasken varianssin muutoksista jokaisella 264 linjalla, jota ennustustarkkuuden laskemiseen on käytetty.
+
+```{r}
+dat=as.data.frame(t(Ay))
+dat$row_var=rowVars(as.matrix(dat),na.rm = TRUE)
+dat=cbind(dat,abu_results)
+```
+
+Ja plottaan tulokset:
+
+```{r}
+ggplot(dat, aes(x=row_var, y=abu_D))+ 
+  geom_point()+ geom_hline(yintercept = 0, color = "black")+ 
+  geom_vline(xintercept = 0, color = "black")+ 
+  xlab("Observed change, variance")+
+  ylab("Prediction accuracy D")+ 
+  geom_abline(intercept = 0, slope = 1, color="red",linetype="dashed", size=1.5)+  geom_smooth() 
+```
+
+Tämäkään kuva ei varsinaisesti vihjaa siihen, että ennustustarkkuus riippuisi muutoksen määrästä.
+
+HUOM! Näissä kuvissa on vielä mukana pohjansirkku ja peltopyy, vaikka myöhemmin poistan ne aineistosta. Siksi varmaankin alussa häntä todella korkealla.

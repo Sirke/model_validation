@@ -42,3 +42,4 @@ MCMCglmm
 bayesplot
 Rcpp
 rstanarm
+matrixStats
