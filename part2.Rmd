@@ -401,7 +401,7 @@ Line=cbind(Line,Line3)
 Line=as.data.frame(Line)
 
 #pdf("Fig123.pdf")
-jpeg("Fig123.jpeg")
+#jpeg("Fig123.jpeg")
 #png("Fig1abcdef.png")
 
 #määrittää 3x3 matriisin johon kuvat piirretään

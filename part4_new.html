@@ -316,7 +316,47 @@ bm.birds&lt;-inverseA(linnut2)$Ainv</code></pre>
 <h3>4.4.1 Pa-aineisto</h3>
 <p>Luodaan mallivaihtoehdot.</p>
 <pre class="r"><code>#priori
-prior&lt;-list(R=list(V=1, nu=0.00), G=list(G1=list(V=1, nu=0.00))) #mutta tämä ei nyt ole malleissa mukana (?)
+#prior&lt;-list(R=list(V=1, nu=0.00), G=list(G1=list(V=1, nu=0.00))) #mutta tämä ei nyt ole malleissa mukana (?)
+
+#m1&lt;- MCMCglmm(accuracy ~ Hab*method*pool + PrevS*method*pool + Mig*method*pool + logmass*method*pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+#m2&lt;- MCMCglmm(accuracy ~ Hab*method + Hab*pool +PrevS*method + PrevS*pool + Mig*method + Mig*pool + logmass*method + logmass*pool, random=~ species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+#m3&lt;- MCMCglmm(accuracy~ Hab*method +PrevS*method + Mig*method + logmass*method + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+#m4&lt;- MCMCglmm(accuracy ~ Hab*pool +PrevS*pool + Mig*pool + logmass*pool + method, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+#m5&lt;- MCMCglmm(accuracy ~ Hab + PrevS + Mig + logmass + method + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+#m6&lt;- MCMCglmm(accuracy ~ Hab*method +PrevS*method + Mig*method  + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+#m7&lt;- MCMCglmm(accuracy ~ Hab*method +PrevS*method  + logmass*method + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+#m8&lt;- MCMCglmm(accuracy ~ Hab*method + Mig*method + logmass*method + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+#m9&lt;- MCMCglmm(accuracy ~ Prev*method + Mig*method + logmass*method + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+#m10&lt;- MCMCglmm(accuracy ~ Hab*method +PrevS*method + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+#m11&lt;- MCMCglmm(accuracy ~ Hab*method + Mig*method  + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+#m12&lt;- MCMCglmm(accuracy ~ Hab*method + logmass*method + pool, random=~species, data=      resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+#m13&lt;- MCMCglmm(accuracy ~ PrevS*method + Mig*method  + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+#m14&lt;- MCMCglmm(accuracy ~ PrevS*method +  logmass*method + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+#m15&lt;- MCMCglmm(accuracy ~ Mig*method + logmass*method + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+#m16&lt;- MCMCglmm(accuracy ~ Hab*method + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+#m17&lt;- MCMCglmm(accuracy ~ PrevS*method + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+#m18&lt;- MCMCglmm(accuracy ~ Mig*method  + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+#m19&lt;- MCMCglmm(accuracy ~ logmass*method + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)</code></pre>
+<pre class="r"><code>#priori
+#prior&lt;-list(R=list(V=1, nu=0.00), G=list(G1=list(V=1, nu=0.00))) #mutta tämä ei nyt ole malleissa mukana (?)
 
 m1&lt;- MCMCglmm(accuracy ~ Hab*method*pool + PrevS*method*pool + Mig*method*pool + logmass*method*pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
@@ -328,179 +368,153 @@ m4&lt;- MCMCglmm(accuracy ~ Hab*pool +PrevS*pool + Mig*pool + logmass*pool + met
 
 m5&lt;- MCMCglmm(accuracy ~ Hab + PrevS + Mig + logmass + method + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-m6&lt;- MCMCglmm(accuracy ~ Hab*method +PrevS*method + Mig*method + logmass*method + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+m6&lt;- MCMCglmm(accuracy ~ Hab*method +PrevS*method + Mig*method  + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-m7&lt;- MCMCglmm(accuracy ~ Hab*method +PrevS*method + Mig*method  + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+m7&lt;- MCMCglmm(accuracy ~ Hab*method +PrevS*method  + logmass*method + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-m8&lt;- MCMCglmm(accuracy ~ Hab*method +PrevS*method  + logmass*method + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+m8&lt;- MCMCglmm(accuracy ~ Hab*method + Mig*method + logmass*method + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-m9&lt;- MCMCglmm(accuracy ~ Hab*method + Mig*method + logmass*method + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+m9&lt;- MCMCglmm(accuracy ~ PrevS*method + Mig*method + logmass*method + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-m10&lt;- MCMCglmm(accuracy ~ Prev*method + Mig*method + logmass*method + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+m10&lt;- MCMCglmm(accuracy ~ Hab*method +PrevS*method + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-m11&lt;- MCMCglmm(accuracy ~ Hab*method +PrevS*method + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
-
-m12&lt;- MCMCglmm(accuracy ~ Hab*method + Mig*method  + pool, random=~species, data = 
+m11&lt;- MCMCglmm(accuracy ~ Hab*method + Mig*method  + pool, random=~species, data = 
 resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-m13&lt;- MCMCglmm(accuracy ~ Hab*method + logmass*method + pool, random=~species, data=      resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+m12&lt;- MCMCglmm(accuracy ~ Hab*method + logmass*method + pool, random=~species, data=      resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-m14&lt;- MCMCglmm(accuracy ~ PrevS*method + Mig*method  + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+m13&lt;- MCMCglmm(accuracy ~ PrevS*method + Mig*method  + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-m15&lt;- MCMCglmm(accuracy ~ PrevS*method +  logmass*method + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+m14&lt;- MCMCglmm(accuracy ~ PrevS*method +  logmass*method + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-m16&lt;- MCMCglmm(accuracy ~ Mig*method + logmass*method + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+m15&lt;- MCMCglmm(accuracy ~ Mig*method + logmass*method + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-m17&lt;- MCMCglmm(accuracy ~ Hab*method + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+m16&lt;- MCMCglmm(accuracy ~ Hab*method + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-m18&lt;- MCMCglmm(accuracy ~ PrevS*method + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+m17&lt;- MCMCglmm(accuracy ~ PrevS*method + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-m19&lt;- MCMCglmm(accuracy ~ Mig*method  + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+m18&lt;- MCMCglmm(accuracy ~ Mig*method  + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-m20&lt;- MCMCglmm(accuracy ~ logmass*method + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)</code></pre>
+m19&lt;- MCMCglmm(accuracy ~ logmass*method + pool, random=~species, data = resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)</code></pre>
 <p>Mumin-paketin model.sel näyttää toimivan myös MCMCglmm-tuotoksen kanssa.</p>
 <pre class="r"><code>#mallin valintaa MuMin paketin avulla
-output1&lt;-model.sel(m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11,m12,m13,m14,m15,m16,m17,m18,m19,m20) 
+output1&lt;-model.sel(m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11,m12,m13,m14,m15,m16,m17,m18,m19) 
 output1</code></pre>
 <pre><code>## Model selection table 
 ##      (Int) Hab        lgm mth Mig pol     PrS Hab:mth Hab:pol lgm:mth
-## m12 0.5815   +              +   +   +               +                
-## m9  0.5672   + -0.0006520   +   +   +               +               +
-## m17 0.6326   +              +       +               +                
-## m7  0.6176   +              +   +   + 0.03040       +                
-## m3  0.5876   +  0.0037750   +   +   + 0.03043       +               +
-## m6  0.5908   +  0.0032010   +   +   + 0.03020       +               +
-## m11 0.6665   +              +       + 0.02820       +                
-## m13 0.5903   +  0.0064530   +       +               +               +
-## m8  0.6209   +  0.0098320   +       + 0.03007       +               +
-## m2  0.5879   +  0.0043280   +   +   + 0.03375       +       +       +
-## m16 0.5113     -0.0072810   +   +   +                               +
-## m19 0.4913                  +   +   +                                
-## m10 0.4725     -0.0032960   +   +   +                               +
-## m14 0.5218                  +   +   + 0.02222                        
-## m20 0.5241     -0.0025590   +       +                               +
-## m18 0.5457                  +       + 0.02378                        
-## m5  0.5604   +  0.0079770   +   +   + 0.02102                        
-## m15 0.5416     -0.0004518   +       + 0.01995                       +
-## m4  0.5623   +  0.0098120   +   +   + 0.02600               +        
-## m1  0.6321   +  0.0042210   +   +   + 0.04581       +       +       +
+## m11 0.5805   +              +   +   +               +                
+## m8  0.5702   + -0.0010180   +   +   +               +               +
+## m16 0.6318   +              +       +               +                
+## m6  0.6237   +              +   +   + 0.03025       +                
+## m3  0.5944   +  0.0033340   +   +   + 0.03102       +               +
+## m10 0.6708   +              +       + 0.02774       +                
+## m12 0.5892   +  0.0060510   +       +               +               +
+## m7  0.6160   +  0.0095550   +       + 0.02970       +               +
+## m2  0.5915   +  0.0050950   +   +   + 0.03425       +       +       +
+## m15 0.5171     -0.0074470   +   +   +                               +
+## m18 0.4903                  +   +   +                                
+## m9  0.5195     -0.0040470   +   +   + 0.01736                       +
+## m13 0.5181                  +   +   + 0.02264                        
+## m19 0.5319     -0.0026110   +       +                               +
+## m17 0.5622                  +       + 0.02449                        
+## m5  0.5601   +  0.0079350   +   +   + 0.02152                        
+## m14 0.5426      0.0004606   +       + 0.02169                       +
+## m4  0.5584   +  0.0099140   +   +   + 0.02482               +        
+## m1  0.6321   +  0.0049050   +   +   + 0.04585       +       +       +
 ##     lgm:pol mth:Mig mth:pol mth:PrS Mig:pol pol:PrS Hab:mth:pol
-## m12               +                                            
-## m9                +                                            
-## m17                                                            
-## m7                +               +                            
-## m3                +               +                            
+## m11               +                                            
+## m8                +                                            
+## m16                                                            
 ## m6                +               +                            
-## m11                               +                            
-## m13                                                            
-## m8                                +                            
+## m3                +               +                            
+## m10                               +                            
+## m12                                                            
+## m7                                +                            
 ## m2        +       +               +       +       +            
-## m16               +                                            
-## m19               +                                            
-## m10               +                                            
-## m14               +               +                            
-## m20                                                            
-## m18                               +                            
+## m15               +                                            
+## m18               +                                            
+## m9                +               +                            
+## m13               +               +                            
+## m19                                                            
+## m17                               +                            
 ## m5                                                             
-## m15                               +                            
+## m14                               +                            
 ## m4        +                               +       +            
 ## m1        +       +       +       +       +       +           +
-##     lgm:mth:pol mth:Mig:pol mth:pol:PrS     Prv mth:Prv df  logLik    AICc
-## m12                                                     27 669.993 -1284.4
-## m9                                                      31 671.244 -1278.4
-## m17                                                     19 657.732 -1276.7
-## m7                                                      31 669.104 -1274.1
-## m3                                                      35 670.829 -1268.9
-## m6                                                      35 670.422 -1268.1
-## m11                                                     23 656.486 -1265.8
-## m13                                                     23 655.428 -1263.7
-## m8                                                      27 654.369 -1253.1
-## m2                                                      42 669.799 -1251.7
-## m16                                                     19 642.530 -1246.3
-## m19                                                     15 635.985 -1241.5
-## m10                                     0.06216       + 23 641.569 -1236.0
-## m14                                                     19 634.972 -1231.1
-## m20                                                     11 623.202 -1224.1
-## m18                                                     11 620.551 -1218.8
-## m5                                                      14 621.470 -1214.5
-## m15                                                     15 621.713 -1212.9
-## m4                                                      21 619.894 -1196.8
-## m1            +           +           +                 66 663.458 -1185.0
-##     delta weight
-## m12  0.00  0.928
-## m9   6.01  0.046
-## m17  7.71  0.020
-## m7  10.29  0.005
-## m3  15.43  0.000
-## m6  16.25  0.000
-## m11 18.57  0.000
-## m13 20.69  0.000
-## m8  31.25  0.000
-## m2  32.70  0.000
-## m16 38.11  0.000
-## m19 42.90  0.000
-## m10 48.40  0.000
-## m14 53.23  0.000
-## m20 60.24  0.000
-## m18 65.54  0.000
-## m5  69.87  0.000
-## m15 71.45  0.000
-## m4  87.56  0.000
-## m1  99.35  0.000
+##     lgm:mth:pol mth:Mig:pol mth:pol:PrS df  logLik    AICc delta weight
+## m11                                     27 670.101 -1284.6  0.00  0.930
+## m8                                      31 671.537 -1278.9  5.64  0.055
+## m16                                     19 657.284 -1275.8  8.82  0.011
+## m6                                      31 668.652 -1273.2 11.41  0.003
+## m3                                      35 670.519 -1268.3 16.27  0.000
+## m10                                     23 656.167 -1265.2 19.43  0.000
+## m12                                     23 655.805 -1264.4 20.15  0.000
+## m7                                      27 654.787 -1254.0 30.63  0.000
+## m2                                      42 669.231 -1250.5 34.06  0.000
+## m15                                     19 642.578 -1246.3 38.23  0.000
+## m18                                     15 635.208 -1239.9 44.67  0.000
+## m9                                      23 640.831 -1234.5 50.10  0.000
+## m13                                     19 634.985 -1231.2 53.42  0.000
+## m19                                     11 622.762 -1223.2 61.33  0.000
+## m17                                     11 620.155 -1218.0 66.55  0.000
+## m5                                      14 621.331 -1214.2 70.36  0.000
+## m14                                     15 622.321 -1214.1 70.45  0.000
+## m4                                      21 619.807 -1196.6 87.95  0.000
+## m1            +           +           + 66 663.888 -1185.9 98.71  0.000
 ## Models ranked by AICc(x) 
 ## Random terms (all models): 
 ## '~species'</code></pre>
-<p>Malli 12, accuracy ~ Hab x method + Mig x method + pool, on näistä paras. Seuraavaksi paras malli sisältää myös painon ja metodin interaktion.</p>
-<p>Malli 12 näyttää tältä:</p>
-<pre class="r"><code>summary(m12)</code></pre>
+<p>Malli 11, accuracy ~ Hab x method + Mig x method + pool, on näistä paras. Seuraavaksi paras malli sisältää myös painon ja metodin interaktion.</p>
+<p>Malli 11 näyttää tältä:</p>
+<pre class="r"><code>summary(m11)</code></pre>
 <pre><code>## 
 ##  Iterations = 3001:1002001
 ##  Thinning interval  = 1000
 ##  Sample size  = 1000 
 ## 
-##  DIC: -1220.262 
+##  DIC: -1220.277 
 ## 
 ##  G-structure:  ~species
 ## 
 ##         post.mean l-95% CI u-95% CI eff.samp
-## species   0.05559  0.03363  0.07479     1138
+## species   0.05565  0.03729  0.07679    774.3
 ## 
 ##  R-structure:  ~units
 ## 
 ##       post.mean l-95% CI u-95% CI eff.samp
-## units   0.01455  0.01325  0.01603    852.6
+## units    0.0145  0.01309  0.01604     1000
 ## 
 ##  Location effects: accuracy ~ Hab * method + Mig * method + pool 
 ## 
 ##               post.mean  l-95% CI  u-95% CI eff.samp  pMCMC    
-## (Intercept)    0.581524  0.350142  0.773989   1000.0 &lt;0.001 ***
-## HabFO         -0.096507 -0.164344 -0.032074   1000.0  0.002 ** 
-## HabMM          0.059970 -0.038532  0.160264   1000.0  0.238    
-## HabWE         -0.216920 -0.330278 -0.127873   1000.0 &lt;0.001 ***
-## methodB       -0.018478 -0.077871  0.049095   1000.0  0.572    
-## methodC       -0.569406 -0.631411 -0.510047   1000.0 &lt;0.001 ***
-## methodD       -0.566850 -0.634251 -0.510982   1000.0 &lt;0.001 ***
-## MigR           0.045450 -0.047184  0.133113   1000.0  0.316    
-## MigS           0.080879  0.001089  0.155898   1000.0  0.040 *  
-## poolPo         0.012399 -0.002803  0.027218    853.5  0.122    
-## HabFO:methodB -0.021653 -0.078929  0.036236   1123.5  0.490    
-## HabMM:methodB -0.012448 -0.102563  0.076392   1000.0  0.784    
-## HabWE:methodB -0.016971 -0.081579  0.061057   1000.0  0.628    
-## HabFO:methodC  0.102896  0.039775  0.158493   1000.0 &lt;0.001 ***
-## HabMM:methodC -0.020518 -0.113993  0.067782   1000.0  0.652    
-## HabWE:methodC  0.175244  0.104850  0.239928   1197.6 &lt;0.001 ***
-## HabFO:methodD  0.084654  0.022490  0.137976    907.3  0.004 ** 
-## HabMM:methodD -0.021081 -0.111156  0.065983    827.3  0.636    
-## HabWE:methodD  0.158449  0.089289  0.223810   1000.0 &lt;0.001 ***
-## methodB:MigR   0.007075 -0.055070  0.066273   1000.0  0.810    
-## methodC:MigR  -0.116261 -0.174511 -0.056731   1000.0 &lt;0.001 ***
-## methodD:MigR  -0.090855 -0.154591 -0.037903   1000.0  0.004 ** 
-## methodB:MigS   0.003081 -0.052271  0.056452   1000.0  0.920    
-## methodC:MigS  -0.078894 -0.134546 -0.027622   1000.0  0.004 ** 
-## methodD:MigS  -0.065886 -0.121006 -0.013130   1000.0  0.026 *  
+## (Intercept)    0.580517  0.364018  0.799480   1171.2 &lt;0.001 ***
+## HabFO         -0.095084 -0.157647 -0.029151    794.3  0.004 ** 
+## HabMM          0.062817 -0.027632  0.158676   1000.0  0.192    
+## HabWE         -0.212153 -0.315835 -0.115746   1000.0 &lt;0.001 ***
+## methodB       -0.017591 -0.075033  0.041352   1000.0  0.604    
+## methodC       -0.567734 -0.626310 -0.503189   1000.0 &lt;0.001 ***
+## methodD       -0.567178 -0.625044 -0.500046   1155.1 &lt;0.001 ***
+## MigR           0.042307 -0.049698  0.134216   1000.0  0.372    
+## MigS           0.079186  0.012257  0.153201   1000.0  0.026 *  
+## poolPo         0.012231 -0.002608  0.026732   1000.0  0.108    
+## HabFO:methodB -0.022973 -0.075915  0.037675   1000.0  0.442    
+## HabMM:methodB -0.014539 -0.102078  0.070144   1000.0  0.736    
+## HabWE:methodB -0.020551 -0.090599  0.046311   1230.5  0.548    
+## HabFO:methodC  0.100924  0.043594  0.157648   1000.0 &lt;0.001 ***
+## HabMM:methodC -0.022912 -0.105751  0.063618   1000.0  0.624    
+## HabWE:methodC  0.170229  0.104422  0.241405    932.5 &lt;0.001 ***
+## HabFO:methodD  0.083903  0.031282  0.149756   1000.0  0.008 ** 
+## HabMM:methodD -0.020341 -0.112067  0.071516   1000.0  0.646    
+## HabWE:methodD  0.155527  0.089318  0.228278   1000.0 &lt;0.001 ***
+## methodB:MigR   0.006819 -0.057441  0.062180   1000.0  0.832    
+## methodC:MigR  -0.115579 -0.169546 -0.051569    791.6 &lt;0.001 ***
+## methodD:MigR  -0.089413 -0.145695 -0.026879   1000.0 &lt;0.001 ***
+## methodB:MigS   0.002569 -0.051101  0.052794   1000.0  0.946    
+## methodC:MigS  -0.079275 -0.135115 -0.024534   1000.0  0.006 ** 
+## methodD:MigS  -0.064796 -0.123455 -0.015699   1000.0  0.018 *  
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
-<pre class="r"><code>#plot(m12$Sol, auto.layout=F) #printit vie ihan hirveästi tilaa tällä koodilla
+<pre class="r"><code>#plot(m11$Sol, auto.layout=F) #printit vie ihan hirveästi tilaa tällä koodilla
 
 #posterior &lt;- as.matrix(m20)
 
@@ -510,85 +524,88 @@ output1</code></pre>
            #prob = 0.8) + plot_title</code></pre>
 <p>Koska aiempi simppelimpi analyysi vihjasi ettei poolauksella ole merkitystä ennustustarkkuuksiin pa-aineistolla, kokeilen vielä mallia, jossa jätän poolauksen pois ja vertaan sitä parhaaseen malliin.</p>
 <pre class="r"><code>#mitä jos tiputtaisi vielä poolauksen?
-m21&lt;- MCMCglmm(accuracy ~ Hab*method + Mig*method , random=~species, data = 
+#m20&lt;- MCMCglmm(accuracy ~ Hab*method + Mig*method , random=~species, data = 
+#resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)</code></pre>
+<pre class="r"><code>#mitä jos tiputtaisi vielä poolauksen?
+m20&lt;- MCMCglmm(accuracy ~ Hab*method + Mig*method , random=~species, data = 
 resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)</code></pre>
-<pre class="r"><code>output2=model.sel(m12,m21)
+<pre class="r"><code>output2=model.sel(m11,m20)
 output2</code></pre>
 <pre><code>## Model selection table 
 ##      (Int) Hab mth Mig pol Hab:mth mth:Mig df  logLik    AICc delta weight
-## m21 0.5837   +   +   +           +       + 26 669.544 -1285.6  0.00  0.648
-## m12 0.5815   +   +   +   +       +       + 27 669.993 -1284.4  1.22  0.352
+## m20 0.5864   +   +   +           +       + 26 669.283 -1285.1  0.00   0.56
+## m11 0.5805   +   +   +   +       +       + 27 670.101 -1284.6  0.48   0.44
 ## Models ranked by AICc(x) 
 ## Random terms (all models): 
 ## '~species'</code></pre>
 <p>Uusi malli on hitusen parempi, se on simppelimpi (vähemmän parametreja) ja sillä on alempi AICc.</p>
-<pre class="r"><code>summary(m21)</code></pre>
+<pre class="r"><code>summary(m20)</code></pre>
 <pre><code>## 
 ##  Iterations = 3001:1002001
 ##  Thinning interval  = 1000
 ##  Sample size  = 1000 
 ## 
-##  DIC: -1219.633 
+##  DIC: -1219.604 
 ## 
 ##  G-structure:  ~species
 ## 
 ##         post.mean l-95% CI u-95% CI eff.samp
-## species   0.05624  0.03842  0.07613     1000
+## species   0.05576    0.038  0.07822    888.7
 ## 
 ##  R-structure:  ~units
 ## 
 ##       post.mean l-95% CI u-95% CI eff.samp
-## units   0.01452  0.01309  0.01593     1000
+## units   0.01453  0.01318    0.016     1000
 ## 
 ##  Location effects: accuracy ~ Hab * method + Mig * method 
 ## 
 ##               post.mean  l-95% CI  u-95% CI eff.samp  pMCMC    
-## (Intercept)    0.583710  0.360894  0.778008   1000.0 &lt;0.001 ***
-## HabFO         -0.098787 -0.157397 -0.026003   1000.0  0.004 ** 
-## HabMM          0.059218 -0.029165  0.167919   1391.2  0.224    
-## HabWE         -0.219570 -0.321710 -0.129521   1092.2 &lt;0.001 ***
-## methodB       -0.019254 -0.082038  0.040441   1409.3  0.572    
-## methodC       -0.570325 -0.633633 -0.506977   1000.0 &lt;0.001 ***
-## methodD       -0.569061 -0.626577 -0.500469   1000.0 &lt;0.001 ***
-## MigR           0.040738 -0.053673  0.125035   1000.0  0.400    
-## MigS           0.078601  0.005162  0.146496   1000.0  0.022 *  
-## HabFO:methodB -0.021991 -0.077994  0.037689   1489.5  0.458    
-## HabMM:methodB -0.011415 -0.107037  0.072391   1000.0  0.786    
-## HabWE:methodB -0.016573 -0.083924  0.048768   1000.0  0.626    
-## HabFO:methodC  0.102591  0.037935  0.159624   1000.0 &lt;0.001 ***
-## HabMM:methodC -0.019557 -0.106765  0.077726   1000.0  0.696    
-## HabWE:methodC  0.175823  0.108944  0.251321    910.1 &lt;0.001 ***
-## HabFO:methodD  0.085410  0.023924  0.137607   1000.0  0.004 ** 
-## HabMM:methodD -0.018346 -0.110685  0.068762   1000.0  0.660    
-## HabWE:methodD  0.158015  0.081096  0.220471   1000.0 &lt;0.001 ***
-## methodB:MigR   0.008104 -0.060386  0.060809   1079.0  0.782    
-## methodC:MigR  -0.114126 -0.178465 -0.055449    891.8 &lt;0.001 ***
-## methodD:MigR  -0.088673 -0.147088 -0.023021    889.2  0.010 ** 
-## methodB:MigS   0.003305 -0.051158  0.055355   1000.0  0.926    
-## methodC:MigS  -0.079027 -0.135337 -0.026495   1000.0  0.004 ** 
-## methodD:MigS  -0.064487 -0.117293 -0.012478   1000.0  0.016 *  
+## (Intercept)    0.586407  0.376488  0.788216     1000 &lt;0.001 ***
+## HabFO         -0.097477 -0.160736 -0.032877     1000  0.004 ** 
+## HabMM          0.060962 -0.038473  0.154457     1000  0.216    
+## HabWE         -0.216372 -0.304991 -0.116898     1000 &lt;0.001 ***
+## methodB       -0.018520 -0.080121  0.043387     1000  0.574    
+## methodC       -0.569604 -0.633728 -0.505539     1000 &lt;0.001 ***
+## methodD       -0.568630 -0.632404 -0.506456     1000 &lt;0.001 ***
+## MigR           0.044196 -0.045836  0.135280     1000  0.370    
+## MigS           0.080948  0.012983  0.156290     1000  0.034 *  
+## HabFO:methodB -0.022355 -0.078891  0.044105     1126  0.460    
+## HabMM:methodB -0.011351 -0.108019  0.078595     1162  0.810    
+## HabWE:methodB -0.018954 -0.086039  0.046956     1000  0.608    
+## HabFO:methodC  0.101857  0.039997  0.155336     1000 &lt;0.001 ***
+## HabMM:methodC -0.019526 -0.113210  0.081233     1103  0.678    
+## HabWE:methodC  0.172948  0.103827  0.241662      893 &lt;0.001 ***
+## HabFO:methodD  0.086215  0.030593  0.153263     1000  0.006 ** 
+## HabMM:methodD -0.016556 -0.104730  0.081951     1000  0.752    
+## HabWE:methodD  0.158116  0.090219  0.225016     1000 &lt;0.001 ***
+## methodB:MigR   0.006926 -0.051424  0.072079     1000  0.830    
+## methodC:MigR  -0.115688 -0.174636 -0.048874     1000 &lt;0.001 ***
+## methodD:MigR  -0.090081 -0.151635 -0.031075     1000  0.006 ** 
+## methodB:MigS   0.002485 -0.052632  0.052379     1131  0.910    
+## methodC:MigS  -0.078753 -0.128860 -0.023757     1000 &lt;0.001 ***
+## methodD:MigS  -0.065224 -0.115707 -0.012633     1000  0.020 *  
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
-<pre class="r"><code>#plot(m21$Sol, auto.layout=F)</code></pre>
+<pre class="r"><code>#plot(m20$Sol, auto.layout=F)</code></pre>
 <p>Interaktiot metodin kanssa ovat merkitseviä vain C ja D metodeilla. Mitäs jos tiputtaa vielä jomman kumman interaktion pois?</p>
 <pre class="r"><code>#mitä jos tiputtaisi vielä interaktiot?
-m22&lt;- MCMCglmm(accuracy ~ Hab*method + Mig , random=~species, data = 
+m21&lt;- MCMCglmm(accuracy ~ Hab*method + Mig , random=~species, data = 
 resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-m23&lt;- MCMCglmm(accuracy ~ Hab + method*Mig , random=~species, data = 
+m22&lt;- MCMCglmm(accuracy ~ Hab + method*Mig , random=~species, data = 
 resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)</code></pre>
 <p>Mitä jos method on päävaikutuksena?</p>
-<pre class="r"><code>m24&lt;- MCMCglmm(accuracy ~ Hab + method + Mig , random=~species, data = 
+<pre class="r"><code>m23&lt;- MCMCglmm(accuracy ~ Hab + method + Mig , random=~species, data = 
 resPA,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)</code></pre>
 <p>mallien vertailu</p>
-<pre class="r"><code>output3=model.sel(m21,m22,m23,m24)
+<pre class="r"><code>output3=model.sel(m20,m21,m22,m23)
 output3</code></pre>
 <pre><code>## Model selection table 
 ##      (Int) Hab mth Mig Hab:mth mth:Mig df  logLik    AICc delta weight
-## m21 0.5837   +   +   +       +       + 26 669.544 -1285.6  0.00  0.998
-## m22 0.6213   +   +   +       +         20 657.065 -1273.2 12.35  0.002
-## m23 0.5477   +   +   +               + 17 634.820 -1235.0 50.59  0.000
-## m24 0.5769   +   +   +                 11 619.969 -1217.7 67.92  0.000
+## m20 0.5864   +   +   +       +       + 26 669.283 -1285.1  0.00  0.998
+## m21 0.6143   +   +   +       +         20 656.929 -1273.0 12.10  0.002
+## m22 0.5529   +   +   +               + 17 635.221 -1235.8 49.27  0.000
+## m23 0.5721   +   +   +                 11 620.381 -1218.5 66.58  0.000
 ## Models ranked by AICc(x) 
 ## Random terms (all models): 
 ## '~species'</code></pre>
@@ -608,185 +625,159 @@ m4A&lt;- MCMCglmm(accuracy ~ Hab*pool +PrevS*pool + Mig*pool + logmass*pool + me
 
 m5A&lt;- MCMCglmm(accuracy ~ Hab + PrevS + Mig + logmass + method + pool, random=~species, data = resABU,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-m6A&lt;- MCMCglmm(accuracy ~ Hab*method +PrevS*method + Mig*method + logmass*method + pool, random=~species, data = resABU,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+m6A&lt;- MCMCglmm(accuracy ~ Hab*method +PrevS*method + Mig*method  + pool, random=~species, data = resABU,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-m7A&lt;- MCMCglmm(accuracy ~ Hab*method +PrevS*method + Mig*method  + pool, random=~species, data = resABU,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+m7A&lt;- MCMCglmm(accuracy ~ Hab*method +PrevS*method  + logmass*method + pool, random=~species, data = resABU,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-m8A&lt;- MCMCglmm(accuracy ~ Hab*method +PrevS*method  + logmass*method + pool, random=~species, data = resABU,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+m8A&lt;- MCMCglmm(accuracy ~ Hab*method + Mig*method + logmass*method + pool, random=~species, data = resABU,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-m9A&lt;- MCMCglmm(accuracy ~ Hab*method + Mig*method + logmass*method + pool, random=~species, data = resABU,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+m9A&lt;- MCMCglmm(accuracy ~ PrevS*method + Mig*method + logmass*method + pool, random=~species, data = resABU,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-m10A&lt;- MCMCglmm(accuracy ~ Prev*method + Mig*method + logmass*method + pool, random=~species, data = resABU,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+m10A&lt;- MCMCglmm(accuracy ~ Hab*method +PrevS*method + pool, random=~species, data = resABU,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-m11A&lt;- MCMCglmm(accuracy ~ Hab*method +PrevS*method + pool, random=~species, data = resABU,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
-
-m12A&lt;- MCMCglmm(accuracy ~ Hab*method + Mig*method  + pool, random=~species, data = 
+m11A&lt;- MCMCglmm(accuracy ~ Hab*method + Mig*method  + pool, random=~species, data = 
 resABU,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-m13A&lt;- MCMCglmm(accuracy ~ Hab*method + logmass*method + pool, random=~species, data=      resABU,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+m12A&lt;- MCMCglmm(accuracy ~ Hab*method + logmass*method + pool, random=~species, data=      resABU,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-m14A&lt;- MCMCglmm(accuracy ~ PrevS*method + Mig*method  + pool, random=~species, data = resABU,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+m13A&lt;- MCMCglmm(accuracy ~ PrevS*method + Mig*method  + pool, random=~species, data = resABU,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-m15A&lt;- MCMCglmm(accuracy ~ PrevS*method +  logmass*method + pool, random=~species, data = resABU,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+m14A&lt;- MCMCglmm(accuracy ~ PrevS*method +  logmass*method + pool, random=~species, data = resABU,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-m16A&lt;- MCMCglmm(accuracy ~ Mig*method + logmass*method + pool, random=~species, data = resABU,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+m15A&lt;- MCMCglmm(accuracy ~ Mig*method + logmass*method + pool, random=~species, data = resABU,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-m17A&lt;- MCMCglmm(accuracy ~ Hab*method + pool, random=~species, data = resABU,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+m16A&lt;- MCMCglmm(accuracy ~ Hab*method + pool, random=~species, data = resABU,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-m18A&lt;- MCMCglmm(accuracy ~ PrevS*method + pool, random=~species, data = resABU,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+m17A&lt;- MCMCglmm(accuracy ~ PrevS*method + pool, random=~species, data = resABU,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-m19A&lt;- MCMCglmm(accuracy ~ Mig*method  + pool, random=~species, data = resABU,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+m18A&lt;- MCMCglmm(accuracy ~ Mig*method  + pool, random=~species, data = resABU,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
-m20A&lt;- MCMCglmm(accuracy ~ logmass*method + pool, random=~species, data = resABU,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)</code></pre>
+m19A&lt;- MCMCglmm(accuracy ~ logmass*method + pool, random=~species, data = resABU,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)</code></pre>
 <pre class="r"><code>#mallin valintaa MuMin paketin avulla
-output4&lt;-model.sel(m1A,m2A,m3A,m4A,m5A,m6A,m7A,m8A,m9A,m10A,m11A,m12A,m13A,m14A,m15A,m16A,m17A,m18A,m19A,m20A) 
+output4&lt;-model.sel(m1A,m2A,m3A,m4A,m5A,m6A,m7A,m8A,m9A,m10A,m11A,m12A,m13A,m14A,m15A,m16A,m17A,m18A,m19A) 
 output4</code></pre>
 <pre><code>## Model selection table 
-##        (Int) Hab     lgm mth Mig pol     PrS Hab:mth Hab:pol lgm:mth
-## m10A 0.06991     0.03367   +   +   +                               +
-## m14A 0.42020               +   +   + 0.05901                        
-## m6A  0.34520   + 0.03230   +   +   + 0.06907       +               +
-## m3A  0.34410   + 0.03151   +   +   + 0.06783       +               +
-## m18A 0.43040               +       + 0.05563                        
-## m16A 0.17150     0.02445   +   +   +                               +
-## m7A  0.53500   +           +   +   + 0.06469       +                
-## m15A 0.20450     0.03624   +       + 0.05639                       +
-## m8A  0.34220   + 0.03266   +       + 0.06957       +               +
-## m19A 0.33330               +   +   +                                
-## m11A 0.54490   +           +       + 0.06748       +                
-## m20A 0.15640     0.03111   +       +                               +
-## m2A  0.34900   + 0.03252   +   +   + 0.07403       +       +       +
-## m9A  0.29270   + 0.02501   +   +   +               +               +
-## m5A  0.28720   + 0.03803   +   +   + 0.04211                        
-## m12A 0.45080   +           +   +   +               +                
-## m13A 0.27750   + 0.02796   +       +               +               +
-## m17A 0.45900   +           +       +               +                
-## m4A  0.27820   + 0.03874   +   +   + 0.04717               +        
-## m1A  0.39780   + 0.03224   +   +   + 0.08330       +       +       +
+##       (Int) Hab     lgm mth Mig pol     PrS Hab:mth Hab:pol lgm:mth
+## m9A  0.2219     0.03233   +   +   + 0.05907                       +
+## m13A 0.4116               +   +   + 0.05708                        
+## m3A  0.3462   + 0.03239   +   +   + 0.06811       +               +
+## m17A 0.4265               +       + 0.05428                        
+## m15A 0.1690     0.02647   +   +   +                               +
+## m6A  0.5351   +           +   +   + 0.06419       +                
+## m14A 0.1997     0.03707   +       + 0.05605                       +
+## m18A 0.3295               +   +   +                                
+## m10A 0.5399   +           +       + 0.06621       +                
+## m7A  0.3370   + 0.03320   +       + 0.06972       +               +
+## m19A 0.1535     0.03087   +       +                               +
+## m2A  0.3482   + 0.03306   +   +   + 0.07385       +       +       +
+## m8A  0.2876   + 0.02573   +   +   +               +               +
+## m5A  0.2803   + 0.03740   +   +   + 0.04241                        
+## m11A 0.4499   +           +   +   +               +                
+## m16A 0.4631   +           +       +               +                
+## m12A 0.2798   + 0.02694   +       +               +               +
+## m4A  0.2844   + 0.03892   +   +   + 0.04792               +        
+## m1A  0.3900   + 0.03208   +   +   + 0.08286       +       +       +
 ##      lgm:pol mth:Mig mth:pol mth:PrS Mig:pol pol:PrS Hab:mth:pol
-## m10A               +                                            
-## m14A               +               +                            
-## m6A                +               +                            
+## m9A                +               +                            
+## m13A               +               +                            
 ## m3A                +               +                            
-## m18A                               +                            
-## m16A               +                                            
-## m7A                +               +                            
-## m15A                               +                            
-## m8A                                +                            
-## m19A               +                                            
-## m11A                               +                            
-## m20A                                                            
+## m17A                               +                            
+## m15A               +                                            
+## m6A                +               +                            
+## m14A                               +                            
+## m18A               +                                            
+## m10A                               +                            
+## m7A                                +                            
+## m19A                                                            
 ## m2A        +       +               +       +       +            
-## m9A                +                                            
+## m8A                +                                            
 ## m5A                                                             
-## m12A               +                                            
-## m13A                                                            
-## m17A                                                            
+## m11A               +                                            
+## m16A                                                            
+## m12A                                                            
 ## m4A        +                               +       +            
 ## m1A        +       +       +       +       +       +           +
-##      lgm:mth:pol mth:Mig:pol mth:pol:PrS    Prv mth:Prv df  logLik   AICc
-## m10A                                     0.2128       + 23 444.703 -842.2
-## m14A                                                    19 436.600 -834.4
-## m6A                                                     35 450.198 -827.7
-## m3A                                                     35 449.957 -827.2
-## m18A                                                    11 423.971 -825.7
-## m16A                                                    19 432.171 -825.5
-## m7A                                                     31 444.469 -824.8
-## m15A                                                    15 426.482 -822.5
-## m8A                                                     27 437.370 -819.1
-## m19A                                                    15 424.397 -818.3
-## m11A                                                    23 432.719 -818.3
-## m20A                                                    11 419.891 -817.5
-## m2A                                                     42 450.909 -813.9
-## m9A                                                     31 435.926 -807.7
-## m5A                                                     14 418.053 -807.7
-## m12A                                                    27 429.910 -804.2
-## m13A                                                    23 422.219 -797.3
-## m17A                                                    19 417.734 -796.7
-## m4A                                                     21 418.335 -793.7
-## m1A            +           +           +                66 455.350 -768.8
-##      delta weight
-## m10A  0.00  0.979
-## m14A  7.83  0.019
-## m6A  14.56  0.001
-## m3A  15.04  0.001
-## m18A 16.56  0.000
-## m16A 16.69  0.000
-## m7A  17.43  0.000
-## m15A 19.77  0.000
-## m8A  23.11  0.000
-## m19A 23.94  0.000
-## m11A 23.97  0.000
-## m20A 24.72  0.000
-## m2A  28.35  0.000
-## m9A  34.51  0.000
-## m5A  34.56  0.000
-## m12A 38.03  0.000
-## m13A 44.97  0.000
-## m17A 45.57  0.000
-## m4A  48.54  0.000
-## m1A  73.43  0.000
+##      lgm:mth:pol mth:Mig:pol mth:pol:PrS df  logLik   AICc delta weight
+## m9A                                      23 442.181 -837.2  0.00  0.823
+## m13A                                     19 436.335 -833.9  3.32  0.156
+## m3A                                      35 450.602 -828.5  8.71  0.011
+## m17A                                     11 424.450 -826.6 10.56  0.004
+## m15A                                     19 432.501 -826.2 10.99  0.003
+## m6A                                      31 444.344 -824.6 12.63  0.001
+## m14A                                     15 425.944 -821.4 15.80  0.000
+## m18A                                     15 424.650 -818.8 18.39  0.000
+## m10A                                     23 432.840 -818.5 18.68  0.000
+## m7A                                      27 436.873 -818.1 19.06  0.000
+## m19A                                     11 419.314 -816.3 20.83  0.000
+## m2A                                      42 450.661 -813.4 23.80  0.000
+## m8A                                      31 436.797 -809.5 27.73  0.000
+## m5A                                      14 418.142 -807.8 29.34  0.000
+## m11A                                     27 429.756 -803.9 33.29  0.000
+## m16A                                     19 418.830 -798.9 38.33  0.000
+## m12A                                     23 422.046 -796.9 40.27  0.000
+## m4A                                      21 418.770 -794.6 42.63  0.000
+## m1A            +           +           + 66 456.053 -770.2 66.98  0.000
 ## Models ranked by AICc(x) 
 ## Random terms (all models): 
 ## '~species'</code></pre>
-<p>Malli 10, accuracy ~ Prev x method + Mig x method + logmass x method + pool, on paras.</p>
-<p>Toiseksi paras malli, 14 accuracy ~ PrevS x method + Mig x method + pool, ei sisällä painoa selittävänä tekijänä.</p>
-<pre class="r"><code>summary(m10A)</code></pre>
+<p>Malli 9, accuracy ~ Prev x method + Mig x method + logmass x method + pool, on paras.</p>
+<p>Toiseksi paras malli, 13 accuracy ~ PrevS x method + Mig x method + pool, ei sisällä painoa selittävänä tekijänä.</p>
+<pre class="r"><code>summary(m9A)</code></pre>
 <pre><code>## 
 ##  Iterations = 3001:1002001
 ##  Thinning interval  = 1000
 ##  Sample size  = 1000 
 ## 
-##  DIC: -780.7219 
+##  DIC: -775.7327 
 ## 
 ##  G-structure:  ~species
 ## 
 ##         post.mean l-95% CI u-95% CI eff.samp
-## species    0.0539  0.03134  0.07588     1000
+## species   0.05422  0.03103  0.07629     1000
 ## 
 ##  R-structure:  ~units
 ## 
 ##       post.mean l-95% CI u-95% CI eff.samp
-## units   0.02303  0.02091  0.02539     1000
+## units   0.02315  0.02108  0.02567     1428
 ## 
-##  Location effects: accuracy ~ Prev * method + Mig * method + logmass * method + pool 
+##  Location effects: accuracy ~ PrevS * method + Mig * method + logmass * method + pool 
 ## 
 ##                  post.mean   l-95% CI   u-95% CI eff.samp  pMCMC    
-## (Intercept)      0.0699112 -0.1988216  0.3201144   1000.0  0.592    
-## Prev             0.2127545  0.1101045  0.3467419   1000.0 &lt;0.001 ***
-## methodB         -0.0944418 -0.1997820  0.0055833   1000.0  0.068 .  
-## methodC         -0.3568848 -0.4526438 -0.2522553   1000.0 &lt;0.001 ***
-## methodD         -0.3185549 -0.4137279 -0.2208551   1000.0 &lt;0.001 ***
-## MigR            -0.0488652 -0.1397609  0.0589250   1000.0  0.310    
-## MigS             0.0359566 -0.0539095  0.1094155   1000.0  0.386    
-## logmass          0.0336745 -0.0017268  0.0628665   1147.0  0.054 .  
-## poolPo           0.0354535  0.0165382  0.0533897   1000.0 &lt;0.001 ***
-## Prev:methodB     0.0386902 -0.0751472  0.1621255   1000.0  0.570    
-## Prev:methodC    -0.1744210 -0.3030310 -0.0645550   1000.0  0.004 ** 
-## Prev:methodD    -0.1866705 -0.3155481 -0.0774576    724.1  0.002 ** 
-## methodB:MigR     0.0026765 -0.0774057  0.0724722   1000.0  0.928    
-## methodC:MigR     0.0899750  0.0038721  0.1606073   1000.0  0.026 *  
-## methodD:MigR     0.0905010  0.0190412  0.1643411   1000.0  0.022 *  
-## methodB:MigS     0.0126202 -0.0628668  0.0828869   1000.0  0.766    
-## methodC:MigS    -0.0632585 -0.1396178  0.0033340   1000.0  0.082 .  
-## methodD:MigS    -0.0178559 -0.0847883  0.0575095   1444.4  0.642    
-## methodB:logmass -0.0005195 -0.0174475  0.0167914   1000.0  0.940    
-## methodC:logmass  0.0157941 -0.0008475  0.0341938   1000.0  0.068 .  
-## methodD:logmass  0.0035512 -0.0135790  0.0198065    884.3  0.710    
+## (Intercept)      0.2218637 -0.0622553  0.4604914   1000.0  0.108    
+## PrevS            0.0590689  0.0222238  0.0949004    750.7 &lt;0.001 ***
+## methodB         -0.0625878 -0.1356352  0.0141366   1000.0  0.102    
+## methodC         -0.4800280 -0.5520741 -0.3891542   1000.0 &lt;0.001 ***
+## methodD         -0.4625965 -0.5357670 -0.3793301    785.0 &lt;0.001 ***
+## MigR            -0.0510177 -0.1441462  0.0469606   1000.0  0.320    
+## MigS             0.0387919 -0.0363137  0.1219320    907.2  0.322    
+## logmass          0.0323339 -0.0015326  0.0637941   1000.0  0.052 .  
+## poolPo           0.0362194  0.0184578  0.0570255   1000.0  0.002 ** 
+## PrevS:methodB    0.0172984 -0.0213847  0.0565446   1114.1  0.362    
+## PrevS:methodC   -0.0428118 -0.0844431 -0.0049586   1019.6  0.040 *  
+## PrevS:methodD   -0.0577927 -0.0944005 -0.0133453   1271.5  0.008 ** 
+## methodB:MigR     0.0019392 -0.0732443  0.0788717   1000.0  0.974    
+## methodC:MigR     0.0883809  0.0123470  0.1622211   1000.0  0.030 *  
+## methodD:MigR     0.0921234  0.0104143  0.1613582   1000.0  0.024 *  
+## methodB:MigS     0.0125729 -0.0626110  0.0836896   1000.0  0.708    
+## methodC:MigS    -0.0698957 -0.1383354  0.0049947   1000.0  0.054 .  
+## methodD:MigS    -0.0237101 -0.0915712  0.0594266   1000.0  0.526    
+## methodB:logmass  0.0003047 -0.0168444  0.0174188   1062.0  0.964    
+## methodC:logmass  0.0180472  0.0015780  0.0362494   1000.0  0.042 *  
+## methodD:logmass  0.0049155 -0.0123334  0.0214998   1000.0  0.572    
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 <pre class="r"><code>#plot(m10A$Sol, auto.layout=F)</code></pre>
 <p>Kokeilen huvikseen mallia ilman poolausta:</p>
-<pre class="r"><code>m21A&lt;- MCMCglmm(accuracy ~ Prev*method + Mig*method + logmass*method + pool, random=~species, data = resABU,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)</code></pre>
-<pre class="r"><code>output5=model.sel(m10A,m21A)
+<pre class="r"><code>m20A&lt;- MCMCglmm(accuracy ~ PrevS*method + Mig*method + logmass*method + pool, random=~species, data = resABU,family=&quot;gaussian&quot;,ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)</code></pre>
+<pre class="r"><code>output5=model.sel(m9A,m20A)
 output5</code></pre>
 <pre><code>## Model selection table 
-##        (Int)     lgm mth Mig pol    Prv lgm:mth mth:Mig mth:Prv df  logLik
-## m21A 0.06428 0.03403   +   +   + 0.2159       +       +       + 23 445.276
-## m10A 0.06991 0.03367   +   +   + 0.2128       +       +       + 23 444.703
+##       (Int)     lgm mth Mig pol     PrS lgm:mth mth:Mig mth:PrS df  logLik
+## m9A  0.2219 0.03233   +   +   + 0.05907       +       +       + 23 442.181
+## m20A 0.2238 0.03319   +   +   + 0.06036       +       +       + 23 441.856
 ##        AICc delta weight
-## m21A -843.4  0.00  0.639
-## m10A -842.2  1.15  0.361
+## m9A  -837.2  0.00  0.581
+## m20A -836.5  0.65  0.419
 ## Models ranked by AICc(x) 
 ## Random terms (all models): 
 ## '~species'</code></pre>
@@ -802,92 +793,85 @@ m2B&lt;- lmer(accuracy ~ Hab*method + Hab*pool +PrevS*method + PrevS*pool + Mig*
 m3B&lt;- lmer(accuracy~ Hab*method +PrevS*method + Mig*method + logmass*method + pool + (1|species),data= resPA, REML = F)
 m4B&lt;- lmer(accuracy ~ Hab*pool + PrevS*pool +  Mig*pool + logmass*pool + method + (1|species),data= resPA, REML = F)
 m5B&lt;- lmer(accuracy ~ Hab + PrevS + Mig + logmass + method + pool + (1|species), data=resPA, REML = F)
-m6B&lt;- lmer(accuracy ~ Hab*method + PrevS*method + Mig*method + logmass*method + pool + (1|species),data= resPA, REML = F)
-m7B&lt;- lmer(accuracy ~ Hab*method + PrevS*method + Mig*method + pool + (1|species),data= resPA, REML = F)
-m8B&lt;- lmer(accuracy ~ Hab*method + PrevS*method + logmass*method + pool + (1|species),data= resPA, REML = F)
-m9B&lt;- lmer(accuracy ~ Hab*method + Mig*method + logmass*method + pool + (1|species),data= resPA, REML = F)
-m10B&lt;- lmer(accuracy ~ PrevS*method + Mig*method + logmass*method + pool + (1|species),data= resPA, REML = F)
-m11B&lt;- lmer(accuracy ~ Hab*method + PrevS*method + pool + (1|species),data= resPA, REML = F)
-m12B&lt;- lmer(accuracy ~ Hab*method +  Mig*method +  pool + (1|species),data= resPA, REML = F)
-m13B&lt;- lmer(accuracy ~ Hab*method + logmass*method + pool + (1|species),data= resPA, REML = F)
-m14B&lt;- lmer(accuracy ~ PrevS*method + Mig*method + pool + (1|species),data= resPA, REML = F)
-m15B&lt;- lmer(accuracy ~ PrevS*method + logmass*method + pool + (1|species),data= resPA, REML = F)
-m16B&lt;- lmer(accuracy ~ Mig*method + logmass*method + pool + (1|species),data= resPA, REML = F)
-m17B&lt;- lmer(accuracy ~ Hab*method + pool + (1|species),data= resPA, REML = F)
-m18B&lt;- lmer(accuracy ~ PrevS*method + pool + (1|species),data= resPA, REML = F)
-m19B&lt;- lmer(accuracy ~ Mig*method +  pool + (1|species),data= resPA, REML = F)
-m20B&lt;- lmer(accuracy ~ logmass*method + pool + (1|species),data= resPA, REML = F)</code></pre>
+m6B&lt;- lmer(accuracy ~ Hab*method + PrevS*method + Mig*method + pool + (1|species),data= resPA, REML = F)
+m7B&lt;- lmer(accuracy ~ Hab*method + PrevS*method + logmass*method + pool + (1|species),data= resPA, REML = F)
+m8B&lt;- lmer(accuracy ~ Hab*method + Mig*method + logmass*method + pool + (1|species),data= resPA, REML = F)
+m9B&lt;- lmer(accuracy ~ PrevS*method + Mig*method + logmass*method + pool + (1|species),data= resPA, REML = F)
+m10B&lt;- lmer(accuracy ~ Hab*method + PrevS*method + pool + (1|species),data= resPA, REML = F)
+m11B&lt;- lmer(accuracy ~ Hab*method +  Mig*method +  pool + (1|species),data= resPA, REML = F)
+m12B&lt;- lmer(accuracy ~ Hab*method + logmass*method + pool + (1|species),data= resPA, REML = F)
+m13B&lt;- lmer(accuracy ~ PrevS*method + Mig*method + pool + (1|species),data= resPA, REML = F)
+m14B&lt;- lmer(accuracy ~ PrevS*method + logmass*method + pool + (1|species),data= resPA, REML = F)
+m15B&lt;- lmer(accuracy ~ Mig*method + logmass*method + pool + (1|species),data= resPA, REML = F)
+m16B&lt;- lmer(accuracy ~ Hab*method + pool + (1|species),data= resPA, REML = F)
+m17B&lt;- lmer(accuracy ~ PrevS*method + pool + (1|species),data= resPA, REML = F)
+m18B&lt;- lmer(accuracy ~ Mig*method +  pool + (1|species),data= resPA, REML = F)
+m19B&lt;- lmer(accuracy ~ logmass*method + pool + (1|species),data= resPA, REML = F)</code></pre>
 <pre class="r"><code>#mallin valintaa MuMin paketin avulla
-output5&lt;-model.sel(m1B,m2B,m3B,m4B,m5B,m6B,m7B,m8B,m9B,m10B,m11B,m12B,m13B,m14B,m15B,m16B,m17B,m18B,m19B,m20B) 
+output5&lt;-model.sel(m1B,m2B,m3B,m4B,m5B,m7B,m8B,m9B,m10B,m11B,m12B,m13B,m14B,m15B,m16B,m17B,m18B,m19B) 
 output5 </code></pre>
 <pre><code>## Model selection table 
 ##       (Int) Hab       lgm mth Mig pol     PrS Hab:mth Hab:pol lgm:mth
-## m12B 0.5960   +             +   +   +               +                
-## m9B  0.6439   + -0.015950   +   +   +               +               +
-## m7B  0.6427   +             +   +   + 0.04167       +                
+## m11B 0.5960   +             +   +   +               +                
+## m8B  0.6439   + -0.015950   +   +   +               +               +
 ## m3B  0.6822   + -0.014290   +   +   + 0.03854       +               +
-## m6B  0.6822   + -0.014290   +   +   + 0.03854       +               +
-## m17B 0.6448   +             +       +               +                
+## m16B 0.6448   +             +       +               +                
 ## m2B  0.6847   + -0.012660   +   +   + 0.04229       +       +       +
-## m11B 0.6917   +             +       + 0.03882       +                
-## m13B 0.6666   + -0.005189   +       +               +               +
-## m8B  0.7048   + -0.003418   +       + 0.03783       +               +
-## m16B 0.6286     -0.027080   +   +   +                               +
-## m10B 0.6550     -0.022700   +   +   + 0.03465                       +
+## m10B 0.6917   +             +       + 0.03882       +                
+## m12B 0.6666   + -0.005189   +       +               +               +
+## m7B  0.7048   + -0.003418   +       + 0.03783       +               +
+## m15B 0.6286     -0.027080   +   +   +                               +
+## m9B  0.6550     -0.022700   +   +   + 0.03465                       +
 ## m1B  0.7239   + -0.013480   +   +   + 0.05415       +       +       +
-## m19B 0.5379                 +   +   +                                
-## m14B 0.5978                 +   +   + 0.05059                        
+## m18B 0.5379                 +   +   +                                
+## m13B 0.5978                 +   +   + 0.05059                        
 ## m5B  0.6475   + -0.009267   +   +   + 0.02952                        
-## m20B 0.6569     -0.019590   +       +                               +
-## m15B 0.6844     -0.014830   +       + 0.03926                       +
-## m18B 0.6330                 +       + 0.05157                        
+## m19B 0.6569     -0.019590   +       +                               +
+## m14B 0.6844     -0.014830   +       + 0.03926                       +
+## m17B 0.6330                 +       + 0.05157                        
 ## m4B  0.6501   + -0.007635   +   +   + 0.03327               +        
 ##      lgm:pol mth:Mig mth:pol mth:PrS Mig:pol pol:PrS Hab:mth:pol
-## m12B               +                                            
-## m9B                +                                            
-## m7B                +               +                            
+## m11B               +                                            
+## m8B                +                                            
 ## m3B                +               +                            
-## m6B                +               +                            
-## m17B                                                            
+## m16B                                                            
 ## m2B        +       +               +       +       +            
-## m11B                               +                            
-## m13B                                                            
-## m8B                                +                            
-## m16B               +                                            
-## m10B               +               +                            
+## m10B                               +                            
+## m12B                                                            
+## m7B                                +                            
+## m15B               +                                            
+## m9B                +               +                            
 ## m1B        +       +       +       +       +       +           +
-## m19B               +                                            
-## m14B               +               +                            
+## m18B               +                                            
+## m13B               +               +                            
 ## m5B                                                             
-## m20B                                                            
-## m15B                               +                            
-## m18B                               +                            
+## m19B                                                            
+## m14B                               +                            
+## m17B                               +                            
 ## m4B        +                               +       +            
 ##      lgm:mth:pol mth:Mig:pol mth:pol:PrS df  logLik    AICc delta weight
-## m12B                                     27 568.739 -1081.9  0.00  0.539
-## m9B                                      31 572.458 -1080.8  1.08  0.315
-## m7B                                      31 571.107 -1078.1  3.78  0.081
-## m3B                                      35 574.462 -1076.2  5.66  0.032
-## m6B                                      35 574.462 -1076.2  5.66  0.032
-## m17B                                     19 553.653 -1068.5 13.36  0.001
+## m11B                                     27 568.739 -1081.9  0.00  0.608
+## m8B                                      31 572.458 -1080.8  1.08  0.355
+## m3B                                      35 574.462 -1076.2  5.66  0.036
+## m16B                                     19 553.653 -1068.5 13.36  0.001
 ## m2B                                      42 577.267 -1066.6 15.26  0.000
-## m11B                                     23 555.690 -1064.2 17.65  0.000
-## m13B                                     23 554.030 -1060.9 20.98  0.000
-## m8B                                      27 555.928 -1056.2 25.62  0.000
-## m16B                                     19 537.168 -1035.5 46.33  0.000
-## m10B                                     23 538.986 -1030.8 51.06  0.000
+## m10B                                     23 555.690 -1064.2 17.65  0.000
+## m12B                                     23 554.030 -1060.9 20.98  0.000
+## m7B                                      27 555.928 -1056.2 25.62  0.000
+## m15B                                     19 537.168 -1035.5 46.33  0.000
+## m9B                                      23 538.986 -1030.8 51.06  0.000
 ## m1B            +           +           + 66 585.155 -1028.4 53.45  0.000
-## m19B                                     15 525.748 -1021.0 60.87  0.000
-## m14B                                     19 529.782 -1020.8 61.10  0.000
+## m18B                                     15 525.748 -1021.0 60.87  0.000
+## m13B                                     19 529.782 -1020.8 61.10  0.000
 ## m5B                                      14 521.219 -1014.0 67.86  0.000
-## m20B                                     11 516.188 -1010.1 71.76  0.000
-## m15B                                     15 518.367 -1006.2 75.63  0.000
-## m18B                                     11 514.248 -1006.2 75.64  0.000
+## m19B                                     11 516.188 -1010.1 71.76  0.000
+## m14B                                     15 518.367 -1006.2 75.63  0.000
+## m17B                                     11 514.248 -1006.2 75.64  0.000
 ## m4B                                      21 523.689 -1004.4 77.46  0.000
 ## Models ranked by AICc(x) 
 ## Random terms (all models): 
 ## '1 | species'</code></pre>
-<pre class="r"><code>summary(m12B)</code></pre>
+<pre class="r"><code>summary(m11B)</code></pre>
 <pre><code>## Linear mixed model fit by maximum likelihood  ['lmerMod']
 ## Formula: accuracy ~ Hab * method + Mig * method + pool + (1 | species)
 ##    Data: resPA
@@ -936,7 +920,7 @@ output5 </code></pre>
 ## Correlation matrix not shown by default, as p = 25 &gt; 12.
 ## Use print(x, correlation=TRUE)  or
 ##     vcov(x)        if you need it</code></pre>
-<p>Pa-aineistolla tulokset pysyvät samoina. Valittaisiin edelleen malli 12, nyt tosin seuraavaksi paras malli on vain 1.08 AIC-yksikön päässä parhaasta. Ei niin vakuuttava ero seuraavaksi parhaaseen malliin.</p>
+<p>Pa-aineistolla tulokset pysyvät samoina. Valittaisiin edelleen malli 11, nyt tosin seuraavaksi paras malli on vain 1.08 AIC-yksikön päässä parhaasta. Ei niin vakuuttava ero seuraavaksi parhaaseen malliin.</p>
 </div>
 <div id="abu-aineisto" class="section level3">
 <h3>abu-aineisto</h3>
@@ -946,92 +930,88 @@ m2B&lt;- lmer(accuracy ~ Hab*method + Hab*pool +PrevS*method + PrevS*pool + Mig*
 m3B&lt;- lmer(accuracy~ Hab*method +PrevS*method + Mig*method + logmass*method + pool + (1|species),data= resABU, REML = F)
 m4B&lt;- lmer(accuracy ~ Hab*pool + PrevS*pool +  Mig*pool + logmass*pool + method + (1|species),data= resABU, REML = F)
 m5B&lt;- lmer(accuracy ~ Hab + PrevS + Mig + logmass + method + pool + (1|species), data=resABU, REML = F)
-m6B&lt;- lmer(accuracy ~ Hab*method + PrevS*method + Mig*method + logmass*method + pool + (1|species),data= resABU, REML = F)
-m7B&lt;- lmer(accuracy ~ Hab*method + PrevS*method + Mig*method + pool + (1|species),data= resABU, REML = F)
-m8B&lt;- lmer(accuracy ~ Hab*method + PrevS*method + logmass*method + pool + (1|species),data= resABU, REML = F)
-m9B&lt;- lmer(accuracy ~ Hab*method + Mig*method + logmass*method + pool + (1|species),data= resABU, REML = F)
-m10B&lt;- lmer(accuracy ~ PrevS*method + Mig*method + logmass*method + pool + (1|species),data= resABU, REML = F)
-m11B&lt;- lmer(accuracy ~ Hab*method + PrevS*method + pool + (1|species),data= resABU, REML = F)
-m12B&lt;- lmer(accuracy ~ Hab*method +  Mig*method +  pool + (1|species),data= resABU, REML = F)
-m13B&lt;- lmer(accuracy ~ Hab*method + logmass*method + pool + (1|species),data= resABU, REML = F)
-m14B&lt;- lmer(accuracy ~ PrevS*method + Mig*method + pool + (1|species),data= resABU, REML = F)
-m15B&lt;- lmer(accuracy ~ PrevS*method + logmass*method + pool + (1|species),data= resABU, REML = F)
-m16B&lt;- lmer(accuracy ~ Mig*method + logmass*method + pool + (1|species),data= resABU, REML = F)
-m17B&lt;- lmer(accuracy ~ Hab*method + pool + (1|species),data= resABU, REML = F)
-m18B&lt;- lmer(accuracy ~ PrevS*method + pool + (1|species),data= resABU, REML = F)
-m19B&lt;- lmer(accuracy ~ Mig*method +  pool + (1|species),data= resABU, REML = F)
-m20B&lt;- lmer(accuracy ~ logmass*method + pool + (1|species),data= resABU, REML = F)</code></pre>
+m6B&lt;- lmer(accuracy ~ Hab*method + PrevS*method + Mig*method + pool + (1|species),data= resABU, REML = F)
+m7B&lt;- lmer(accuracy ~ Hab*method + PrevS*method + logmass*method + pool + (1|species),data= resABU, REML = F)
+m8B&lt;- lmer(accuracy ~ Hab*method + Mig*method + logmass*method + pool + (1|species),data= resABU, REML = F)
+m9B&lt;- lmer(accuracy ~ PrevS*method + Mig*method + logmass*method + pool + (1|species),data= resABU, REML = F)
+m10B&lt;- lmer(accuracy ~ Hab*method + PrevS*method + pool + (1|species),data= resABU, REML = F)
+m11B&lt;- lmer(accuracy ~ Hab*method +  Mig*method +  pool + (1|species),data= resABU, REML = F)
+m12B&lt;- lmer(accuracy ~ Hab*method + logmass*method + pool + (1|species),data= resABU, REML = F)
+m13B&lt;- lmer(accuracy ~ PrevS*method + Mig*method + pool + (1|species),data= resABU, REML = F)
+m14B&lt;- lmer(accuracy ~ PrevS*method + logmass*method + pool + (1|species),data= resABU, REML = F)
+m15B&lt;- lmer(accuracy ~ Mig*method + logmass*method + pool + (1|species),data= resABU, REML = F)
+m16B&lt;- lmer(accuracy ~ Hab*method + pool + (1|species),data= resABU, REML = F)
+m17B&lt;- lmer(accuracy ~ PrevS*method + pool + (1|species),data= resABU, REML = F)
+m18B&lt;- lmer(accuracy ~ Mig*method +  pool + (1|species),data= resABU, REML = F)
+m19B&lt;- lmer(accuracy ~ logmass*method + pool + (1|species),data= resABU, REML = F)</code></pre>
 <pre class="r"><code>#mallin valintaa MuMin paketin avulla
-output6&lt;-model.sel(m1B,m2B,m3B,m4B,m5B,m6B,m7B,m8B,m9B,m10B,m11B,m12B,m13B,m14B,m15B,m16B,m17B,m18B,m19B,m20B) 
+output6&lt;-model.sel(m1B,m2B,m3B,m4B,m5B,m6B,m7B,m8B,m9B,m10B,m11B,m12B,m13B,m14B,m15B,m16B,m17B,m18B,m19B) 
 output6 </code></pre>
 <pre><code>## Model selection table 
 ##       (Int) Hab       lgm mth Mig pol     PrS Hab:mth Hab:pol lgm:mth
-## m7B  0.5379   +             +   +   + 0.07378       +                
+## m6B  0.5379   +             +   +   + 0.07378       +                
 ## m3B  0.5810   + -0.015630   +   +   + 0.07035       +               +
-## m6B  0.5810   + -0.015630   +   +   + 0.07035       +               +
 ## m2B  0.5836   + -0.014650   +   +   + 0.07657       +       +       +
-## m10B 0.4875     -0.016330   +   +   + 0.05628                       +
-## m14B 0.4463                 +   +   + 0.06775                        
-## m11B 0.5545   +             +       + 0.07672       +                
-## m9B  0.5112   + -0.018660   +   +   +               +               +
-## m8B  0.5875   + -0.008554   +       + 0.07423       +               +
-## m12B 0.4551   +             +   +   +               +                
+## m9B  0.4875     -0.016330   +   +   + 0.05628                       +
+## m13B 0.4463                 +   +   + 0.06775                        
+## m10B 0.5545   +             +       + 0.07672       +                
+## m8B  0.5112   + -0.018660   +   +   +               +               +
+## m7B  0.5875   + -0.008554   +       + 0.07423       +               +
+## m11B 0.4551   +             +   +   +               +                
 ## m1B  0.6310   + -0.016310   +   +   + 0.08572       +       +       +
-## m16B 0.4446     -0.023430   +   +   +                               +
+## m15B 0.4446     -0.023430   +   +   +                               +
 ## m5B  0.5188   + -0.009135   +   +   + 0.04300                        
-## m18B 0.4500                 +       + 0.05685                        
-## m19B 0.3661                 +   +   +                                
+## m17B 0.4500                 +       + 0.05685                        
+## m18B 0.3661                 +   +   +                                
 ## m4B  0.5214   + -0.008152   +   +   + 0.04922               +        
-## m15B 0.4681     -0.005227   +       + 0.05251                       +
-## m17B 0.4619   +             +       +               +                
-## m13B 0.5125   + -0.012030   +       +               +               +
-## m20B 0.4313     -0.011590   +       +                               +
+## m14B 0.4681     -0.005227   +       + 0.05251                       +
+## m16B 0.4619   +             +       +               +                
+## m12B 0.5125   + -0.012030   +       +               +               +
+## m19B 0.4313     -0.011590   +       +                               +
 ##      lgm:pol mth:Mig mth:pol mth:PrS Mig:pol pol:PrS Hab:mth:pol
-## m7B                +               +                            
-## m3B                +               +                            
 ## m6B                +               +                            
+## m3B                +               +                            
 ## m2B        +       +               +       +       +            
-## m10B               +               +                            
-## m14B               +               +                            
-## m11B                               +                            
-## m9B                +                                            
-## m8B                                +                            
-## m12B               +                                            
+## m9B                +               +                            
+## m13B               +               +                            
+## m10B                               +                            
+## m8B                +                                            
+## m7B                                +                            
+## m11B               +                                            
 ## m1B        +       +       +       +       +       +           +
-## m16B               +                                            
+## m15B               +                                            
 ## m5B                                                             
-## m18B                               +                            
-## m19B               +                                            
+## m17B                               +                            
+## m18B               +                                            
 ## m4B        +                               +       +            
-## m15B                               +                            
-## m17B                                                            
-## m13B                                                            
-## m20B                                                            
+## m14B                               +                            
+## m16B                                                            
+## m12B                                                            
+## m19B                                                            
 ##      lgm:mth:pol mth:Mig:pol mth:pol:PrS df  logLik   AICc delta weight
-## m7B                                      31 389.410 -714.7  0.00  0.558
-## m3B                                      35 392.766 -712.8  1.88  0.218
-## m6B                                      35 392.766 -712.8  1.88  0.218
-## m2B                                      42 396.790 -705.6  9.06  0.006
-## m10B                                     23 372.828 -698.5 16.20  0.000
-## m14B                                     19 368.577 -698.3 16.33  0.000
-## m11B                                     23 369.835 -692.5 22.18  0.000
-## m9B                                      31 376.288 -688.4 26.24  0.000
-## m8B                                      27 371.871 -688.1 26.56  0.000
-## m12B                                     27 371.807 -688.0 26.69  0.000
+## m6B                                      31 389.410 -714.7  0.00  0.713
+## m3B                                      35 392.766 -712.8  1.88  0.278
+## m2B                                      42 396.790 -705.6  9.06  0.008
+## m9B                                      23 372.828 -698.5 16.20  0.000
+## m13B                                     19 368.577 -698.3 16.33  0.000
+## m10B                                     23 369.835 -692.5 22.18  0.000
+## m8B                                      31 376.288 -688.4 26.24  0.000
+## m7B                                      27 371.871 -688.1 26.56  0.000
+## m11B                                     27 371.807 -688.0 26.69  0.000
 ## m1B            +           +           + 66 414.297 -686.6 28.06  0.000
-## m16B                                     19 360.976 -683.1 31.53  0.000
+## m15B                                     19 360.976 -683.1 31.53  0.000
 ## m5B                                      14 353.654 -678.9 35.80  0.000
-## m18B                                     11 349.286 -676.3 38.37  0.000
-## m19B                                     15 352.121 -673.7 40.93  0.000
+## m17B                                     11 349.286 -676.3 38.37  0.000
+## m18B                                     15 352.121 -673.7 40.93  0.000
 ## m4B                                      21 357.318 -671.6 43.02  0.000
-## m15B                                     15 350.311 -670.1 44.55  0.000
-## m17B                                     19 351.182 -663.5 51.11  0.000
-## m13B                                     23 354.452 -661.7 52.95  0.000
-## m20B                                     11 340.730 -659.2 55.48  0.000
+## m14B                                     15 350.311 -670.1 44.55  0.000
+## m16B                                     19 351.182 -663.5 51.11  0.000
+## m12B                                     23 354.452 -661.7 52.95  0.000
+## m19B                                     11 340.730 -659.2 55.48  0.000
 ## Models ranked by AICc(x) 
 ## Random terms (all models): 
 ## '1 | species'</code></pre>
-<pre class="r"><code>summary(m7B)</code></pre>
+<pre class="r"><code>summary(m6B)</code></pre>
 <pre><code>## Linear mixed model fit by maximum likelihood  ['lmerMod']
 ## Formula: accuracy ~ Hab * method + PrevS * method + Mig * method + pool +  
 ##     (1 | species)
@@ -1085,7 +1065,7 @@ output6 </code></pre>
 ## Correlation matrix not shown by default, as p = 29 &gt; 12.
 ## Use print(x, correlation=TRUE)  or
 ##     vcov(x)        if you need it</code></pre>
-<p>Abu-aineistolla tulokset muuttuvat. Nyt parhaaksi malliksi valikoituukin malli 7, joka sisältääkin habitaatin, prevalenssin ja migraation (vs. prev, mig ja mass, jotka valikoituivat kun fylogenia huomioitiin). Eros seuraavaan malliin vain 1.88 (malli3 (tai 6), joka sisältää kaikki traitit).</p>
+<p>Abu-aineistolla tulokset muuttuvat. Nyt parhaaksi malliksi valikoituukin malli 6, joka sisältääkin habitaatin, prevalenssin ja migraation (vs. prev, mig ja mass, jotka valikoituivat kun fylogenia huomioitiin). Eroa seuraavaan malliin vain 1.88 (malli3, joka sisältää kaikki traitit).</p>
 </div>
 </div>
 </div>

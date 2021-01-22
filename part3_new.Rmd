@@ -1082,7 +1082,8 @@ bm.birds<-inverseA(linnut2)$Ainv
 ```
 
 
-```{r echo=TRUE, results='hide', cache=TRUE}
+```{r, cache=T,results="hide"}
+
 M1<- MCMCglmm(accuracy ~ method * pool, random=~species, data = poolresPA,family="gaussian",  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
 M2<- MCMCglmm(accuracy ~ method + pool, random=~species, data = poolresPA,family="gaussian",  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
@@ -1145,7 +1146,7 @@ Eli pa-aineistolla vain metodilla on väliä, ei niinkään poolauksella?
 
 #### Abu-aineisto:
 
-```{r echo=TRUE, results='hide', cache=TRUE}
+```{r, cache=T,results="hide"}
 N1<- MCMCglmm(accuracy ~ method * pool, random=~species, data = poolresABU,family="gaussian",  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
 N2<- MCMCglmm(accuracy ~ method + pool, random=~species, data = poolresABU,family="gaussian",  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
@@ -1225,7 +1226,7 @@ pd <- position_dodge(0.4) # move them .05 to the left and right
 # bars won't be dodged!
 poolres$pa=revalue(poolres$pa, c("pa"="occurrence", "abu"="abundance"))
 stat$pa=revalue(stat$pa, c("pa"="occurrence", "abu"="abundance"))
-stat$pool=revalue(stat$pool, c("NPo"="non-pooled", "Po"="pooled"))
+stat$pool=revalue(stat$pool, c("NPo"="local, non-pooled", "Po"="regional, pooled"))
 
 stat$pa=factor(stat$pa, levels=c("occurrence","abundance"))
 

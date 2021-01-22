@@ -1374,10 +1374,10 @@ M4&lt;- MCMCglmm(accuracy ~ pool, random=~species, data = poolresPA,family=&quot
 output1</code></pre>
 <pre><code>## Model selection table 
 ##     (Int) mth pol mth:pol df   logLik    AICc   delta weight
-## M3 0.5216   +              6  620.136 -1228.2    0.00  0.607
-## M2 0.5212   +   +          7  620.707 -1227.3    0.89  0.390
-## M1 0.5298   +   +       + 10  619.067 -1217.9   10.28  0.004
-## M4 0.2633       +          4 -241.464   491.0 1719.15  0.000
+## M3 0.5238   +              6  620.070 -1228.1    0.00  0.628
+## M2 0.5174   +   +          7  620.546 -1227.0    1.08  0.366
+## M1 0.5245   +   +       + 10  619.452 -1218.7    9.38  0.006
+## M4 0.2660       +          4 -240.817   489.7 1717.73  0.000
 ## Models ranked by AICc(x) 
 ## Random terms (all models): 
 ## '~species'</code></pre>
@@ -1387,25 +1387,25 @@ output1</code></pre>
 ##  Thinning interval  = 1000
 ##  Sample size  = 1000 
 ## 
-##  DIC: -1137.84 
+##  DIC: -1137.802 
 ## 
 ##  G-structure:  ~species
 ## 
 ##         post.mean l-95% CI u-95% CI eff.samp
-## species   0.06116  0.04182  0.08413    959.6
+## species    0.0605  0.04147  0.08206    902.5
 ## 
 ##  R-structure:  ~units
 ## 
 ##       post.mean l-95% CI u-95% CI eff.samp
-## units    0.0161  0.01458  0.01769     1098
+## units   0.01608  0.01465  0.01766     1000
 ## 
 ##  Location effects: accuracy ~ method 
 ## 
-##             post.mean  l-95% CI  u-95% CI eff.samp  pMCMC    
-## (Intercept)  0.521633  0.321132  0.712414     1220 &lt;0.001 ***
-## methodB     -0.031627 -0.051967 -0.005999     1000  0.006 ** 
-## methodC     -0.544243 -0.568750 -0.523876     1000 &lt;0.001 ***
-## methodD     -0.541757 -0.565770 -0.521022     1000 &lt;0.001 ***
+##             post.mean l-95% CI u-95% CI eff.samp  pMCMC    
+## (Intercept)   0.52383  0.33375  0.72817      885 &lt;0.001 ***
+## methodB      -0.03205 -0.05437 -0.01231     1000  0.006 ** 
+## methodC      -0.54428 -0.56726 -0.52152     1000 &lt;0.001 ***
+## methodD      -0.54216 -0.56407 -0.51855     1000 &lt;0.001 ***
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 <pre class="r"><code>summary(M2)</code></pre>
@@ -1414,26 +1414,26 @@ output1</code></pre>
 ##  Thinning interval  = 1000
 ##  Sample size  = 1000 
 ## 
-##  DIC: -1138.127 
+##  DIC: -1138.215 
 ## 
 ##  G-structure:  ~species
 ## 
 ##         post.mean l-95% CI u-95% CI eff.samp
-## species   0.06009  0.04054  0.08123     1000
+## species   0.06099  0.04005  0.08301     1000
 ## 
 ##  R-structure:  ~units
 ## 
 ##       post.mean l-95% CI u-95% CI eff.samp
-## units   0.01607  0.01454  0.01758     1000
+## units   0.01607  0.01452  0.01764     1000
 ## 
 ##  Location effects: accuracy ~ method + pool 
 ## 
 ##             post.mean  l-95% CI  u-95% CI eff.samp  pMCMC    
-## (Intercept)  0.521173  0.336952  0.702430     1000 &lt;0.001 ***
-## methodB     -0.031848 -0.054145 -0.010582     1000  0.008 ** 
-## methodC     -0.544095 -0.565753 -0.519186     1000 &lt;0.001 ***
-## methodD     -0.542276 -0.565617 -0.520365     1000 &lt;0.001 ***
-## poolPo       0.012141 -0.001388  0.029823     1000  0.116    
+## (Intercept)  0.517380  0.336847  0.710393     1066 &lt;0.001 ***
+## methodB     -0.031497 -0.054014 -0.008669     1000  0.012 *  
+## methodC     -0.544109 -0.566912 -0.519449     1000 &lt;0.001 ***
+## methodD     -0.541613 -0.563860 -0.518961     1000 &lt;0.001 ***
+## poolPo       0.012066 -0.002859  0.028441     1000  0.140    
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 <pre class="r"><code>#vanhalla tyylillä ilman fylogeniaa
