@@ -154,7 +154,7 @@ bm.birds<-inverseA(linnut2)$Ainv
 
 Selvitetään, vaikuttavatko lajien ominaisuudet (muuttokäyttäytyminen 'Mig', elinympäristö 'Hab', paino 'logMass' tai prevalenssi 'Prev') ennustustarkkuuteen. Analyysissä pitäisi huomioida fylogenia eli, että lajit voivat olla ominaisuuksiltaan samankaltaisia (ja siten omata myös samanlaiset ennustustarkkuudet) läheisen sukulaisuussuhteen takia. Mukana nyt myös ominaisuuksien mahdolliset yhdysvaikutukset metodin ja poolauksen kanssa.
 
-### 4.4.1 Pa-aineisto
+### 4.4.1 Pa-aineisto, mallit MCMCglmm-funktiolla
 
 Luodaan mallivaihtoehdot.
 
@@ -257,17 +257,22 @@ Malli 11, accuracy ~ Hab x method + Mig x method  + pool, on näistä paras. Seu
 
 Malli 11 näyttää tältä:
 
+### 4.4.2 Parhaimman mallin validointi kuvaajista
+
 ```{r}
 summary(m11)
-#plot(m11$Sol, auto.layout=F) #printit vie ihan hirveästi tilaa tällä koodilla
+plot(m11$Sol, auto.layout=F) #printit vie ihan hirveästi tilaa tällä koodilla
 
-#posterior <- as.matrix(m20)
+#posterior <- as.matrix(m11)
 
 #plot_title <- ggtitle("Posterior distributions","with medians and 80% intervals")
 #mcmc_areas(posterior,
            #pars = c("logmass", "method", "pool","species"),
-           #prob = 0.8) + plot_title
+          #prob = 0.8) + plot_title
+#EI TOIMI.
 ```
+
+### 4.4.3 Muita vaihtoehtoisia malleja
 
 Koska aiempi simppelimpi analyysi vihjasi ettei poolauksella ole merkitystä ennustustarkkuuksiin pa-aineistolla, kokeilen vielä mallia, jossa jätän poolauksen pois ja vertaan sitä parhaaseen malliin.
 
@@ -292,7 +297,7 @@ Uusi malli on hitusen parempi, se on simppelimpi (vähemmän parametreja) ja sil
 
 ```{r}
 summary(m20)
-#plot(m20$Sol, auto.layout=F)
+plot(m20$Sol, auto.layout=F)
 ```
 
 Interaktiot metodin kanssa ovat merkitseviä vain C ja D metodeilla. Mitäs jos tiputtaa vielä jomman kumman interaktion pois?
@@ -326,7 +331,7 @@ Poolauksen voisi siis tiputtaa pois mutta ei interaktioita metodin kanssa. Tulok
 Mallinvalinnasta AIC-arvojen avulla voi lukea [täältä](http://webhome.auburn.edu/~tds0009/PDFs/arnold%20et%20al.%202010.pdf). Tosin tämän artikkelin mukaan olisin ehkä ennemmin vertaillut weights-arvoja. Lainaus: "If the primary objective of modeling is to evaluate the relative importance of many potential predictor variables, such as in many habitat selection
 studies, then summing Akaike model weights across all models that include that variable can be a useful approach."
 
-### 4.4.2 Abu-aineistolle
+### 4.4.4 Abu-aineisto, glmmMCMC-funktiolla
 
 Vaihdetaan aineistoa. Sama fylogeniarakenne toimii tässäkin vaikka abu-aineistossa C ja D metodeilla on vain 118 havaintoa, eli fylogeniapuussa on pari ylimääräistä oksaa. Aiemmin gls-funktiolla tämä haittasi mallin sovittamista, tässä ilmeisesti ei haittaa.
 
@@ -381,10 +386,14 @@ Malli 9, accuracy ~ Prev x method + Mig x method + logmass x method + pool, on p
 
 Toiseksi paras malli, 13 accuracy ~ PrevS x method + Mig x method  + pool, ei sisällä painoa selittävänä tekijänä.
 
+### 4.4.5 Parhaimman mallin validointi kuvaajista
+
 ```{r}
 summary(m9A)
-#plot(m10A$Sol, auto.layout=F)
+plot(m9A$Sol, auto.layout=F)
 ```
+
+### 4.4.6 Muita vaihtoehtoisia malleja
 
 Kokeilen huvikseen mallia ilman poolausta:
 
@@ -399,10 +408,10 @@ output5
 ```
 
 
-## 4.5 Analyysit lmer ilman fylogeniaa
+## 4.5 Analyysit, lmer-funktiolla, ilman fylogeniaa
 
 
-### pa-aineisto
+### 4.5.1 pa-aineisto
 
 ```{r, cache=T,results="hide"}
 #luodaan eri mallivaihtoehtoja
@@ -440,7 +449,7 @@ summary(m11B)
 
 Pa-aineistolla tulokset pysyvät samoina. Valittaisiin edelleen malli 11, nyt tosin seuraavaksi paras malli on vain 1.08 AIC-yksikön päässä parhaasta. Ei niin vakuuttava ero seuraavaksi parhaaseen malliin. 
 
-### abu-aineisto
+### 4.5.2 abu-aineisto
 
 ```{r, cache=T,results="hide"}
 #luodaan eri mallivaihtoehtoja

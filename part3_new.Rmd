@@ -1032,7 +1032,7 @@ ggplot(res2, aes(x = method, y = accuracy,  colour = pa)) + geom_boxplot() +face
 ```
 
 
-### 3.3.3 Analyysi 
+### 3.3.3 Analyysi PA-aineisto
 
 Testataan vaikuttaako metodi ja poolaus ennustustarkkuuksiin. Käytän samaa sekamallia kuin aikaisemminkin.(En siis vertaile random-rakenteita enää). Laji on random-muuttuja. 
 
@@ -1063,7 +1063,7 @@ write.csv(poolres, "poolres.csv",row.names = F)
 
 Analysoidaan pa ja abu datasetit erillään:
 
-#### Pa-aineisto:
+
 
 ```{r}
 #jaetaan aineisto pa ja abu aineistoihin
@@ -1071,6 +1071,7 @@ poolresPA=subset(poolres,pa=="pa")
 poolresABU=subset(poolres,pa=="abu")
 ```
 
+#### Pa-aineisto:
 
 ```{r}
 #luetaan aineisto sisään, Multiphylo eli monta puuta
@@ -1103,6 +1104,15 @@ summary(M3)
 summary(M2)
 ```
 
+### 3.3.4 Parhaan mallin validointi kuvaajista
+
+```{r}
+plot(M3$Sol, auto.layout=F)
+```
+
+### 3.3.5 Pa-aineisto lme-fuktiolla
+
+Sama mutta lme-fuktiolla, ilman fylogeniaa.
 
 ```{r}
 #vanhalla tyylillä ilman fylogeniaa
@@ -1144,7 +1154,8 @@ abline(h=0,lty=2)
 
 Eli pa-aineistolla vain metodilla on väliä, ei niinkään poolauksella?
 
-#### Abu-aineisto:
+
+### 3.3.6 Analyysi abu-aineistolla
 
 ```{r, cache=T,results="hide"}
 N1<- MCMCglmm(accuracy ~ method * pool, random=~species, data = poolresABU,family="gaussian",  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
@@ -1161,10 +1172,16 @@ output2=model.sel(N1,N2,N3,N4)
 output2
 ```
 
+### 3.3.6 abu-aineisto, parhaan mallin validointi kuvaajista
+
 ```{r}
 summary(N1)
+plot(N1$Sol, auto.layout=F)
 ```
 
+### 3.3.7 Abu-aineisto, analyysi lme-funktiolla
+
+Sama mutta lme-funktiolla eli ilman fylogeniaa.
 
 ```{r}
 #fixed osan vertailua, abu aineisto:
@@ -1207,7 +1224,7 @@ abline(h=0,lty=2)
 
 Abu-aineistolla sekä metodilla että poolauksella, ja niiden yhteisvaikutuksella on väliä.
 
-### 3.3.5 Luottamusvälit
+### 3.3.8 Kuvaaja luottamusväleillä
 
 
 ```{r}
