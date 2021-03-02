@@ -14,7 +14,7 @@ Analysoin pa ja abu-aineistot erillään.
 knitr::opts_chunk$set(echo = TRUE)
 
 getwd()
-paketit<-c("lme4","visreg","nlme","readr","tidyr","plyr","dplyr","magrittr","purrr","ggplot2","ape","geiger","MuMIn","psych","Hmisc","MCMCglmm","bayesplot","rstanarm")
+paketit<-c("lme4","nlme","readr","tidyr","plyr","dplyr","magrittr","purrr","ggplot2","ape","MuMIn","Hmisc","MCMCglmm","bayesplot","rstanarm","ggeffects","viridis")
 lapply(paketit,library,character.only=T)
 ```
 
@@ -226,7 +226,7 @@ m9<- MCMCglmm(accuracy ~ PrevS*method + Mig*method + logmass*method + pool, rand
 m10<- MCMCglmm(accuracy ~ Hab*method +PrevS*method + pool, random=~species, data = resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
 m11<- MCMCglmm(accuracy ~ Hab*method + Mig*method  + pool, random=~species, data = 
-resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000,pr=TRUE)
 
 m12<- MCMCglmm(accuracy ~ Hab*method + logmass*method + pool, random=~species, data=      resPA,family="gaussian",ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
@@ -270,6 +270,215 @@ plot(m11$Sol, auto.layout=F) #printit vie ihan hirveästi tilaa tällä koodilla
            #pars = c("logmass", "method", "pool","species"),
           #prob = 0.8) + plot_title
 #EI TOIMI.
+```
+
+#### Kuvaaja
+
+```{r}
+#ggeffects-paketin ggpredict-funktio tekee ennusteen suoraan ggplot2-yhteensopivasti
+#luo 96 ennustetta eli kullekin kombinaatiolle yhden predicted arvon
+mydf=ggpredict(m11, terms=c("Hab", "Mig","method","pool"))
+mydf
+#plot-funktio osaa suoraan plotata aineiston, pienillä säädöillä voi muuttaa esitystapaa
+plot(mydf, limits = c(-0.4, 1))+ 
+  facet_grid(method ~ pool) 
+
+#tai sitten voi muotoilla vapaammin omanlaisensa kuvaajan perinteiseen tapaan ggplot-funktiolla
+pd <- position_dodge(0.7) # move them .05 to the left and right
+
+ggplot(data = mydf, aes(x, predicted, colour = group, group=group)) +
+  geom_errorbar(aes(ymin=conf.low, ymax=conf.high), width=.1, position=pd) +
+  geom_point(position=pd) + 
+  facet_grid(panel ~ facet) 
+
+#muokataan muuttujia hieman
+mydf$group <- factor(mydf$group, levels=c("L", "R", "S"), labels=c("long-distance", "resident","short-distance"))
+mydf$panel <- factor(mydf$panel, levels=c("NPo", "Po"), labels=c("local", "regional"))
+mydf$x <- factor(mydf$x, levels=c("CU", "FO","MM","WE"), labels=c("cultural", "forests","mountain/mire", "wetland"))
+
+mydf %>%
+  arrange(predicted) %>%
+  mutate(migration = factor(group, levels=c("long-distance", "short-distance", "resident"))) %>%
+  ggplot(aes(x, predicted, color = migration, group=migration)) +
+  theme_bw() +
+  geom_errorbar(aes(ymin=conf.low, ymax=conf.high), width=.1, position=pd) +
+  geom_point(position=pd) + 
+  facet_grid(panel ~ facet)+
+  xlab("Habitat preference")+
+  ylab("Prediction accuracy")+
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.9, hjust=0.9))
+```
+
+```{r}
+#type="random"" eli random muuttuja huomioidaan tässä ja intervallien pitäisi olla prediction intervallit
+mydf2=ggpredict(m11, terms=c("Hab", "Mig","method","pool"),type="random")
+mydf2
+#plot-funktio osaa suoraan plotata aineiston, pienillä säädöillä voi muuttaa esitystapaa
+plot(mydf2, limits = c(-0.4, 1))+ 
+  facet_grid(method ~ pool) 
+
+#tai sitten voi muotoilla vapaammin omanlaisensa kuvaajan perinteiseen tapaan ggplot-funktiolla
+pd <- position_dodge(0.7) # move them .05 to the left and right
+
+ggplot(data = mydf2, aes(x, predicted, colour = group, group=group)) +
+  geom_errorbar(aes(ymin=conf.low, ymax=conf.high), width=.1, position=pd) +
+  geom_point(position=pd) + 
+  facet_grid(panel ~ facet) 
+
+#muokataan muuttujia hieman
+mydf2$group <- factor(mydf2$group, levels=c("L", "R", "S"), labels=c("long-distance", "resident","short-distance"))
+mydf2$panel <- factor(mydf2$panel, levels=c("NPo", "Po"), labels=c("local", "regional"))
+mydf2$x <- factor(mydf2$x, levels=c("CU", "FO","MM","WE"), labels=c("cultural", "forests","mountain/mire", "wetland"))
+
+mydf2 %>%
+  arrange(predicted) %>%
+  mutate(migration = factor(group, levels=c("long-distance", "short-distance", "resident"))) %>%
+  ggplot(aes(x, predicted, color = migration, group=migration)) +
+  theme_bw() +
+  geom_errorbar(aes(ymin=conf.low, ymax=conf.high), width=.1, position=pd) +
+  geom_point(position=pd) + 
+  facet_grid(panel ~ facet)+
+  xlab("Habitat preference")+
+  ylab("Prediction accuracy")+
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.9, hjust=0.9))
+```
+
+Ihan samat tulokset. En ole ihan varma toimiiko ggpredict-funktio sittenkään aivan moitteettomasti mcmcglmm-objektille.
+
+```{r}
+#yritän tehdä samat ennusteet itse predict.MCMCglmm-funktiolla
+#luon samanlaisen uuden aineiston mallille syötettäväksi (tosin mydf oli ilman lajia ja accuracya)
+newdata1 <- expand.grid(method = c("A","B","C","D"),
+                       pool = c("NPo","Po"),
+                       Mig = c("L", "R","S"),
+                       Hab=c("CU","FO","MM","WE"),accuracy=0,species="Acrocephalus_palustris")
+
+g=predict.MCMCglmm(object = m11, newdata1, interval = "prediction", type = "response", marginal=m9A$Random$species)
+#g=predict.MCMCglmm(object = m11, newdata1, interval = "prediction", type = "response") #mikä näiden ero on? mitä tuo marginalisointi meinaa?
+#g=predict.MCMCglmm(object = m11, newdata1, interval = "confidence", type = "response", marginal=m9A$Random$species) #näin en saa confidence intervalleja haettua, johtuuko siitä, että species on vain yksi laji?
+#g=predict.MCMCglmm(object = m11, newdata1, interval = "confidence", type = "response")#tämä toimii
+g=cbind(newdata1,g)
+
+pd <- position_dodge(0.7) # move them .05 to the left and right
+
+#muokataan muuttujia hieman
+g$Mig <- factor(g$Mig, levels=c("L", "R", "S"), labels=c("long-distance", "resident","short-distance"))
+g$pool <- factor(g$pool, levels=c("NPo", "Po"), labels=c("local", "regional"))
+g$Hab <- factor(g$Hab, levels=c("CU", "FO","MM","WE"), labels=c("cultural", "forests","mountain/mire", "wetland"))
+
+g %>%
+  arrange(fit) %>%
+  mutate(migration = factor(Mig, levels=c("long-distance", "short-distance", "resident"))) %>%
+  ggplot(aes(Hab, fit, color = migration, group=migration)) +
+  theme_bw() +
+  geom_errorbar(aes(ymin=lwr, ymax=upr), width=.1, position=pd) +
+  geom_point(position=pd) + 
+  facet_grid(pool ~ method)+
+  xlab("Habitat preference")+
+  ylab("Prediction accuracy")+
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.9, hjust=0.9))
+
+```
+
+```{r}
+#yritän tehdä samat ennusteet itse predict.MCMCglmm-funktiolla
+#luon samanlaisen uuden aineiston mallille syötettäväksi (tosin mydf oli ilman lajia ja accuracya)
+newdata1 <- expand.grid(method = c("A","B","C","D"),
+                       pool = c("NPo","Po"),
+                       Mig = c("L", "R","S"),
+                       Hab=c("CU","FO","MM","WE"),accuracy=0,species="Acrocephalus_palustris")
+
+#g=predict.MCMCglmm(object = m11, newdata1, interval = "prediction", type = "response", marginal=m9A$Random$species)
+g=predict.MCMCglmm(object = m11, newdata1, interval = "prediction", type = "response") #mikä näiden ero on? mitä tuo marginalisointi meinaa?
+#g=predict.MCMCglmm(object = m11, newdata1, interval = "confidence", type = "response", marginal=m9A$Random$species) #näin en saa confidence intervalleja haettua, johtuuko siitä, että species on vain yksi laji?
+#g=predict.MCMCglmm(object = m11, newdata1, interval = "confidence", type = "response")#tämä toimii
+g=cbind(newdata1,g)
+
+pd <- position_dodge(0.7) # move them .05 to the left and right
+
+#muokataan muuttujia hieman
+g$Mig <- factor(g$Mig, levels=c("L", "R", "S"), labels=c("long-distance", "resident","short-distance"))
+g$pool <- factor(g$pool, levels=c("NPo", "Po"), labels=c("local", "regional"))
+g$Hab <- factor(g$Hab, levels=c("CU", "FO","MM","WE"), labels=c("cultural", "forests","mountain/mire", "wetland"))
+
+g %>%
+  arrange(fit) %>%
+  mutate(migration = factor(Mig, levels=c("long-distance", "short-distance", "resident"))) %>%
+  ggplot(aes(Hab, fit, color = migration, group=migration)) +
+  theme_bw() +
+  geom_errorbar(aes(ymin=lwr, ymax=upr), width=.1, position=pd) +
+  geom_point(position=pd) + 
+  facet_grid(pool ~ method)+
+  xlab("Habitat preference")+
+  ylab("Prediction accuracy")+
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.9, hjust=0.9))+ 
+  scale_color_viridis(discrete = TRUE, option = "D")+
+  scale_fill_viridis(discrete = TRUE) 
+ggsave("pa_predictions_plot.pdf",device="pdf",width=20,height=12,units="cm")
+```
+
+
+
+```{r}
+#yritän muuttaa luottamusvälit lyhyemmiksi
+l=as.character(unique(resPA$species))
+newdata2 <- expand.grid(method = c("A","B","C","D"),
+                       pool = c("NPo","Po"),
+                       Mig = c("L", "R","S"),
+                       Hab=c("CU","FO","MM","WE"),accuracy=0,species=c(l)) #luon ennusteet kaikista kombinaatioista kaikille lajeille
+
+u=predict.MCMCglmm(object = m11, newdata2, interval = "confidence", type = "response") 
+#u=predict.MCMCglmm(object = m11, newdata2, interval = "confidence", type = "response", marginal=m9A$Random$species) #tällä ei toimi, eli mitä? jos haluaa marginalisoida random efektin, niin silloin ei voi saada confidence intervalleja, ainakaan tällä newdatalla, jossa kaikki lajit
+u=cbind(newdata2,u)
+
+pd <- position_dodge(0.7) # move them .05 to the left and right
+
+#muokataan muuttujia hieman
+u$Mig <- factor(u$Mig, levels=c("L", "R", "S"), labels=c("long-distance", "resident","short-distance"))
+u$pool <- factor(u$pool, levels=c("NPo", "Po"), labels=c("local", "regional"))
+u$Hab <- factor(u$Hab, levels=c("CU", "FO","MM","WE"), labels=c("cultural", "forests","mountain/mire", "wetland"))
+
+u %>%
+  arrange(fit) %>%
+  mutate(migration = factor(Mig, levels=c("long-distance", "short-distance", "resident"))) %>%
+  ggplot(aes(Hab, fit, color = migration, group=migration)) +
+  theme_bw() +
+  geom_errorbar(aes(ymin=lwr, ymax=upr), width=.1, position=pd) +
+  geom_point(position=pd) + 
+  facet_grid(pool ~ method)+
+  xlab("Habitat preference")+
+  ylab("Prediction accuracy")+
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.9, hjust=0.9))
+```
+Huom!
+Note that, *prediction interval* relies strongly on the assumption that the residual errors are normally distributed with a constant variance. So, you should only use such intervals if you believe that the assumption is approximately met for the data at hand.
+
+```{r}
+#ilman uutta aineistoa, fitted arvot
+r=predict(m11,marginal=~species,type="response",interval="confidence") #ei prediction!!
+r=predict.MCMCglmm(object = m11, interval = "confidence", type = "response")
+r=predict.MCMCglmm(object = m11, interval = "prediction", type = "response")
+r=predict.MCMCglmm(object = m11, interval = "prediction", type = "response", marginal=m9A$Random$species)
+r=cbind(resPA,r)
+
+pd <- position_dodge(0.7) # move them .05 to the left and right
+
+#muokataan muuttujia hieman
+r$Mig <- factor(r$Mig, levels=c("L", "R", "S"), labels=c("long-distance", "resident","short-distance"))
+r$pool <- factor(r$pool, levels=c("NPo", "Po"), labels=c("local", "regional"))
+r$Hab <- factor(r$Hab, levels=c("CU", "FO","MM","WE"), labels=c("cultural", "forests","mountain/mire", "wetland"))
+
+r %>%
+  arrange(fit) %>%
+  mutate(migration = factor(Mig, levels=c("long-distance", "short-distance", "resident"))) %>%
+  ggplot(aes(Hab, fit, color = migration, group=migration)) +
+  theme_bw() +
+  geom_errorbar(aes(ymin=lwr, ymax=upr), width=.1, position=pd) +
+  geom_point(position=pd) + 
+  facet_grid(pool ~ method)+
+  xlab("Habitat preference")+
+  ylab("Prediction accuracy")+
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.9, hjust=0.9))
 ```
 
 ### 4.4.3 Muita vaihtoehtoisia malleja
@@ -392,6 +601,126 @@ Toiseksi paras malli, 13 accuracy ~ PrevS x method + Mig x method  + pool, ei si
 summary(m9A)
 plot(m9A$Sol, auto.layout=F)
 ```
+
+#### Kuvaaja ennusteista
+
+```{r}
+#yritys jossa logmass ja prevS ovat vuorotellen keskiarvoja
+mean_mass2=mean(resABU$logmass)
+#med_mass=median(resABU$logmass)
+min_prev2 <- min(resABU$PrevS)
+max_prev2 <- max(resABU$PrevS)
+newdata3 <- expand.grid(PrevS = (seq(from = min_prev2,to = max_prev2, length.out = 10)),
+                       #logmass = mean_mass2,
+                       logmass=9.2,
+                       method = c("A","B","C","D"),
+                       pool = c("NPo","Po"),
+                       Mig = c("L", "R","S"),
+                       accuracy=0,
+                       species="Acrocephalus_palustris")
+
+c=predict.MCMCglmm(object = m9A, newdata = newdata3, interval = "prediction", type = "response", marginal=m9A$Random$species)
+#c=predict.MCMCglmm(object = m9A, newdata = newdata3, interval = "prediction", type = "response")
+c=cbind(newdata3,c)
+
+#muokataan muuttujia hieman
+c$Mig <- factor(c$Mig, levels=c("L", "R", "S"), labels=c("long-distance", "resident","short-distance"))
+c$pool <- factor(c$pool, levels=c("NPo", "Po"), labels=c("local", "regional"))
+
+c %>% arrange(PrevS) %>%
+  mutate(PrevS=exp(PrevS))%>%
+mutate(migration = factor(Mig, levels=c("long-distance", "short-distance", "resident"))) %>%
+ggplot(aes(x=PrevS, y=fit, colour = migration, group=migration, ymin = lwr, ymax = upr)) +
+  theme_bw()+
+  geom_line() +
+  geom_ribbon(alpha = 0.2, color = FALSE)+
+  facet_grid(pool ~ method) +
+  xlab("Prevalence")+
+  ylab("Prediction accuracy")+
+  scale_x_continuous(breaks=c(0.3,0.6, 0.9),labels=c("0.3","0.6","0.9"))+ 
+  scale_color_viridis(discrete = TRUE, option = "D")+
+  scale_fill_viridis(discrete = TRUE)
+
+ggsave("prevalence.png",device="png",width=20,height=12,units="cm")
+
+#PrevS keskiarvoksi ja uudet arvot massalle
+mean_prev=mean(resABU$PrevS)
+#med_mass=median(resABU$logmass)
+min_mass <- min(resABU$logmass)
+max_mass<- max(resABU$logmass)
+newdata4 <- expand.grid(logmass = (seq(from = min_mass,to = max_mass, length.out = 10)),
+                       PrevS = mean_prev,
+                       method = c("A","B","C","D"),
+                       pool = c("NPo","Po"),
+                       Mig = c("L", "R","S"),
+                       accuracy=0,
+                       species="Acrocephalus_palustris")
+
+t=predict.MCMCglmm(object = m9A, newdata = newdata4, interval = "prediction", type = "response", marginal=m9A$Random$species)
+t=cbind(newdata4,t)
+
+#muokataan muuttujia hieman
+t$Mig <- factor(t$Mig, levels=c("L", "R", "S"), labels=c("long-distance", "resident","short-distance"))
+t$pool <- factor(t$pool, levels=c("NPo", "Po"), labels=c("local", "regional"))
+
+t %>% arrange(logmass) %>%
+    mutate(logmass=exp(logmass))%>%
+mutate(migration = factor(Mig, levels=c("long-distance", "short-distance", "resident"))) %>%
+ggplot(aes(x=logmass, y=fit, colour = migration, group=migration, ymin = lwr, ymax = upr)) +
+  theme_bw()+
+  geom_line() +
+  geom_ribbon(alpha = 0.2, color = FALSE)+
+  facet_grid(pool ~ method)+
+  xlab("Mass (kg)")+
+  ylab("Prediction accuracy")+
+  scale_x_continuous(breaks=c(0,5000, 10000),labels=c("0","5","10"))+ 
+  scale_color_viridis(discrete = TRUE, option = "D")+
+  scale_fill_viridis(discrete = TRUE)
+
+ggsave("mass.png",device="png",width=20,height=12,units="cm")
+```
+
+```{r}
+#yritys jossa logmass ja prevS ovat vuorotellen keskiarvoja
+mean_mass2=mean(resABU$logmass)
+#med_mass=median(resABU$logmass)
+min_prev2 <- min(resABU$PrevS)
+max_prev2 <- max(resABU$PrevS)
+newdata3 <- expand.grid(PrevS = (seq(from = min_prev2,to = max_prev2, length.out = 10)),
+                       logmass = mean_mass2,
+                       method = c("A","B","C","D"),
+                       pool = c("NPo","Po"),
+                       Mig = c("L", "R","S"),
+                       accuracy=0,
+                       species="Acrocephalus_palustris")
+
+c=predict.MCMCglmm(object = m9A, newdata = newdata3, interval = "confidence", type = "response") #miksi tämä ei toimi? en saa confidence intervalleja abu-aineiston tuloksille
+```
+
+
+```{r}
+#ei uutta aineistoa
+#mcmcglmm-paketin omalla predict-funktiolla
+#t=predict.MCMCglmm(object = m9A, interval = "confidence", type = "response", marginal=m9A$Random$species)
+b=predict(m9A,marginal=~species,type="response",interval="confidence") #vai interval=prediction?
+#b=predict(m9A,marginal=~species,type="response",interval="prediction") #vai interval=prediction?
+b=cbind(resABU,b)
+
+#muokataan muuttujia hieman
+b$Mig <- factor(b$Mig, levels=c("L", "R", "S"), labels=c("long-distance", "resident","short-distance"))
+b$pool <- factor(b$pool, levels=c("NPo", "Po"), labels=c("local", "regional"))
+
+b %>% arrange(logmass) %>%
+mutate(migration = factor(Mig, levels=c("long-distance", "short-distance", "resident"))) %>%
+ggplot(aes(x=logmass, y=fit, colour = migration, group=migration, ymin = lwr, ymax = upr)) +
+  geom_line() +
+  geom_ribbon(alpha = 0.2, color = FALSE)+
+  facet_grid(pool ~ method)+
+  xlab("log(mass)")+
+  ylab("Prediction accuracy")
+```
+
+
 
 ### 4.4.6 Muita vaihtoehtoisia malleja
 

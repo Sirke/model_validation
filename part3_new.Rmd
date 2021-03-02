@@ -1092,10 +1092,12 @@ M2<- MCMCglmm(accuracy ~ method + pool, random=~species, data = poolresPA,family
 M3<- MCMCglmm(accuracy ~ method, random=~species, data = poolresPA,family="gaussian",  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
 M4<- MCMCglmm(accuracy ~ pool, random=~species, data = poolresPA,family="gaussian",  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+M5<- MCMCglmm(accuracy ~ 1, random=~species, data = poolresPA,family="gaussian",  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 ```
 
 ```{r}
-output1=model.sel(M1,M2,M3,M4)
+output1=model.sel(M1,M2,M3,M4,M5)
 output1
 ```
 
@@ -1120,9 +1122,11 @@ A1=lme(accuracy~method*pool,data=poolresPA,random=~1|species,method="ML",na.acti
 A2=lme(accuracy~method+pool,data=poolresPA,random=~1|species,method="ML",na.action="na.exclude")
 A3=lme(accuracy~method,data=poolresPA,random=~1|species,method="ML",na.action="na.exclude")
 A4=lme(accuracy~pool,data=poolresPA,random=~1|species,method="ML",na.action="na.exclude")
+A5=lme(accuracy~1,data=poolresPA,random=~1|species,method="ML",na.action="na.exclude")
+
 
 anova(A1,A2)
-AIC(A1,A2,A3,A4)
+AIC(A1,A2,A3,A4,A5)
 
 anova(A2,A3)
 summary(A3)
@@ -1165,10 +1169,12 @@ N2<- MCMCglmm(accuracy ~ method + pool, random=~species, data = poolresABU,famil
 N3<- MCMCglmm(accuracy ~ method, random=~species, data = poolresABU,family="gaussian",  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 
 N4<- MCMCglmm(accuracy ~ pool, random=~species, data = poolresABU,family="gaussian",  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
+
+N5<- MCMCglmm(accuracy ~ 1, random=~species, data = poolresABU,family="gaussian",  ginverse=list(species=bm.birds),nitt=1003000, burnin=3000, thin=1000)
 ```
 
 ```{r}
-output2=model.sel(N1,N2,N3,N4)
+output2=model.sel(N1,N2,N3,N4,N5)
 output2
 ```
 
@@ -1189,9 +1195,10 @@ A1=lme(accuracy~method*pool,data=poolresABU,random=~1|species,method="ML",na.act
 A2=lme(accuracy~method+pool,data=poolresABU,random=~1|species,method="ML",na.action="na.exclude")
 A3=lme(accuracy~method,data=poolresABU,random=~1|species,method="ML",na.action="na.exclude")
 A4=lme(accuracy~pool,data=poolresABU,random=~1|species,method="ML",na.action="na.exclude")
+A5=lme(accuracy~1,data=poolresABU,random=~1|species,method="ML",na.action="na.exclude")
 
 anova(A1,A2)
-AIC(A1,A2,A3,A4)
+AIC(A1,A2,A3,A4,A5)
 
 summary(A1)
 anova(A1)
@@ -1265,7 +1272,7 @@ ggplot(stat, aes(y=accuracy, x=method, group=pool)) +
   theme(legend.text = element_text(colour="black", size=10, 
                                      face="bold"))
 
-ggsave("plot3_pa_pool_method.png")
+ggsave("plot3_pa_pool_method.pdf")
 ```
 
 
