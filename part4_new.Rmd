@@ -71,7 +71,6 @@ ggplot(resABU, aes(x=Hab, y=accuracy)) +
   geom_boxplot(aes(fill=method)) + facet_grid(. ~pool ) +
   ggtitle("abundance data")
 ```
-
 *Migration*
 
 ```{r }
@@ -118,6 +117,277 @@ ggplot(resABU, aes(x=logmass, y=accuracy,color=method)) +
   facet_grid(. ~pool ) +
   ggtitle("abundance data")
 ```
+
+```{r}
+#muokataan muuttujia hieman
+resPA$Mig <- factor(resPA$Mig, levels=c("L", "R", "S"), labels=c("long-distance", "resident","short-distance"))
+resPA$pool <- factor(resPA$pool, levels=c("NPo", "Po"), labels=c("local", "regional"))
+resPA$Hab <- factor(resPA$Hab, levels=c("CU", "FO","MM","WE"), labels=c("cultural", "forests","mountain/mire", "wetland"))
+```
+
+```{r}
+resPA %>%
+  mutate(migration = factor(Mig, levels=c("long-distance", "short-distance", "resident"))) %>%
+  ggplot(aes(Hab, accuracy,fill=migration)) +
+  theme_bw() +
+  geom_boxplot()+
+  facet_grid(pool ~ method)+
+  xlab("Habitat preference")+
+  ylab("Prediction accuracy")+
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.9, hjust=0.9))+ 
+  scale_color_viridis(discrete = TRUE, option = "D")+
+  scale_fill_viridis(discrete = TRUE) 
+ggsave("pa_raw_data_plot_factors.pdf",device="pdf",width=25,height=12,units="cm")
+```
+
+```{r}
+resPA %>%
+  mutate(migration = factor(Mig, levels=c("long-distance", "short-distance", "resident"))) %>%
+  ggplot(aes(logmass, accuracy,color=migration)) +
+  theme_bw() +
+  geom_point () + 
+  geom_smooth(method=lm) +
+  facet_grid(pool ~ method)+
+  xlab("log(Mass)")+
+  ylab("Prediction accuracy")+
+  scale_color_viridis(discrete = TRUE, option = "D")+
+  scale_fill_viridis(discrete = TRUE)
+ggsave("pa_raw_data_plot_mass_by_migration.pdf",device="pdf",width=25,height=12,units="cm")
+
+resPA %>%
+  mutate(migration = factor(Mig, levels=c("long-distance", "short-distance", "resident"))) %>%
+  ggplot(aes(PrevS, accuracy,color=migration)) +
+  theme_bw() +
+  geom_point () + 
+  geom_smooth(method=lm) +
+  #geom_point(position=pd) + 
+  facet_grid(pool ~ method)+
+  xlab("log(Prevalence)")+
+  ylab("Prediction accuracy")+
+  scale_color_viridis(discrete = TRUE, option = "D")+
+  scale_fill_viridis(discrete = TRUE)
+ggsave("pa_raw_data_plot_prev_by_migration.pdf",device="pdf",width=25,height=12,units="cm")
+```
+
+```{r}
+#tai jokainen trait erikseen
+resPA %>%
+  ggplot(aes(Hab, accuracy)) +
+  theme_bw() +
+  geom_boxplot(aes(colour=factor(Hab)))+
+  facet_grid(pool ~ method)+
+  xlab("Habitat preference")+
+  ylab("Prediction accuracy")+
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.9, hjust=0.9))+ 
+  scale_color_viridis(discrete = TRUE, option = "D")+
+ theme(legend.position="top")+
+  labs(color = "Habitat preference")+
+  theme(legend.position='none')
+ggsave("pa_raw_data_plot_habitat.pdf",device="pdf",width=25,height=12,units="cm")
+ggsave("pa_raw_data_plot_habitat.png",device="png",width=25,height=12,units="cm")
+```
+
+```{r}
+resPA %>%
+  mutate(Mig = factor(Mig, levels=c("long-distance", "short-distance", "resident"))) %>%
+  ggplot(aes(Mig, accuracy)) +
+  theme_bw() +
+  geom_boxplot(aes(colour=factor(Mig)))+
+  facet_grid(pool ~ method)+
+  xlab("Migration behaviour")+
+  ylab("Prediction accuracy")+
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.9, hjust=0.9))+ 
+  scale_color_viridis(discrete = TRUE, option = "D")+
+ theme(legend.position="top")+
+  labs(color = "Habitat preference")+
+  theme(legend.position='none')
+ggsave("pa_raw_data_plot_migration.pdf",device="pdf",width=25,height=12,units="cm")
+ggsave("pa_raw_data_plot_migration.png",device="png",width=25,height=12,units="cm")
+```
+
+```{r}
+resPA %>%
+  ggplot(aes(exp(logmass), accuracy)) +
+  theme_bw() +
+  geom_point () + 
+  geom_smooth(method=lm) +
+  facet_grid(pool ~ method)+
+  xlab("Mass (kg)")+
+  ylab("Prediction accuracy")+
+   scale_x_continuous(breaks=c(0,5000, 10000),labels=c("0","5","10"))+ 
+  scale_color_viridis(discrete = TRUE, option = "D")+
+  scale_fill_viridis(discrete = TRUE)
+ggsave("pa_raw_data_plot_mass.pdf",device="pdf",width=25,height=12,units="cm")
+```
+
+```{r}
+resPA %>%
+  ggplot(aes(exp(PrevS), accuracy)) +
+  theme_bw() +
+  geom_point () + 
+  geom_smooth(method=lm) +
+  facet_grid(pool ~ method)+
+  xlab("Prevalence")+
+  ylab("Prediction accuracy")+
+  scale_x_continuous(breaks=c(0.3,0.6, 0.9),labels=c("0.3","0.6","0.9"))+
+  scale_color_viridis(discrete = TRUE, option = "D")+
+  scale_fill_viridis(discrete = TRUE)
+ggsave("pa_raw_data_plot_mass.pdf",device="pdf",width=25,height=12,units="cm")
+```
+
+```{r}
+#muokataan muuttujia hieman
+resABU$Mig <- factor(resABU$Mig, levels=c("L", "R", "S"), labels=c("long-distance", "resident","short-distance"))
+resABU$pool <- factor(resABU$pool, levels=c("NPo", "Po"), labels=c("local", "regional"))
+resABU$Hab <- factor(resABU$Hab, levels=c("CU", "FO","MM","WE"), labels=c("cultural", "forests","mountain/mire", "wetland"))
+```
+
+```{r}
+resABU %>%
+  mutate(migration = factor(Mig, levels=c("long-distance", "short-distance", "resident"))) %>%
+  #ggplot(aes(Hab, accuracy, color = migration, group=migration)) +
+  ggplot(aes(Hab, accuracy,fill=migration)) +
+  theme_bw() +
+  geom_boxplot()+
+  #geom_point(position=pd) + 
+  facet_grid(pool ~ method)+
+  xlab("Habitat preference")+
+  ylab("Prediction accuracy")+
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.9, hjust=0.9))+ 
+  scale_color_viridis(discrete = TRUE, option = "D")+
+  scale_fill_viridis(discrete = TRUE) 
+ggsave("abu_raw_data_plot_factors.pdf",device="pdf",width=25,height=12,units="cm")
+```
+
+```{r}
+resABU %>%
+  mutate(migration = factor(Mig, levels=c("long-distance", "short-distance", "resident"))) %>%
+  ggplot(aes(logmass, accuracy,color=migration)) +
+  theme_bw() +
+  geom_point () + 
+  geom_smooth(method=lm) +
+  facet_grid(pool ~ method)+
+  xlab("log(Mass)")+
+  ylab("Prediction accuracy")+
+  scale_color_viridis(discrete = TRUE, option = "D")+
+  scale_fill_viridis(discrete = TRUE)
+ggsave("abu_raw_data_plot_mass_by_migration.pdf",device="pdf",width=25,height=12,units="cm")
+```
+
+```{r}
+resABU %>%
+  mutate(migration = factor(Mig, levels=c("long-distance", "short-distance", "resident"))) %>%
+  ggplot(aes(PrevS, accuracy,color=migration)) +
+  theme_bw() +
+  geom_point () + 
+  geom_smooth(method=lm) +
+  #geom_point(position=pd) + 
+  facet_grid(pool ~ method)+
+  xlab("log(Prevalence)")+
+  ylab("Prediction accuracy")+
+  scale_color_viridis(discrete = TRUE, option = "D")+
+  scale_fill_viridis(discrete = TRUE)
+
+ggsave("abu_raw_data_plot_prev_by_migration.pdf",device="pdf",width=25,height=12,units="cm")
+```
+
+```{r}
+#tai jokainen trait erikseen:
+resABU %>%
+  ggplot(aes(Hab, accuracy)) +
+  theme_bw() +
+  geom_boxplot(aes(colour=factor(Hab)))+
+  #geom_point(position=pd) + 
+  facet_grid(pool ~ method)+
+  xlab("Habitat preference")+
+  ylab("Prediction accuracy")+
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.9, hjust=0.9))+ 
+  scale_color_viridis(discrete = TRUE, option = "D")+
+ theme(legend.position="top")+
+  labs(color = "Habitat preference")+
+  theme(legend.position='none')
+ggsave("abu_raw_data_plot_habitat.pdf",device="pdf",width=25,height=12,units="cm")
+ggsave("abu_raw_data_plot_habitat.png",device="png",width=25,height=12,units="cm")
+```
+
+```{r}
+resABU %>%
+  mutate(Mig = factor(Mig, levels=c("long-distance", "short-distance", "resident"))) %>%
+  ggplot(aes(Mig, accuracy)) +
+  theme_bw() +
+  geom_boxplot(aes(colour=factor(Mig)))+
+  facet_grid(pool ~ method)+
+  xlab("Migration behaviour")+
+  ylab("Prediction accuracy")+
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.9, hjust=0.9))+ 
+  scale_color_viridis(discrete = TRUE, option = "D")+
+  theme(legend.position='none')
+ggsave("abu_raw_data_plot_migration.pdf",device="pdf",width=25,height=12,units="cm")
+ggsave("abu_raw_data_plot_migration.png",device="png",width=25,height=12,units="cm")
+```
+
+```{r}
+resABU %>%
+  ggplot(aes(exp(logmass), accuracy)) +
+  theme_bw() +
+  geom_point () + 
+  geom_smooth(method=lm) +
+  facet_grid(pool ~ method)+
+  xlab("Mass (kg)")+
+  ylab("Prediction accuracy")+
+   scale_x_continuous(breaks=c(0,5000, 10000),labels=c("0","5","10"))+ 
+  scale_color_viridis(discrete = TRUE, option = "D")+
+  scale_fill_viridis(discrete = TRUE)
+ggsave("abu_raw_data_plot_mass.pdf",device="pdf",width=25,height=12,units="cm")
+```
+
+```{r}
+resABU %>%
+  ggplot(aes(exp(PrevS), accuracy)) +
+  theme_bw() +
+  geom_point () + 
+  geom_smooth(method=lm) +
+  facet_grid(pool ~ method)+
+  xlab("Prevalence")+
+  ylab("Prediction accuracy")+
+  scale_x_continuous(breaks=c(0.3,0.6, 0.9),labels=c("0.3","0.6","0.9"))+
+  scale_color_viridis(discrete = TRUE, option = "D")+
+  scale_fill_viridis(discrete = TRUE)
+ggsave("abu_raw_data_plot_prev.pdf",device="pdf",width=25,height=12,units="cm")
+
+#log-skaalalla samat:
+resABU %>%
+  ggplot(aes(logmass, accuracy)) +
+  theme_bw() +
+  geom_point () + 
+  geom_smooth(method=lm) +
+  facet_grid(pool ~ method)+
+  xlab("log(Mass)")+
+  ylab("Prediction accuracy")+
+   #scale_x_continuous(breaks=c(0,5000, 10000),labels=c("0","5","10"))+ 
+  scale_color_viridis(discrete = TRUE, option = "D")+
+  scale_fill_viridis(discrete = TRUE)
+ggsave("abu_raw_data_plot_mass_logscale.pdf",device="pdf",width=25,height=12,units="cm")
+ggsave("abu_raw_data_plot_mass_logscale.png",device="png",width=25,height=12,units="cm")
+```
+
+```{r}
+resABU %>%
+  ggplot(aes(PrevS, accuracy)) +
+  theme_bw() +
+  geom_point () + 
+  geom_smooth(method=lm) +
+  facet_grid(pool ~ method)+
+  xlab("log(Prevalence)")+
+  ylab("Prediction accuracy")+
+  #scale_x_continuous(breaks=c(0.3,0.6, 0.9),labels=c("0.3","0.6","0.9"))+
+  scale_color_viridis(discrete = TRUE, option = "D")+
+  scale_fill_viridis(discrete = TRUE)
+ggsave("abu_raw_data_plot_prevalence_logscale.pdf",device="pdf",width=25,height=12,units="cm")
+ggsave("abu_raw_data_plot_prevalence_logscale.png",device="png",width=25,height=12,units="cm")
+```
+
+
 
 Tarkistan massan ja prevalenssin korrelaation:
 
@@ -642,7 +912,9 @@ ggplot(aes(x=PrevS, y=fit, colour = migration, group=migration, ymin = lwr, ymax
   scale_fill_viridis(discrete = TRUE)
 
 ggsave("prevalence.png",device="png",width=20,height=12,units="cm")
+```
 
+```{r}
 #PrevS keskiarvoksi ja uudet arvot massalle
 mean_prev=mean(resABU$PrevS)
 #med_mass=median(resABU$logmass)

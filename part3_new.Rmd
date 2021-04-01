@@ -157,27 +157,44 @@ Ay1 ja 2 ovat todellisia havaintoja, periodeittain. Ap1 ja 2 ovat ennusteita.
 
 ```{r}
 #luetaan sisään reitit, havainnot ja ennusteet
-coordinates(Ay1)<-c("x","y")
-plot(Ay1)
-proj4string(Ay1) <-CRS("+init=EPSG:3035")
+#coordinates(Ay1)<-c("x","y")
+#plot(Ay1)
+#proj4string(Ay1) <-CRS("+init=EPSG:3035")
 
-coordinates(Ay2)<-c("x","y")
-proj4string(Ay2) <-CRS("+init=EPSG:3035")
+#coordinates(Ay2)<-c("x","y")
+#proj4string(Ay2) <-CRS("+init=EPSG:3035")
 
-coordinates(Ap1)<-c("x","y")
-proj4string(Ap1) <-CRS("+init=EPSG:3035")
+#coordinates(Ap1)<-c("x","y")
+#proj4string(Ap1) <-CRS("+init=EPSG:3035")
 
-coordinates(Ap2)<-c("x","y")
-proj4string(Ap2) <-CRS("+init=EPSG:3035")
+#coordinates(Ap2)<-c("x","y")
+#proj4string(Ap2) <-CRS("+init=EPSG:3035")
+
+Ay1 <- st_as_sf(Ay1, coords = c("x", "y"), crs = 3035)
+st_crs(Ay1)
+
+Ay2 <- st_as_sf(Ay2, coords = c("x", "y"), crs = 3035)
+st_crs(Ay2)
+
+Ap1 <- st_as_sf(Ap1, coords = c("x", "y"), crs = 3035)
+st_crs(Ap1)
+
+Ap2 <- st_as_sf(Ap2, coords = c("x", "y"), crs = 3035)
+st_crs(Ap2)
 ```
 
 Gridit olen tehnyt jo aiemmin QGis:llä. 
 
 ```{r}
-gridi<- readOGR(dsn="./gridit", layer="grid50km")
+#gridi<- readOGR(dsn="./gridit", layer="grid50km")
 #gridi<- readOGR(dsn="./gridit", layer="grid100km")
-proj4string(gridi)
-plot(gridi)
+#proj4string(gridi)
+#plot(gridi)
+
+grid=st_read("C:/Users/U1701911/OneDrive - University of Helsinki/github_mallinnus/model_validation/gridit/grid50km.shp")
+head(grid,n=4)
+plot(st_geometry(grid))
+grid=st_set_crs(grid,3035)
 ```
 
 Itse poolaus tapahtuu niin, että liitetään kuhunkin reittiin tieto, millä gridin ruudulla (id-numero) se on, jonka jälkeen ryhmitellään kaikki reitit gridiruuduittain ja lasketaan niille keskiarvot. Tallennan taas kaikki tiedot niin, että ne on helppo lukea ja tarkistaa GIS:llä.
@@ -185,7 +202,7 @@ Itse poolaus tapahtuu niin, että liitetään kuhunkin reittiin tieto, millä gr
 
 ```{r}
 #liitetään kuhunkin reittiin tieto, millä gridin ruudulla se on
-pts.poly <- point.in.poly(Ay1, gridi)
+pts.poly <- point.in.poly(Ay1, grid,sp=F)
 data<-as.data.frame(pts.poly)
 
 #ryhmitelään linjat gridiruuduittain ja lasketaan keskiarvot kullekin sarakkeelle, eli lajeittain.
@@ -195,21 +212,21 @@ data%>%
   write.csv(.,file = "pool_pa_obs_per1.csv",row.names=F)
 
 #ja sama muille aineistoille
-pts.poly <- point.in.poly(Ay2, gridi)
+pts.poly <- point.in.poly(Ay2, grid,sp=F)
 data<-as.data.frame(pts.poly)
 data%>%
   group_by(grid_id) %>%
   summarise_at(vars(-Route), list(~mean(., na.rm=T))) %>%
   write.csv(.,file = "pool_pa_obs_per2.csv",row.names=F)
 
-pts.poly <- point.in.poly(Ap1, gridi)
+pts.poly <- point.in.poly(Ap1, grid,sp=F)
 data<-as.data.frame(pts.poly)
 data%>%
   group_by(grid_id) %>%
   summarise_at(vars(-Route), list(~mean(., na.rm=T))) %>%
   write.csv(.,file = "pool_pa_pred_per1.csv",row.names=F)
 
-pts.poly <- point.in.poly(Ap2, gridi)
+pts.poly <- point.in.poly(Ap2, grid,sp=F)
 data<-as.data.frame(pts.poly)
 data%>%
   group_by(grid_id) %>%
@@ -232,7 +249,7 @@ papred2<-read.csv("pool_pa_pred_per2.csv",header=T,sep=",")
 
 #heivataan turhat sarakkeet
 names(paY1)
-drops <- c("routeid","left","top","right","bottom","coords.x1","coords.x2")
+drops <- c("routeid","left","top","right","bottom","geometry")
 paY1<-paY1[ , !(names(paY1) %in% drops)]
 paY2<-paY2[ , !(names(paY2) %in% drops)]
 papred1<-papred1[ , !(names(papred1) %in% drops)]
@@ -394,22 +411,35 @@ write.csv(Ay2,"pa_obs_per2.csv",row.names = F)
 write.csv(Ap1,"pa_pred_per1.csv",row.names = F)
 write.csv(Ap2,"pa_pred_per2.csv",row.names = F)
 
+
+Ay1 <- st_as_sf(Ay1, coords = c("x", "y"), crs = 3035)
+st_crs(Ay1)
+
+Ay2 <- st_as_sf(Ay2, coords = c("x", "y"), crs = 3035)
+st_crs(Ay2)
+
+Ap1 <- st_as_sf(Ap1, coords = c("x", "y"), crs = 3035)
+st_crs(Ap1)
+
+Ap2 <- st_as_sf(Ap2, coords = c("x", "y"), crs = 3035)
+st_crs(Ap2)
+
 #luetaan sisään reitit, havainnot ja ennusteet
-coordinates(Ay1)<-c("x","y")
-plot(Ay1)
-proj4string(Ay1) <-CRS("+init=EPSG:3035")
+#coordinates(Ay1)<-c("x","y")
+#plot(Ay1)
+#proj4string(Ay1) <-CRS("+init=EPSG:3035")
 
-coordinates(Ay2)<-c("x","y")
-proj4string(Ay2) <-CRS("+init=EPSG:3035")
+#coordinates(Ay2)<-c("x","y")
+#proj4string(Ay2) <-CRS("+init=EPSG:3035")
 
-coordinates(Ap1)<-c("x","y")
-proj4string(Ap1) <-CRS("+init=EPSG:3035")
+#coordinates(Ap1)<-c("x","y")
+#proj4string(Ap1) <-CRS("+init=EPSG:3035")
 
-coordinates(Ap2)<-c("x","y")
-proj4string(Ap2) <-CRS("+init=EPSG:3035")
+#coordinates(Ap2)<-c("x","y")
+#proj4string(Ap2) <-CRS("+init=EPSG:3035")
 
 #liitetään kuhunkin reittiin tieto, millä gridin ruudulla se on
-pts.poly <- point.in.poly(Ay1, gridi)
+pts.poly <- point.in.poly(Ay1, grid,sp=F)
 data<-as.data.frame(pts.poly)
 
 #ryhmitelään linjat gridiruuduittain ja lasketaan keskiarvot kullekin sarakkeelle, eli lajeittain.
@@ -419,21 +449,21 @@ data%>%
   write.csv(.,file = "pool_pa_obs_per1.csv",row.names=F)
 
 #ja sama muille aineistoille
-pts.poly <- point.in.poly(Ay2, gridi)
+pts.poly <- point.in.poly(Ay2, grid,sp=F)
 data<-as.data.frame(pts.poly)
 data%>%
   group_by(grid_id) %>%
   summarise_at(vars(-Route), list(~mean(., na.rm=T))) %>%
   write.csv(.,file = "pool_pa_obs_per2.csv",row.names=F)
 
-pts.poly <- point.in.poly(Ap1, gridi)
+pts.poly <- point.in.poly(Ap1, grid,sp=F)
 data<-as.data.frame(pts.poly)
 data%>%
   group_by(grid_id) %>%
   summarise_at(vars(-Route), list(~mean(., na.rm=T))) %>%
   write.csv(.,file = "pool_pa_pred_per1.csv",row.names=F)
 
-pts.poly <- point.in.poly(Ap2, gridi)
+pts.poly <- point.in.poly(Ap2, grid,sp=F)
 data<-as.data.frame(pts.poly)
 data%>%
   group_by(grid_id) %>%
@@ -448,7 +478,7 @@ papred2<-read.csv("pool_pa_pred_per2.csv",header=T,sep=",")
 
 #heivataan turhat sarakkeet
 names(paY1)
-drops <- c("routeid","left","top","right","bottom","coords.x1","coords.x2")
+drops <- c("routeid","left","top","right","bottom","geometry")
 paY1<-paY1[ , !(names(paY1) %in% drops)]
 paY2<-paY2[ , !(names(paY2) %in% drops)]
 papred1<-papred1[ , !(names(papred1) %in% drops)]
@@ -607,41 +637,53 @@ write.csv(Ap2,"abu_pred_per2.csv",row.names = F)
 
 ```{r}
 #luetaan sisään reitit koordinaatteineen
-coordinates(Ay1)<-c("x","y")
-proj4string(Ay1) <-CRS("+init=EPSG:3035")
+#coordinates(Ay1)<-c("x","y")
+#proj4string(Ay1) <-CRS("+init=EPSG:3035")
 
-coordinates(Ay2)<-c("x","y")
-proj4string(Ay2) <-CRS("+init=EPSG:3035")
+#coordinates(Ay2)<-c("x","y")
+#proj4string(Ay2) <-CRS("+init=EPSG:3035")
 
-coordinates(Ap1)<-c("x","y")
-proj4string(Ap1) <-CRS("+init=EPSG:3035")
+#coordinates(Ap1)<-c("x","y")
+#proj4string(Ap1) <-CRS("+init=EPSG:3035")
 
-coordinates(Ap2)<-c("x","y")
-proj4string(Ap2) <-CRS("+init=EPSG:3035")
+#coordinates(Ap2)<-c("x","y")
+#proj4string(Ap2) <-CRS("+init=EPSG:3035")
+
+Ay1 <- st_as_sf(Ay1, coords = c("x", "y"), crs = 3035)
+st_crs(Ay1)
+
+Ay2 <- st_as_sf(Ay2, coords = c("x", "y"), crs = 3035)
+st_crs(Ay2)
+
+Ap1 <- st_as_sf(Ap1, coords = c("x", "y"), crs = 3035)
+st_crs(Ap1)
+
+Ap2 <- st_as_sf(Ap2, coords = c("x", "y"), crs = 3035)
+st_crs(Ap2)
 
 #join data based on polygons
-pts.poly <- point.in.poly(Ay1, gridi)
+pts.poly <- point.in.poly(Ay1, grid,sp=F)
 data<-as.data.frame(pts.poly)
 data%>%
   group_by(grid_id) %>%
   summarise_at(vars(-Route), list(~mean(., na.rm=T))) %>% #NA:t eivät vaikuta laskuihin
   write.csv(.,file = "pool_abu_obs_per1.csv",row.names=F,na="")
 
-pts.poly <- point.in.poly(Ay2, gridi)
+pts.poly <- point.in.poly(Ay2, grid,sp=F)
 data<-as.data.frame(pts.poly)
 data%>%
   group_by(grid_id) %>%
   summarise_at(vars(-Route), list(~mean(., na.rm=T))) %>%
   write.csv(.,file = "pool_abu_obs_per2.csv",row.names=F,na="")
 
-pts.poly <- point.in.poly(Ap1, gridi)
+pts.poly <- point.in.poly(Ap1, grid,sp=F)
 data<-as.data.frame(pts.poly)
 data%>%
   group_by(grid_id) %>%
   summarise_at(vars(-Route), list(~mean(., na.rm=T))) %>%
   write.csv(.,file = "pool_abu_pred_per1.csv",row.names=F,na="")
 
-pts.poly <- point.in.poly(Ap2, gridi)
+pts.poly <- point.in.poly(Ap2, grid,sp=F)
 data<-as.data.frame(pts.poly)
 data%>%
   group_by(grid_id) %>%
@@ -662,7 +704,7 @@ papred1<-read.csv("pool_abu_pred_per1.csv",header=T,sep=",")
 papred2<-read.csv("pool_abu_pred_per2.csv",header=T,sep=",")
 
 #heivataan turhat sarakkeet
-drops <- c("routeid","left","top","right","bottom","coords.x1","coords.x2")
+drops <- c("routeid","left","top","right","bottom","geometry")
 paY1<-paY1[ , !(names(paY1) %in% drops)]
 paY2<-paY2[ , !(names(paY2) %in% drops)]
 papred1<-papred1[ , !(names(papred1) %in% drops)]
@@ -828,41 +870,53 @@ write.csv(Ap2,"abu_pred_per2.csv",row.names = F)
 
 ```{r}
 #luetaan sisään reitit koordinaatteineen
-coordinates(Ay1)<-c("x","y")
-proj4string(Ay1) <-CRS("+init=EPSG:3035")
+#coordinates(Ay1)<-c("x","y")
+#proj4string(Ay1) <-CRS("+init=EPSG:3035")
 
-coordinates(Ay2)<-c("x","y")
-proj4string(Ay2) <-CRS("+init=EPSG:3035")
+#coordinates(Ay2)<-c("x","y")
+#proj4string(Ay2) <-CRS("+init=EPSG:3035")
 
-coordinates(Ap1)<-c("x","y")
-proj4string(Ap1) <-CRS("+init=EPSG:3035")
+#coordinates(Ap1)<-c("x","y")
+#proj4string(Ap1) <-CRS("+init=EPSG:3035")
 
-coordinates(Ap2)<-c("x","y")
-proj4string(Ap2) <-CRS("+init=EPSG:3035")
+#coordinates(Ap2)<-c("x","y")
+#proj4string(Ap2) <-CRS("+init=EPSG:3035")
+
+Ay1 <- st_as_sf(Ay1, coords = c("x", "y"), crs = 3035)
+st_crs(Ay1)
+
+Ay2 <- st_as_sf(Ay2, coords = c("x", "y"), crs = 3035)
+st_crs(Ay2)
+
+Ap1 <- st_as_sf(Ap1, coords = c("x", "y"), crs = 3035)
+st_crs(Ap1)
+
+Ap2 <- st_as_sf(Ap2, coords = c("x", "y"), crs = 3035)
+st_crs(Ap2)
 
 #join data based on polygons
-pts.poly <- point.in.poly(Ay1, gridi)
+pts.poly <- point.in.poly(Ay1, grid,sp=F)
 data<-as.data.frame(pts.poly)
 data%>%
   group_by(grid_id) %>%
   summarise_at(vars(-Route), list(~mean(., na.rm=T))) %>% #NA:t eivät vaikuta laskuihin
   write.csv(.,file = "pool_abu_obs_per1.csv",row.names=F,na="")
 
-pts.poly <- point.in.poly(Ay2, gridi)
+pts.poly <- point.in.poly(Ay2, grid,sp=F)
 data<-as.data.frame(pts.poly)
 data%>%
   group_by(grid_id) %>%
   summarise_at(vars(-Route), list(~mean(., na.rm=T))) %>%
   write.csv(.,file = "pool_abu_obs_per2.csv",row.names=F,na="")
 
-pts.poly <- point.in.poly(Ap1, gridi)
+pts.poly <- point.in.poly(Ap1, grid,sp=F)
 data<-as.data.frame(pts.poly)
 data%>%
   group_by(grid_id) %>%
   summarise_at(vars(-Route), list(~mean(., na.rm=T))) %>%
   write.csv(.,file = "pool_abu_pred_per1.csv",row.names=F,na="")
 
-pts.poly <- point.in.poly(Ap2, gridi)
+pts.poly <- point.in.poly(Ap2, grid,sp=F)
 data<-as.data.frame(pts.poly)
 data%>%
   group_by(grid_id) %>%
@@ -879,7 +933,7 @@ papred1<-read.csv("pool_abu_pred_per1.csv",header=T,sep=",")
 papred2<-read.csv("pool_abu_pred_per2.csv",header=T,sep=",")
 
 #heivataan turhat sarakkeet
-drops <- c("routeid","left","top","right","bottom","coords.x1","coords.x2")
+drops <- c("routeid","left","top","right","bottom","geometry")
 paY1<-paY1[ , !(names(paY1) %in% drops)]
 paY2<-paY2[ , !(names(paY2) %in% drops)]
 papred1<-papred1[ , !(names(papred1) %in% drops)]
@@ -1050,9 +1104,9 @@ poolres$method=stringr::str_replace(poolres$method,'pool_','')
 poolres$method=as.factor(poolres$method)
 
 #tarkistellaan taulukkona, tää ei nyt jostain syystä skulaa?!
-poolres %>%
-  group_by(method, pa, pool) %>%
-  summarise(mean = mean(accuracy,na.rm=T),std.errors=std.error(accuracy,na.rm=T))
+#poolres %>%
+ # group_by(method, pa, pool) %>%
+ # summarise(mean = mean(accuracy,na.rm=T),std.errors=std.error(accuracy,na.rm=T))
 
 #plottailua
 ggplot(poolres,aes(x=method,y=accuracy,color=pool))+geom_boxplot()+facet_grid(.~pa)
